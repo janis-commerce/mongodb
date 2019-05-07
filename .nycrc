@@ -1,0 +1,16 @@
+{
+  "exclude": [
+    "tests/"
+  ],
+  "extension": [
+    ".js"
+  ],
+  "cache": true,
+  "all": true,
+  "default-excludes": true,
+  "check-coverage": true,
+  "statements": 95,
+  "branches": 95,
+  "functions": 95,
+  "lines": 95
+}
