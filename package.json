@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/janis-commerce/mongodb#readme",
   "dependencies": {
+    "@janiscommerce/logger": "^1.0.2",
     "lodash": "^4.17.11",
     "mongodb": "^3.2.3"
   },

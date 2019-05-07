@@ -2,7 +2,7 @@
 
 const assert = require('assert');
 
-const MongoDB = require('./../index');
+const { MongoDB, MongoDBError } = require('./../mongodb');
 
 /* eslint-disable prefer-arrow-callback */
 
@@ -27,7 +27,7 @@ describe('MongoDB', function() {
 				assert.throws(() => {
 					mongodb
 						.getFilter(dummyModel);
-				}, Error);
+				}, MongoDBError);
 			});
 
 			it('when getting filter and no index found', function() {
@@ -47,7 +47,7 @@ describe('MongoDB', function() {
 				assert.throws(() => {
 					mongodb
 						.getFilter(dummyModel, { sarasa: 1 });
-				}, Error);
+				}, MongoDBError);
 
 			});
 
