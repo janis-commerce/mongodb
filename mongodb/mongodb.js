@@ -16,7 +16,11 @@ class MongoDB {
 		this.config = config;
 	}
 
-	async checkConn() {
+	/**
+	 * Checks the connection to the database
+	 * @throws if the connection is not successfull
+	 */
+	async checkConnection() {
 		if(!this.client) {
 			this.client = await MongoClient.connect(this.config.host, {
 				useNewUrlParser: true
@@ -27,8 +31,8 @@ class MongoDB {
 	/**
 	 * Format an index for mongodb
 	 *
-	 * @param {<type>} index The index
-	 * @param {mixed} string with a simple index or array with complex index
+	 * @param {(String|Array)} index A simple index or array with complex index
+	 * @returns {Object} formatted index
 	 */
 	formatIndex(index) {
 
@@ -47,11 +51,11 @@ class MongoDB {
 	 * Create indexes
 	 *
 	 * @param {Object} model The model
-	 * @return {Promise} { description_of_the_return_value }
-	 */
+	 * @return {Promise} mongodb index
+	*/
 	async createIndexes(model) {
 
-		await this.checkConn();
+		await this.checkConnection();
 
 		const db = this.client.db(model.dbname);
 
@@ -75,21 +79,32 @@ class MongoDB {
 	}
 
 	/* eslint-disable no-underscore-dangle */
+	/**
+	* @param {Object} fields fields
+	*/
 	prepareFields(fields) {
 		if(fields._id)
 			fields._id = ObjectID(fields._id);
 	}
 	/* eslint-enable no-underscore-dangle */
 
+	/**
+	 * Get data from mongodb database
+	 *
+	 * @param {Model} model The Model module instance
+	 * @param {Object} params params
+	 * @returns {Array} mongodb response
+	 */
 	async get(model, params) {
 
-		await this.checkConn();
+		await this.checkConnection();
 
 		const db = this.client.db(model.dbname);
 
 		const limit = params.limit || DEFAULT_LIMIT;
 
-		const filters = params.filters ? ({ ...params.filters }) : {};
+		const filters = { ...params.filters } || {};
+
 		this.prepareFields(filters);
 
 		return db.collection(model.getTable())
@@ -98,6 +113,13 @@ class MongoDB {
 			.toArray();
 	}
 
+	/**
+	 * Get the filters
+	 *
+	 * @param {Model} model The Model module instance
+	 * @param {Object} item item
+	 * @returns {Object} filters
+	 */
 	getFilter(model, item) {
 
 		if(!model.constructor.indexes)
@@ -124,9 +146,16 @@ class MongoDB {
 		return filter;
 	}
 
+	/**
+	 * Saves data into the database
+	 *
+	 * @param {Model} model The Model module instance
+	 * @param {Object} item item
+	 * @returns {Boolean} true if something updated or false if not.
+	 */
 	async save(model, item) {
 
-		await this.checkConn();
+		await this.checkConnection();
 
 		const db = this.client.db(model.dbname);
 
@@ -147,7 +176,7 @@ class MongoDB {
 
 	async insert(model, item) {
 
-		await this.checkConn();
+		await this.checkConnection();
 
 		const db = this.client.db(model.dbname);
 
@@ -173,7 +202,7 @@ class MongoDB {
 
 	async update(model, values, filter) {
 
-		await this.checkConn();
+		await this.checkConnection();
 
 		const db = this.client.db(model.dbname);
 
@@ -193,7 +222,7 @@ class MongoDB {
 
 	async multiInsert(model, items) {
 
-		await this.checkConn();
+		await this.checkConnection();
 
 		const db = this.client.db(model.dbname);
 
@@ -209,7 +238,7 @@ class MongoDB {
 
 	async multiSave(model, items) {
 
-		await this.checkConn();
+		await this.checkConnection();
 
 		const db = this.client.db(model.dbname);
 
