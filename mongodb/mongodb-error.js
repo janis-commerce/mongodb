@@ -11,9 +11,10 @@ class MongoDBError extends Error {
 
 	}
 
-	constructor(err) {
+	constructor(err, code) {
 		super(err);
 		this.message = err.message || err;
+		this.code = code;
 		this.name = 'MongoDBError';
 	}
 }

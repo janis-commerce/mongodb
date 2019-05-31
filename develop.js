@@ -1,22 +1,25 @@
 /* eslint-disable */
 'use strict';
 
+const { MongoMemoryServer } = require('mongodb-memory-server');
+
 const MongoDB = require('./index');
 
-const mongodb = new MongoDB({
-   host: 'foo',
-   user: 'root',
-   password: 'foobar',
-   database: 'my_db',
-   port: 1234
+const mongod = new MongoMemoryServer();
+
+(async function(){
+   const uri = await mongod.getConnectionString();
+   const port = await mongod.getPort();
+   const dbPath = await mongod.getDbPath();
+   const dbName = await mongod.getDbName();
+
+   console.log(uri, port, dbPath, dbName);
 });
 
-async function test() {
-   try {
-      await mongodb.checkConnection();
-   } catch (err) {
-      console.error(err.message);
-   }
-}
-
-test();
+/* const mongodb = new MongoDB({
+   host: '127.0.0.1',
+   port: 3306,
+   database: 'myDB',
+   user: 'root',
+   password: ''
+}); */

@@ -10,6 +10,10 @@ const MongoDBError = require('./mongodb-error');
 
 const DEFAULT_LIMIT = 500;
 
+/**
+ * @class MongoDB
+ * @classdesc MongoDB driver module
+ */
 class MongoDB {
 
 	constructor(config) {
@@ -30,7 +34,6 @@ class MongoDB {
 
 	/**
 	 * Format an index for mongodb
-	 *
 	 * @param {(String|Array)} index A simple index or array with complex index
 	 * @returns {Object} formatted index
 	 */
@@ -49,7 +52,6 @@ class MongoDB {
 
 	/**
 	 * Create indexes
-	 *
 	 * @param {Object} model The model
 	 * @return {Promise} mongodb index
 	*/
@@ -80,6 +82,7 @@ class MongoDB {
 
 	/* eslint-disable no-underscore-dangle */
 	/**
+	* Prepares the fields for monogdb
 	* @param {Object} fields fields
 	*/
 	prepareFields(fields) {
@@ -90,8 +93,7 @@ class MongoDB {
 
 	/**
 	 * Get data from mongodb database
-	 *
-	 * @param {Model} model The Model module instance
+	 * @param {Model} model Model instance
 	 * @param {Object} params params
 	 * @returns {Array} mongodb response
 	 */
@@ -115,9 +117,8 @@ class MongoDB {
 
 	/**
 	 * Get the filters
-	 *
-	 * @param {Model} model The Model module instance
-	 * @param {Object} item item
+	 * @param {Model} model Model instance
+	 * @param {(String|Array)} item item
 	 * @returns {Object} filters
 	 */
 	getFilter(model, item) {
@@ -147,11 +148,10 @@ class MongoDB {
 	}
 
 	/**
-	 * Saves data into the database
-	 *
-	 * @param {Model} model The Model module instance
-	 * @param {Object} item item
-	 * @returns {Boolean} true if something updated or false if not.
+	 * Saves data into one element of the database
+	 * @param {Model} model Model instance
+	 * @param {(Object|Array)} item item
+	 * @returns {Boolean} true/false
 	 */
 	async save(model, item) {
 
@@ -162,6 +162,7 @@ class MongoDB {
 		const filter = this.getFilter(model, item);
 
 		const setItem = { ...item };
+
 		this.prepareFields(setItem);
 
 		const res = await db.collection(model.getTable())
@@ -174,6 +175,12 @@ class MongoDB {
 		return res.matchedCount === 1 || res.upsertedCount === 1;
 	}
 
+	/**
+	 * Inserts data into the database
+	 * @param {Model} model Model instance
+	 * @param {(Object|Array)} item item
+	 * @returns {Boolean} true/false
+	 */
 	async insert(model, item) {
 
 		await this.checkConnection();
@@ -200,6 +207,13 @@ class MongoDB {
 		}
 	}
 
+	/**
+	 * Updates data into the database
+	 * @param {Model} model Model instance
+	 * @param {(Object|Array)} values values to apply
+	 * @param {Object} filter filter
+	 * @returns {Number} modified count
+	 */
 	async update(model, values, filter) {
 
 		await this.checkConnection();
@@ -220,6 +234,12 @@ class MongoDB {
 		return res.modifiedCount;
 	}
 
+	/**
+	 * Multi insert into dabatase
+	 * @param {Model} model Model instance
+	 * @param {Array} items items
+	 * @returns {Boolean} true/false
+	 */
 	async multiInsert(model, items) {
 
 		await this.checkConnection();

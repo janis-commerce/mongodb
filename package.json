@@ -21,7 +21,8 @@
   "dependencies": {
     "@janiscommerce/logger": "^1.0.2",
     "lodash": "^4.17.11",
-    "mongodb": "^3.2.3"
+    "mongodb": "^3.2.3",
+    "sinon": "^7.3.2"
   },
   "devDependencies": {
     "eslint": "^5.16.0",
