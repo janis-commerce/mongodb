@@ -1,9 +1,10 @@
 'use strict';
 
-/* eslint-disable no-unused-vars */
-
 const assert = require('assert');
 const sinon = require('sinon');
+const mock = require('mock-require');
+
+mock('mongodb', 'mongo-mock');
 
 const { MongoClient, ObjectID } = require('mongodb');
 
@@ -11,60 +12,38 @@ const { MongoDB, MongoDBError } = require('./../mongodb');
 
 /* eslint-disable prefer-arrow-callback */
 
+const sandbox = sinon.createSandbox();
+
+class Model {
+
+	get dbname() {
+		return 'myDB';
+	}
+
+	static get indexes() {
+		return [
+			'values'
+		];
+	}
+
+	getTable() {
+		return 'table';
+	}
+}
+
+const mongodb = new MongoDB({
+	host: 'mongodb://localhost:3306/fizzmod',
+	user: 'root',
+	db: 'myDB'
+});
+
+const model = new Model();
+
 describe('MongoDB', function() {
 
-	const mongodb = new MongoDB({});
-
-	// MongoDB.client class fake
-	mongodb.client = {
-		db: () => {
-			return {
-				collection: table => {
-					if(!table)
-						throw new Error();
-					else {
-						return {
-							createIndex: index => {
-								if(!index)
-									throw new Error();
-							},
-							find: filters => {
-								if(!filters)
-									throw new Error();
-								else {
-									return {
-										limit: limit => {
-											if(!limit)
-												throw new Error();
-											else {
-												return {
-													toArray: () => {}
-												};
-											}
-										}
-									};
-								}
-							}
-						};
-					}
-				}
-			};
-		}
-	};
-
-	class Model {
-
-		static get indexes() {
-			return [
-				'foo',
-				'bar'
-			];
-		}
-
-		getTable() {
-			return 'table';
-		}
-	}
+	afterEach(() => {
+		sandbox.restore();
+	});
 
 	describe('handled errors', function() {
 
@@ -80,9 +59,7 @@ describe('MongoDB', function() {
 				});
 			});
 
-			it('should explode 😃🔥 with "Operation requires indexes"', function() {
-
-				const model = new Model();
+			it('should explode 😃🔥 with "operation requires indexes"', function() {
 
 				assert.throws(() => {
 					mongodb.getFilter(model);
@@ -97,43 +74,30 @@ describe('MongoDB', function() {
 
 	describe('checkConnection()', function() {
 
-		const stubExecute = result => sinon.stub(MongoClient.prototype, 'connect').callsFake(() => result);
+		it('should call MongoClient connect', async function() {
 
-		it('should explode 😃🔥', async function() {
+			const spy = sandbox.spy(MongoClient, 'connect');
 
-			await assert.rejects(mongodb.checkConnection());
+			try {
+				await mongodb.checkConnection();
+			} catch(err) {
+				// nothing...
+			}
 
-		});
-
-		it('should not explode 😱🔥', async function() {
-
-			const stub = stubExecute(
-				Promise.resolve()
-			);
-
-			await assert.doesNotReject(mongodb.checkConnection());
-
-			stub.restore();
+			sandbox.assert.calledOnce(spy);
 		});
 	});
 
 	describe('formatIndex()', function() {
 		it('should return formatted index object', function() {
-			assert.equal(typeof mongodb.formatIndex('index'), 'object');
+			assert.deepEqual(typeof mongodb.formatIndex('foo'), 'object');
 		});
 	});
 
 	describe('createIndexes()', function() {
-
-		// const checkConnectionStub = result => sinon.stub(MongoDB.prototype, 'checkConnection').callsFake(() => result);
-		// checkConnectionStub(true);
-
-		const model = new Model();
-
-		it('should not explode 😱🔥', async function() {
-			await assert.doesNotReject(mongodb.createIndexes(model));
+		it('should call ObjectID', async function() {
+			
 		});
-
 	});
 
 });
