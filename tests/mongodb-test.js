@@ -95,8 +95,24 @@ describe('MongoDB', function() {
 	});
 
 	describe('createIndexes()', function() {
-		it('should call ObjectID', async function() {
-			
+		it('should not explode 😱🔥', async function() {
+			await assert.doesNotReject(mongodb.createIndexes(model));
+		});
+	});
+
+	describe('prepareFields()', function() {
+
+		it('should call ObjectID', function() {
+
+			const spy = sandbox.spy(ObjectID);
+
+			const fields = {
+				_id: 0,
+				value: 'sarasa'
+			};
+
+			mongodb.prepareFields(fields);
+			sandbox.assert.calledOnce(spy);
 		});
 	});
 
