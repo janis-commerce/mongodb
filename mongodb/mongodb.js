@@ -256,6 +256,12 @@ class MongoDB {
 		return !!res.result.ok;
 	}
 
+	/**
+	 * Multi save into dabatase
+	 * @param {Model} model Model instance
+	 * @param {Array} items items
+	 * @returns {Boolean} true/false
+	 */
 	async multiSave(model, items) {
 
 		await this.checkConnection();
