@@ -61,7 +61,7 @@ describe('MongoDB', function() {
 
 		describe('getFilter()', function() {
 
-			it('should explode 😃🔥 with "model requires indexes"', function() {
+			it('should throw "model requires indexes"', function() {
 
 				assert.throws(() => {
 					mongodb.getFilter({});
@@ -71,7 +71,7 @@ describe('MongoDB', function() {
 				});
 			});
 
-			it('should explode 😃🔥 with "operation requires indexes"', function() {
+			it('should throw "operation requires indexes"', function() {
 
 				assert.throws(() => {
 					mongodb.getFilter(model);
@@ -114,7 +114,7 @@ describe('MongoDB', function() {
 
 	describe('createIndexes()', function() {
 
-		it('should not explode 😱🔥 while creating indexes without uniqueIndexes', async function() {
+		it('should not reject while creating indexes without uniqueIndexes', async function() {
 
 			sandbox.stub(model.constructor, 'uniqueIndexes').get(() => {
 				return undefined;
@@ -123,7 +123,7 @@ describe('MongoDB', function() {
 			await assert.doesNotReject(mongodb.createIndexes(model));
 		});
 
-		it('should not explode 😱🔥 while creating indexes without indexes', async function() {
+		it('should not reject while creating indexes without indexes', async function() {
 
 			sandbox.stub(model.constructor, 'indexes').get(() => {
 				return undefined;
@@ -132,7 +132,7 @@ describe('MongoDB', function() {
 			await assert.doesNotReject(mongodb.createIndexes(model));
 		});
 
-		it('should not explode 😱🔥 while creating indexes normally', async function() {
+		it('should not reject while creating indexes normally', async function() {
 			await assert.doesNotReject(mongodb.createIndexes(model));
 		});
 
