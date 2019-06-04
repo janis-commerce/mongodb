@@ -12,31 +12,31 @@ npm install --save @janiscommerce/mongodb
 - `new MongoDB({config})`  
 Constructs the MongoDB driver instance, connected with the `config` `[Object]`.  
 
-- **async** `insert(model, {item})`  
+- *async* `insert(model, {item})`  
 Inserts data into the mongodb database.  
 Requires a `model [Model]` and `item [Object]`.  
 Returns `true` if the operation was successfull or `false` if not.  
 
-- **async** `multiInsert(model, [{items}])`  
+- *async* `multiInsert(model, [{items}])`  
 Inserts multiple elements into the mongodb database.  
 Requires a `model [Model]` and `item [Object array]`.  
 Returns `true` if the operation was successfull or `false` if not.  
 
-- **async** `update(model, {values}, {filter})`  
+- *async* `update(model, {values}, {filter})`  
 Updates an existing element from the database.  
 Requires a `model [Model]`, `values [Object]` and `filter [Object]`  
 Returns the modified/updated elements count.  
 
-- **async** `get(model, {parameters})`  
+- *async* `get(model, {parameters})`  
 Search elements from the database then returns an `[Array]` with the results `[Object]`.
 Requires a `model [Model]`, `parameters [Object]` are optional.  
 
-- **async** `save(model, {item})`  
+- *async* `save(model, {item})`  
 Apply the changes into the specified item from the database, then updates the last modified information.  
 Requires a `model [Model]` and `item [Object]`.  
 Returns `true/false` if the result was successfully or not.  
 
-- **async** `multiSave(model, [{items}])`  
+- *async* `multiSave(model, [{items}])`  
 Apply the changes into multiple specified items from the database, then updates the last modified information.  
 Requires a `model [Model]` and `item [Object array]`.  
 Returns `true/false` if the result was successfully or not.  
