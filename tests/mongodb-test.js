@@ -197,7 +197,7 @@ describe('MongoDB', function() {
 
 	describe('get()', function() {
 
-		it('should return data object from db (empty params)', async function() {
+		it('should return data object from db', async function() {
 
 			await mongodb.insert(model, { _id: 1, value: 'sarasa' });
 
@@ -310,7 +310,7 @@ describe('MongoDB', function() {
 			stub.restore();
 		});
 
-		it('should return false (if updateItems.length is 0', async function() {
+		it('should return false (updateItems.length is 0)', async function() {
 
 			const result = await mongodb.multiSave(model, []);
 
