@@ -4,11 +4,13 @@
 [![Coverage Status](https://coveralls.io/repos/github/janis-commerce/mongodb/badge.svg?branch=JCN-50-mongodb)](https://coveralls.io/github/janis-commerce/mongodb?branch=JCN-50-mongodb)
 
 ## Installation
-```
+
+```sh
 npm install --save @janiscommerce/mongodb
 ```
 
 ## API
+
 - `new MongoDB({config})`  
 Constructs the MongoDB driver instance, connected with the `config` `[Object]`.  
 
@@ -42,6 +44,7 @@ Requires a `model [Model]` and `item [Object array]`.
 Returns `true/false` if the result was successfully or not.  
 
 ## Errors
+
 The errors are informed with a `MongoDBError`.  
 This object has a code that can be useful for a correct error handling.  
 The codes are the following:  
@@ -52,6 +55,7 @@ The codes are the following:
 | 2    | Empty indexes                 |
 
 ## Usage
+
 ```js
 const MongoDB = require('@janiscommerce/mongodb');
 const Model = require('myModel');
@@ -65,7 +69,7 @@ const mongo = new MongoDB({
 const model = new Model();
 
 (async function() {
-   
+
    let result;
 
    // Insert
@@ -82,7 +86,7 @@ const model = new Model();
    ]); // expected return: true
 
    // update
-   result = await mongo.update(model, 
+   result = await mongo.update(model,
       { value: 'foobar' },
       { _id: 1 }
    ); // expected return: 1 (row with _id == 1 will change his "value" from "sarasa" to "foobar")
@@ -103,6 +107,6 @@ const model = new Model();
       { _id: 2, value: 'sarasa 2' },
       { _id: 3, value: 'sarasa 3' }
    ]); // expected return: true
-   
+
 });
 ```
