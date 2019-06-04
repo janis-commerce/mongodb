@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "export TEST_ENV=true; mocha --exit -R nyan --recursive tests/",
-    "test-ci": "nyc --reporter=html --reporter=text mocha --recursive tests/",
+    "test-ci": "nyc --reporter=html --reporter=text mocha --exit --recursive tests/",
     "watch-test": "export TEST_ENV=true; mocha --exit -R nyan -w --recursive",
     "coverage": "nyc npm test"
   },
