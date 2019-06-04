@@ -105,7 +105,7 @@ class MongoDB {
 
 		const limit = params.limit || DEFAULT_LIMIT;
 
-		const filters = { ...params.filters } || {};
+		const filters = { ...params.filters };
 
 		this.prepareFields(filters);
 
