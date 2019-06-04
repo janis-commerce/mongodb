@@ -12,7 +12,7 @@ npm install --save @janiscommerce/mongodb
 ## API
 
 - `new MongoDB({config})`  
-Constructs the MongoDB driver instance, connected with the `config` `[Object]`.  
+Constructs the MongoDB driver instance, connected with the `config [Object]`.  
 
 - *async* `insert(model, {item})`  
 Inserts data into the mongodb database.  
