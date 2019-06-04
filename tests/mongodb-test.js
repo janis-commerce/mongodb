@@ -53,6 +53,10 @@ describe('MongoDB', function() {
 		sandbox.restore();
 	});
 
+	after(() => {
+		mock.stopAll();
+	});
+
 	describe('handled errors', function() {
 
 		describe('getFilter()', function() {
@@ -112,24 +116,20 @@ describe('MongoDB', function() {
 
 		it('should not explode 😱🔥 while creating indexes without uniqueIndexes', async function() {
 
-			const stub = sinon.stub(model.constructor, 'uniqueIndexes').get(() => {
+			sandbox.stub(model.constructor, 'uniqueIndexes').get(() => {
 				return undefined;
 			});
 
 			await assert.doesNotReject(mongodb.createIndexes(model));
-
-			stub.restore();
 		});
 
 		it('should not explode 😱🔥 while creating indexes without indexes', async function() {
 
-			const stub = sinon.stub(model.constructor, 'indexes').get(() => {
+			sandbox.stub(model.constructor, 'indexes').get(() => {
 				return undefined;
 			});
 
 			await assert.doesNotReject(mongodb.createIndexes(model));
-
-			stub.restore();
 		});
 
 		it('should not explode 😱🔥 while creating indexes normally', async function() {
@@ -157,15 +157,13 @@ describe('MongoDB', function() {
 
 		it('should return non empty filter object (with array index)', function() {
 
-			const stub = sinon.stub(model.constructor, 'indexes').get(() => {
+			sandbox.stub(model.constructor, 'indexes').get(() => {
 				return [['value']];
 			});
 
 			const result = mongodb.getFilter(model, { value: 'sarasa' });
 
 			assert.deepEqual(result.value, 'sarasa');
-
-			stub.restore();
 		});
 
 		it('should return non empty filter object', function() {
@@ -223,15 +221,13 @@ describe('MongoDB', function() {
 
 			const collection = mongodb.client.db(model.dbname).collection(model.getTable());
 
-			const stub = sinon.stub(collection, 'updateOne').returns({
+			sandbox.stub(collection, 'updateOne').returns({
 				matchedCount: 2
 			});
 
 			const result = await mongodb.save(model, { value: 'sarasa' });
 
 			assert.deepEqual(result, false);
-
-			stub.restore();
 		});
 
 	});
@@ -289,7 +285,7 @@ describe('MongoDB', function() {
 
 			const collection = mongodb.client.db(model.dbname).collection(model.getTable());
 
-			const stub = sinon.stub(collection, 'bulkWrite').callsFake(updateItems => {
+			sandbox.stub(collection, 'bulkWrite').callsFake(updateItems => {
 
 				const fakeResult = {
 					result: {
@@ -306,8 +302,6 @@ describe('MongoDB', function() {
 			const result = await mongodb.multiSave(model, items);
 
 			assert.deepEqual(result, true);
-
-			stub.restore();
 		});
 
 		it('should return false (updateItems.length is 0)', async function() {
