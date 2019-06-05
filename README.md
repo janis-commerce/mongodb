@@ -120,7 +120,7 @@ const model = new Model();
    ]); // expected return: true
 
    // remove
-   result = await mongo.remove(item, { id: 1 }); // expected return: true
+   result = await mongo.remove(model, { id: 1 }); // expected return: true
 
    // multiRemove
    result = await mongo.multiRemove(model, [
