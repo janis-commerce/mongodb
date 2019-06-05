@@ -57,33 +57,6 @@ describe('MongoDB', function() {
 		mock.stopAll();
 	});
 
-	describe('handled errors', function() {
-
-		describe('getFilter()', function() {
-
-			it('should throw "model requires indexes"', function() {
-
-				assert.throws(() => {
-					mongodb.getFilter({});
-				}, {
-					name: 'MongoDBError',
-					code: MongoDBError.codes.MODEL_EMPTY_INDEXES
-				});
-			});
-
-			it('should throw "operation requires indexes"', function() {
-
-				assert.throws(() => {
-					mongodb.getFilter(model);
-				}, {
-					name: 'MongoDBError',
-					code: MongoDBError.codes.EMPTY_INDEXES
-				});
-
-			});
-		});
-	});
-
 	describe('checkConnection()', function() {
 
 		it('should call MongoClient connect', async function() {
@@ -136,6 +109,13 @@ describe('MongoDB', function() {
 			await assert.doesNotReject(mongodb.createIndexes(model));
 		});
 
+		it('should reject with "Invalid or empty model"', async function() {
+			await assert.rejects(mongodb.createIndexes(), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
 	});
 
 	describe('prepareFields()', function() {
@@ -173,13 +153,43 @@ describe('MongoDB', function() {
 			assert.deepEqual(result.value, 'sarasa');
 		});
 
+		it('should throw "model requires indexes"', function() {
+
+			assert.throws(() => {
+				mongodb.getFilter({});
+			}, {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.MODEL_EMPTY_INDEXES
+			});
+		});
+
+		it('should throw "operation requires indexes"', function() {
+
+			assert.throws(() => {
+				mongodb.getFilter(model);
+			}, {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.EMPTY_INDEXES
+			});
+
+		});
+
+		it('should throw "Invalid or empty model"', function() {
+			assert.throws(() => {
+				mongodb.getFilter();
+			}, {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
 	});
 
 	describe('insert()', function() {
 
 		it('should return true (returned if the data was successfully inserted into db)', async function() {
 
-			const result = await mongodb.insert(model, {	_id: 1, value: 'sarasa'	});
+			const result = await mongodb.insert(model, {	value: 'sarasa' });
 
 			assert.deepEqual(result, true);
 		});
@@ -191,17 +201,31 @@ describe('MongoDB', function() {
 			assert.deepEqual(result, false);
 		});
 
+		it('should reject with "Invalid or empty model', async function() {
+			await assert.rejects(mongodb.insert(), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
 	});
 
 	describe('get()', function() {
 
 		it('should return data object from db', async function() {
 
-			await mongodb.insert(model, { _id: 1, value: 'sarasa' });
+			await mongodb.insert(model, { value: 'sarasa' });
 
 			const result = await mongodb.get(model, {});
 
 			assert.deepEqual(result[0].value, 'sarasa');
+		});
+
+		it('should reject with "Invalid or empty model', async function() {
+			await assert.rejects(mongodb.get(), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.INVALID_MODEL
+			});
 		});
 
 	});
@@ -230,17 +254,31 @@ describe('MongoDB', function() {
 			assert.deepEqual(result, false);
 		});
 
+		it('should reject with "Invalid or empty model"', async function() {
+			await assert.rejects(mongodb.save(), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
 	});
 
 	describe('update()', function() {
 
 		it('should return 1 (modified count from mongodb)', async function() {
 
-			await mongodb.insert(model, { _id: 1, value: 'foobar' });
+			await mongodb.insert(model, { value: 'foobar' });
 
 			const result = await mongodb.update(model, { value: 'sarasa' }, { value: 'foobar' });
 
 			assert.deepEqual(result, 1);
+		});
+
+		it('should reject with "Invalid or empty model', async function() {
+			await assert.rejects(mongodb.update(), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.INVALID_MODEL
+			});
 		});
 
 	});
@@ -250,18 +288,9 @@ describe('MongoDB', function() {
 		it('should return true if the operation was successful', async function() {
 
 			const items = [
-				{
-					_id: 3,
-					value: 'sarasa1'
-				},
-				{
-					_id: 4,
-					value: 'sarasa2'
-				},
-				{
-					_id: 5,
-					value: 'sarasa3'
-				}
+				{ value: 'sarasa1' },
+				{ value: 'sarasa2' },
+				{ value: 'sarasa3' }
 			];
 
 			const result = await mongodb.multiInsert(model, items);
@@ -269,17 +298,24 @@ describe('MongoDB', function() {
 			assert.deepEqual(result, true);
 		});
 
+		it('should reject with "Invalid or empty model', async function() {
+			await assert.rejects(mongodb.multiInsert(), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
 	});
 
 	describe('multiSave', function() {
 
-		const items = [
-			{	value: 'sarasa1' },
-			{	value: 'sarasa2' },
-			{	value: 'sarasa3' }
-		];
-
 		it('should call mongodb bulkWrite then return true', async function() {
+
+			const items = [
+				{	value: 'sarasa1' },
+				{	value: 'sarasa2' },
+				{	value: 'sarasa3' }
+			];
 
 			await mongodb.checkConnection();
 
@@ -311,6 +347,80 @@ describe('MongoDB', function() {
 			assert.deepEqual(result, false);
 		});
 
+		it('should reject with "Invalid or empty model', async function() {
+			await assert.rejects(mongodb.multiSave(), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
+	});
+
+	describe('remove()', function() {
+
+		it('should return 1 (deleted count from mongodb)', async function() {
+
+			await mongodb.insert(model, { value: 'foobar' });
+
+			const result = await mongodb.remove(model, { value: 'foobar' });
+
+			assert.deepEqual(result, 1);
+		});
+
+		it('should reject with "Invalid or empty model', async function() {
+			await assert.rejects(mongodb.remove(), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+	});
+
+	describe('multiRemove()', function() {
+
+		it('should call mongodb bulkWrite then return true', async function() {
+
+			const items = [
+				{	value: 'sarasa1' },
+				{	value: 'sarasa2' },
+				{	value: 'sarasa3' }
+			];
+
+			await mongodb.checkConnection();
+
+			const collection = mongodb.client.db(model.dbname).collection(model.getTable());
+
+			sandbox.stub(collection, 'bulkWrite').callsFake(deleteItems => {
+
+				const fakeResult = {
+					result: {
+						ok: false
+					}
+				};
+
+				if(Array.isArray(deleteItems) && typeof deleteItems[0] === 'object')
+					fakeResult.result.ok = true;
+
+				return fakeResult;
+			});
+
+			const result = await mongodb.multiRemove(model, items);
+
+			assert.deepEqual(result, true);
+		});
+
+		it('should return false (deleteItems.length is 0)', async function() {
+
+			const result = await mongodb.multiRemove(model, []);
+
+			assert.deepEqual(result, false);
+		});
+
+		it('should reject with "Invalid or empty model', async function() {
+			await assert.rejects(mongodb.multiRemove(), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
 	});
 
 });
