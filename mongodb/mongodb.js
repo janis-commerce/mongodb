@@ -57,6 +57,9 @@ class MongoDB {
 	*/
 	async createIndexes(model) {
 
+		if(!model)
+			throw new MongoDBError('Invalid or empty model', MongoDBError.codes.INVALID_MODEL);
+
 		await this.checkConnection();
 
 		const db = this.client.db(model.dbname);
@@ -97,7 +100,10 @@ class MongoDB {
 	 * @param {Object} params params
 	 * @returns {Array} mongodb response
 	 */
-	async get(model, params) {
+	async get(model, params = {}) {
+
+		if(!model)
+			throw new MongoDBError('Invalid or empty model', MongoDBError.codes.INVALID_MODEL);
 
 		await this.checkConnection();
 
@@ -122,6 +128,9 @@ class MongoDB {
 	 * @returns {Object} filters
 	 */
 	getFilter(model, item) {
+
+		if(!model)
+			throw new MongoDBError('Invalid or empty model', MongoDBError.codes.INVALID_MODEL);
 
 		if(!model.constructor.indexes)
 			throw new MongoDBError(`Model requires indexes. See ${model.constructor.name}.indexes`, MongoDBError.codes.MODEL_EMPTY_INDEXES);
@@ -155,6 +164,9 @@ class MongoDB {
 	 */
 	async save(model, item) {
 
+		if(!model)
+			throw new MongoDBError('Invalid or empty model', MongoDBError.codes.INVALID_MODEL);
+
 		await this.checkConnection();
 
 		const db = this.client.db(model.dbname);
@@ -183,6 +195,9 @@ class MongoDB {
 	 */
 	async insert(model, item) {
 
+		if(!model)
+			throw new MongoDBError('Invalid or empty model', MongoDBError.codes.INVALID_MODEL);
+
 		await this.checkConnection();
 
 		const db = this.client.db(model.dbname);
@@ -191,9 +206,7 @@ class MongoDB {
 
 			const setItem = { ...item };
 
-			setItem.$setOnInsert = {
-				dateCreated: new Date()
-			};
+			setItem.dateCreated = new Date();
 
 			this.prepareFields(setItem);
 
@@ -216,6 +229,9 @@ class MongoDB {
 	 */
 	async update(model, values, filter) {
 
+		if(!model)
+			throw new MongoDBError('Invalid or empty model', MongoDBError.codes.INVALID_MODEL);
+
 		await this.checkConnection();
 
 		const db = this.client.db(model.dbname);
@@ -225,7 +241,8 @@ class MongoDB {
 
 		const updateData = {
 			$set: updateValues,
-			$currentDate: { lastModified: true }
+			$currentDate: { lastModified: true },
+			$setOnInsert: { dateCreated: new Date() }
 		};
 
 		const res = await db.collection(model.getTable())
@@ -242,12 +259,16 @@ class MongoDB {
 	 */
 	async multiInsert(model, items) {
 
+		if(!model)
+			throw new MongoDBError('Invalid or empty model', MongoDBError.codes.INVALID_MODEL);
+
 		await this.checkConnection();
 
 		const db = this.client.db(model.dbname);
 
 		items.forEach(item => {
-			item.$setOnInsert = { dateCreated: new Date() };
+			this.prepareFields(item);
+			item.dateCreated = new Date();
 		});
 
 		const res = await db.collection(model.getTable())
@@ -263,6 +284,9 @@ class MongoDB {
 	 * @returns {Boolean} true/false
 	 */
 	async multiSave(model, items) {
+
+		if(!model)
+			throw new MongoDBError('Invalid or empty model', MongoDBError.codes.INVALID_MODEL);
 
 		await this.checkConnection();
 
@@ -290,6 +314,53 @@ class MongoDB {
 		return !!res.result.ok;
 	}
 
+	async remove(model, item) {
+
+		if(!model)
+			throw new MongoDBError('Invalid or empty model', MongoDBError.codes.INVALID_MODEL);
+
+		await this.checkConnection();
+
+		const db = this.client.db(model.dbname);
+
+		const filter = this.getFilter(model, item);
+
+		const deleteItem = { ...item };
+
+		this.prepareFields(deleteItem);
+
+		const res = await db.collection(model.getTable())
+			.deleteOne(filter, {
+				$in: deleteItem
+			});
+
+		return res.deletedCount === 1;
+	}
+
+	async multiRemove(model, items) {
+
+		if(!model)
+			throw new MongoDBError('Invalid or empty model', MongoDBError.codes.INVALID_MODEL);
+
+		await this.checkConnection();
+
+		const db = this.client.db(model.dbname);
+
+		const deleteItems = items.map(item => {
+
+			const filter = this.getFilter(model, item);
+
+			return { deleteOne: { filter, item, upsert: true } };
+		}).filter(Boolean);
+
+		if(!deleteItems.length)
+			return false;
+
+		const res = await db.collection(model.getTable())
+			.bulkWrite(deleteItems);
+
+		return !!res.result.ok;
+	}
 }
 
 module.exports = MongoDB;
