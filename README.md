@@ -43,6 +43,16 @@ Apply the changes into multiple specified items from the database, then updates 
 Requires a `model [Model]` and `item [Object array]`.  
 Returns `true/false` if the result was successfully or not.  
 
+- *async* `remove(model, {item})`  
+Removes the specified item from the database.
+Requires a `model [Model]` and `item [Object]`.  
+Returns `true/false` if the result was successfully or not.  
+
+- *async* `multiRemove(model, [{items}])`  
+Removes multiple specified items from the database.  
+Requires a `model [Model]` and `item [Object array]`.  
+Returns `true/false` if the result was successfully or not.  
+
 ## Errors
 
 The errors are informed with a `MongoDBError`.  
@@ -53,6 +63,7 @@ The codes are the following:
 |------|-------------------------------|
 | 1    | Model with empty indexes      |
 | 2    | Empty indexes                 |
+| 3    | Invalid or empty model        |
 
 ## Usage
 
@@ -101,12 +112,21 @@ const model = new Model();
       value: 'sarasa'
    }); // expected return: true
 
-   //multiSave
+   // multiSave
    result = await mongo.multiSave(model, [
       { _id: 1, value: 'sarasa 1' },
       { _id: 2, value: 'sarasa 2' },
       { _id: 3, value: 'sarasa 3' }
    ]); // expected return: true
 
+   // remove
+   result = await mongo.remove(item, { id: 1 }); // expected return: true
+
+   // multiRemove
+   result = await mongo.multiRemove(model, [
+      { _id: 1 },
+      { _id: 2 },
+      { _id: 3 }
+   ]); // expected return: true
 });
 ```
