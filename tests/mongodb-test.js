@@ -377,42 +377,25 @@ describe('MongoDB', function() {
 
 	describe('multiRemove()', function() {
 
-		it('should call mongodb bulkWrite then return true', async function() {
-
-			const items = [
-				{	value: 'sarasa1' },
-				{	value: 'sarasa2' },
-				{	value: 'sarasa3' }
-			];
+		it('should return 2 (deleted count from mongodb)', async function() {
 
 			await mongodb.checkConnection();
 
 			const collection = mongodb.client.db(model.dbname).collection(model.getTable());
 
-			sandbox.stub(collection, 'bulkWrite').callsFake(deleteItems => {
-
-				const fakeResult = {
-					result: {
-						ok: false
-					}
-				};
-
-				if(Array.isArray(deleteItems) && typeof deleteItems[0] === 'object')
-					fakeResult.result.ok = true;
-
-				return fakeResult;
+			sinon.stub(collection, 'deleteMany').callsFake(async filter => {
+				if(filter) {
+					const result = await mongodb.get(model, filter);
+					return { deletedCount: result.length };
+				}
+				return {	deletedCount: 0 };
 			});
 
-			const result = await mongodb.multiRemove(model, items);
+			await mongodb.multiInsert(model, [{ value: 'foobar1' }, { value: 'foobar2' }]);
 
-			assert.deepEqual(result, true);
-		});
+			const result = await mongodb.multiRemove(model, { value: /foobar/ });
 
-		it('should return false (deleteItems.length is 0)', async function() {
-
-			const result = await mongodb.multiRemove(model, []);
-
-			assert.deepEqual(result, false);
+			assert.deepEqual(result, 2);
 		});
 
 		it('should reject with "Invalid or empty model', async function() {
@@ -421,6 +404,7 @@ describe('MongoDB', function() {
 				code: MongoDBError.codes.INVALID_MODEL
 			});
 		});
+
 	});
 
 });
