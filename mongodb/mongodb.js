@@ -314,7 +314,7 @@ class MongoDB {
 		return !!res.result.ok;
 	}
 
-	async remove(model, item) {
+	async remove(model, filter) {
 
 		if(!model)
 			throw new MongoDBError('Invalid or empty model', MongoDBError.codes.INVALID_MODEL);
@@ -323,43 +323,29 @@ class MongoDB {
 
 		const db = this.client.db(model.dbname);
 
-		const filter = this.getFilter(model, item);
-
-		const deleteItem = { ...item };
-
-		this.prepareFields(deleteItem);
+		filter = this.getFilter(model, filter);
 
 		const res = await db.collection(model.getTable())
-			.deleteOne(filter, {
-				$in: deleteItem
-			});
+			.deleteOne(filter);
 
 		return res.deletedCount === 1;
 	}
 
-	async multiRemove(model, items) {
+	async multiRemove(model, filter) {
 
 		if(!model)
 			throw new MongoDBError('Invalid or empty model', MongoDBError.codes.INVALID_MODEL);
 
 		await this.checkConnection();
 
+		filter = this.getFilter(model, filter);
+
 		const db = this.client.db(model.dbname);
 
-		const deleteItems = items.map(item => {
-
-			const filter = this.getFilter(model, item);
-
-			return { deleteOne: { filter, item, upsert: true } };
-		}).filter(Boolean);
-
-		if(!deleteItems.length)
-			return false;
-
 		const res = await db.collection(model.getTable())
-			.bulkWrite(deleteItems);
+			.deleteMany(filter);
 
-		return !!res.result.ok;
+		return res.deletedCount;
 	}
 }
 
