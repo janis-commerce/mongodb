@@ -1,7 +1,7 @@
 'use strict';
 
 const assert = require('assert');
-const sinon = require('sinon');
+const sandbox = require('sinon').createSandbox();
 const mock = require('mock-require');
 
 mock('mongodb', 'mongo-mock');
@@ -13,8 +13,6 @@ const MongoDB = require('./../index');
 const { MongoDBError } = require('./../mongodb');
 
 /* eslint-disable prefer-arrow-callback */
-
-const sandbox = sinon.createSandbox();
 
 class Model {
 
@@ -49,7 +47,7 @@ const model = new Model();
 
 describe('MongoDB', function() {
 
-	afterEach(() => {
+	beforeEach(() => {
 		sandbox.restore();
 	});
 
@@ -383,17 +381,17 @@ describe('MongoDB', function() {
 
 			const collection = mongodb.client.db(model.dbname).collection(model.getTable());
 
-			sinon.stub(collection, 'deleteMany').callsFake(async filter => {
+			sandbox.stub(collection, 'deleteMany').callsFake(async filter => {
 				if(filter) {
-					const result = await mongodb.get(model, filter);
+					const result = await mongodb.get(model, { filters: filter });
 					return { deletedCount: result.length };
 				}
-				return {	deletedCount: 0 };
+				return { deletedCount: 0 };
 			});
 
-			await mongodb.multiInsert(model, [{ value: 'foobar1' }, { value: 'foobar2' }]);
+			await mongodb.multiInsert(model, [{ value: 'deleteThis' }, { value: 'deleteThis2' }]);
 
-			const result = await mongodb.multiRemove(model, { value: /foobar/ });
+			const result = await mongodb.multiRemove(model, { value: { $in: ['deleteThis', 'deleteThis2'] } });
 
 			assert.deepEqual(result, 2);
 		});
