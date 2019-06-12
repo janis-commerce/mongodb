@@ -74,11 +74,11 @@ describe('MongoDB', function() {
 	describe('formatIndex()', function() {
 
 		it('should return forrmated index object (array param)', function() {
-			assert.deepEqual(typeof mongodb.formatIndex(['foo']), 'object');
+			assert.deepEqual(mongodb.formatIndex(['foo', 'bar']), { foo: 1, bar: 1 });
 		});
 
 		it('should return formatted index object', function() {
-			assert.deepEqual(typeof mongodb.formatIndex('foo'), 'object');
+			assert.deepEqual(mongodb.formatIndex('foo'), { foo: 1 });
 		});
 
 	});
@@ -310,9 +310,8 @@ describe('MongoDB', function() {
 		it('should call mongodb bulkWrite then return true', async function() {
 
 			const items = [
-				{	value: 'sarasa1' },
-				{	value: 'sarasa2' },
-				{	value: 'sarasa3' }
+				{ value: 'sarasa1' },
+				{ value: 'sarasa2' }
 			];
 
 			await mongodb.checkConnection();
@@ -341,6 +340,30 @@ describe('MongoDB', function() {
 		it('should return false (updateItems.length is 0)', async function() {
 
 			const result = await mongodb.multiSave(model, []);
+
+			assert.deepEqual(result, false);
+		});
+
+		it('should return false if any of the save stacks rejects', async function() {
+
+			const items = Array(30).fill()
+				.map((item, i) => {
+					return {
+						value: 'sarasa' + i
+					};
+				});
+
+			await mongodb.checkConnection();
+
+			const collection = mongodb.client.db(model.dbname).collection(model.getTable());
+
+			const stub = sandbox.stub(collection, 'bulkWrite');
+
+			stub.onCall(0).resolves();
+			stub.onCall(1).rejects();
+			stub.onCall(2).resolves();
+
+			const result = await mongodb.multiSave(model, items, 10);
 
 			assert.deepEqual(result, false);
 		});
