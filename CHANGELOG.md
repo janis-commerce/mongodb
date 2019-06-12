@@ -8,9 +8,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Added
-
 - MongoDB wrapper
 - Tests
 - Travis & coveralls badges
 - Readme
 - remove and multiRemove methods
+
+### Fixed
+- Performance issues with multiRemove and multiSave methods

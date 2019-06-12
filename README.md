@@ -26,7 +26,7 @@ Returns `true` if the operation was successfull or `false` if not.
 
 - *async* `update(model, {values}, {filter})`  
 Updates an existing element from the database.  
-Requires a `model [Model]`, `values [Object]` and `filter [Object]`  
+Requires a `model [Model]`, `values [Object]` and `filter [Object]` (MongoDB filter).  
 Returns the modified/updated elements count.  
 
 - *async* `get(model, {parameters})`  
@@ -38,9 +38,10 @@ Apply the changes into the specified item from the database, then updates the la
 Requires a `model [Model]` and `item [Object]`.  
 Returns `true/false` if the result was successfully or not.  
 
-- *async* `multiSave(model, [{items}])`  
+- *async* `multiSave(model, [{items}], stackLimit)`  
 Apply the changes into multiple specified items from the database, then updates the last modified information.  
 Requires a `model [Model]` and `item [Object array]`.  
+`stackLimit [Number]` (optional, default 1000): Specifies the max amount of items that can be written at same time and the max size of a item stack.  
 Returns `true/false` if the result was successfully or not.  
 
 - *async* `remove(model, {item})`  
@@ -48,10 +49,10 @@ Removes the specified item from the database.
 Requires a `model [Model]` and `item [Object]`.  
 Returns `true/false` if the result was successfully or not.  
 
-- *async* `multiRemove(model, [{items}])`  
+- *async* `multiRemove(model, {filter})`  
 Removes multiple specified items from the database.  
-Requires a `model [Model]` and `item [Object array]`.  
-Returns `true/false` if the result was successfully or not.  
+Requires a `model [Model]` and `filter [Object]` (MongoDB filter).  
+Returns `deletedCount [Number]`.  
 
 ## Errors
 
@@ -123,10 +124,7 @@ const model = new Model();
    result = await mongo.remove(model, { id: 1 }); // expected return: true
 
    // multiRemove
-   result = await mongo.multiRemove(model, [
-      { _id: 1 },
-      { _id: 2 },
-      { _id: 3 }
-   ]); // expected return: true
+   result = await mongo.multiRemove(model, { value: /sarasa/ });
+   // expected return: 3 (should delete all items that contains "sarasa" on "value" field).
 });
 ```
