@@ -281,9 +281,10 @@ class MongoDB {
 	 * Multi save into dabatase
 	 * @param {Model} model Model instance
 	 * @param {Array} items items
+	 * @param {Number} stackLimit specifies the limit of items that can be bulk writed into monogdb at the same time.
 	 * @returns {Boolean} true/false
 	 */
-	async multiSave(model, items) {
+	async multiSave(model, items, stackLimit = 1000) {
 
 		if(!model)
 			throw new MongoDBError('Invalid or empty model', MongoDBError.codes.INVALID_MODEL);
@@ -308,13 +309,42 @@ class MongoDB {
 		if(!updateItems.length)
 			return false;
 
-		const res = await db.collection(model.getTable())
-			.bulkWrite(updateItems);
+		const itemStacks = [];
+		const stacks = [];
 
-		return !!res.result.ok;
+		if(updateItems.length > stackLimit) {
+
+			let stackIndex = 0;
+
+			for(let i = 0; i < updateItems.length; i++) {
+
+				if(!itemStacks[stackIndex])
+					itemStacks[stackIndex] = [];
+
+				if(itemStacks[stackIndex].length === stackLimit) {
+					stackIndex++;
+					itemStacks[stackIndex] = [];
+				}
+
+				itemStacks[stackIndex].push(updateItems[i]);
+			}
+
+		} else
+			itemStacks[0] = updateItems;
+
+		for(const stack of itemStacks)
+			stacks.push(db.collection(model.getTable()).bulkWrite(stack));
+
+		try {
+			await Promise.all(stacks);
+		} catch(error) {
+			return false;
+		}
+
+		return true;
 	}
 
-	async remove(model, filter) {
+	async remove(model, item) {
 
 		if(!model)
 			throw new MongoDBError('Invalid or empty model', MongoDBError.codes.INVALID_MODEL);
@@ -323,10 +353,10 @@ class MongoDB {
 
 		const db = this.client.db(model.dbname);
 
-		filter = this.getFilter(model, filter);
+		item = this.getFilter(model, item);
 
 		const res = await db.collection(model.getTable())
-			.deleteOne(filter);
+			.deleteOne(item);
 
 		return res.deletedCount === 1;
 	}
