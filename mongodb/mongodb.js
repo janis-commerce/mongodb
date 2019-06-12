@@ -52,8 +52,7 @@ class MongoDB {
 
 	/**
 	 * Create indexes
-	 * @param {Object} model The model
-	 * @return {Promise} mongodb index
+	 * @param {Object} model Model instance
 	*/
 	async createIndexes(model) {
 
@@ -85,8 +84,8 @@ class MongoDB {
 
 	/* eslint-disable no-underscore-dangle */
 	/**
-	* Prepares the fields for monogdb
-	* @param {Object} fields fields
+	* Generates and appends the _id field into the fields if already doesn't have it.
+	* @param {Object} fields item fields
 	*/
 	prepareFields(fields) {
 		if(fields._id)
@@ -97,8 +96,8 @@ class MongoDB {
 	/**
 	 * Get data from mongodb database
 	 * @param {Model} model Model instance
-	 * @param {Object} params params
-	 * @returns {Array} mongodb response
+	 * @param {Object} params parameters (limit and filters)
+	 * @returns {Array} mongodb get result
 	 */
 	async get(model, params = {}) {
 
@@ -122,10 +121,11 @@ class MongoDB {
 	}
 
 	/**
-	 * Get the filters
+	 * Compares the model with the item then returns a common filter between both
 	 * @param {Model} model Model instance
 	 * @param {(String|Array)} item item
-	 * @returns {Object} filters
+	 * @returns {Object} filter
+	 * @throws if there isn't a common filter between the model and the item
 	 */
 	getFilter(model, item) {
 
@@ -157,7 +157,7 @@ class MongoDB {
 	}
 
 	/**
-	 * Saves data into one element of the database
+	 * Insert/update one element into the database
 	 * @param {Model} model Model instance
 	 * @param {(Object|Array)} item item
 	 * @returns {Boolean} true/false
@@ -224,7 +224,7 @@ class MongoDB {
 	 * Updates data into the database
 	 * @param {Model} model Model instance
 	 * @param {(Object|Array)} values values to apply
-	 * @param {Object} filter filter
+	 * @param {Object} filter mongodb filter
 	 * @returns {Number} modified count
 	 */
 	async update(model, values, filter) {
@@ -252,7 +252,7 @@ class MongoDB {
 	}
 
 	/**
-	 * Multi insert into dabatase
+	 * Multi insert items into the dabatase
 	 * @param {Model} model Model instance
 	 * @param {Array} items items
 	 * @returns {Boolean} true/false
@@ -278,10 +278,10 @@ class MongoDB {
 	}
 
 	/**
-	 * Multi save into dabatase
+	 * Multi insert/update items into the dabatase
 	 * @param {Model} model Model instance
 	 * @param {Array} items items
-	 * @param {Number} stackLimit specifies the limit of items that can be bulk writed into monogdb at the same time.
+	 * @param {Number} stackLimit specifies the limit of items that can be bulk writed into monogdb at the same time
 	 * @returns {Boolean} true/false
 	 */
 	async multiSave(model, items, stackLimit = 1000) {
@@ -344,6 +344,12 @@ class MongoDB {
 		return true;
 	}
 
+	/**
+	 * Removes an item from the database
+	 * @param {Model} model Model instance
+	 * @param {Object} item item
+	 * @returns {Boolean} true/false
+	 */
 	async remove(model, item) {
 
 		if(!model)
@@ -361,6 +367,12 @@ class MongoDB {
 		return res.deletedCount === 1;
 	}
 
+	/**
+	 * Multi remove items from the database
+	 * @param {Model} model Model instance
+	 * @param {filter} filter mongodb filter
+	 * @returns {Number} deleted count
+	 */
 	async multiRemove(model, filter) {
 
 		if(!model)
