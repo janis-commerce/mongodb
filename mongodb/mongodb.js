@@ -17,7 +17,10 @@ const DEFAULT_LIMIT = 500;
 class MongoDB {
 
 	constructor(config) {
-		this.config = config;
+		this.config = {
+			host: config.host,
+			limit: config.limit || DEFAULT_LIMIT
+		};
 	}
 
 	/**
@@ -108,7 +111,7 @@ class MongoDB {
 
 		const db = this.client.db(model.dbname);
 
-		const limit = params.limit || DEFAULT_LIMIT;
+		const limit = params.limit || this.config.limit;
 
 		const filters = { ...params.filters };
 
@@ -281,10 +284,10 @@ class MongoDB {
 	 * Multi insert/update items into the dabatase
 	 * @param {Model} model Model instance
 	 * @param {Array} items items
-	 * @param {Number} stackLimit specifies the limit of items that can be bulk writed into monogdb at the same time
+	 * @param {Number} limit specifies the limit of items that can be bulk writed into monogdb at the same time
 	 * @returns {Boolean} true/false
 	 */
-	async multiSave(model, items, stackLimit = 1000) {
+	async multiSave(model, items, limit = 1000) {
 
 		if(!model)
 			throw new MongoDBError('Invalid or empty model', MongoDBError.codes.INVALID_MODEL);
@@ -312,7 +315,7 @@ class MongoDB {
 		const itemStacks = [];
 		const stacks = [];
 
-		if(updateItems.length > stackLimit) {
+		if(updateItems.length > limit) {
 
 			let stackIndex = 0;
 
@@ -321,7 +324,7 @@ class MongoDB {
 				if(!itemStacks[stackIndex])
 					itemStacks[stackIndex] = [];
 
-				if(itemStacks[stackIndex].length === stackLimit) {
+				if(itemStacks[stackIndex].length === limit) {
 					stackIndex++;
 					itemStacks[stackIndex] = [];
 				}
