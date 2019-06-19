@@ -10,7 +10,7 @@ const { MongoClient } = require('mongodb');
 
 const MongoDB = require('./../index');
 
-const { MongoDBError } = require('./../mongodb');
+const { MongoDBError } = require('./../lib');
 
 /* eslint-disable prefer-arrow-callback */
 
