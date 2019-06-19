@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Travis & coveralls badges
 - Readme
 - remove and multiRemove methods
+- `lib` folder into `package.json` files
+- Git hooks
+
+### Changed
+- Changed modules files folder into `lib`
 
 ### Fixed
 - Performance issues with multiRemove and multiSave methods
