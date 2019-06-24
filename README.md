@@ -14,11 +14,12 @@ npm install --save @janiscommerce/mongodb
 - `new MongoDB({config})`  
 Constructs the MongoDB driver instance, connected with the `config [Object]`. 
 
-### Config example
+### Config usage
 ```js
 {
    host: 'mongodb://localhost:27017',
-   limit: 1000 // Default 500
+   limit: 1000 // Default 500,
+   database: 'myDB'
 }
 ```
 
@@ -99,7 +100,7 @@ const Model = require('myModel');
 const mongo = new MongoDB({
    host: 'mongodb://foo:3306/foobar',
    user: 'sarasa',
-   db: 'myDB'
+   database: 'myDB'
 });
 
 const model = new Model();

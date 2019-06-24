@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Git hooks
 
 ### Changed
+- Database name is loaded from config instead model
 - Changed modules files folder into `lib`
 
 ### Fixed
