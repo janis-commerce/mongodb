@@ -16,10 +16,6 @@ const { MongoDBError } = require('./../lib');
 
 class Model {
 
-	get dbname() {
-		return 'myDB';
-	}
-
 	static get uniqueIndexes() {
 		return [
 			'_id'
@@ -40,7 +36,7 @@ class Model {
 const mongodb = new MongoDB({
 	host: 'mongodb://localhost:3306/fizzmod',
 	user: 'root',
-	db: 'myDB'
+	database: 'myDB'
 });
 
 const model = new Model();
@@ -241,7 +237,7 @@ describe('MongoDB', function() {
 
 			await mongodb.checkConnection();
 
-			const collection = mongodb.client.db(model.dbname).collection(model.getTable());
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
 
 			sandbox.stub(collection, 'updateOne').returns({
 				matchedCount: 2
@@ -316,7 +312,7 @@ describe('MongoDB', function() {
 
 			await mongodb.checkConnection();
 
-			const collection = mongodb.client.db(model.dbname).collection(model.getTable());
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
 
 			sandbox.stub(collection, 'bulkWrite').callsFake(updateItems => {
 
@@ -355,7 +351,7 @@ describe('MongoDB', function() {
 
 			await mongodb.checkConnection();
 
-			const collection = mongodb.client.db(model.dbname).collection(model.getTable());
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
 
 			const stub = sandbox.stub(collection, 'bulkWrite');
 
@@ -402,7 +398,7 @@ describe('MongoDB', function() {
 
 			await mongodb.checkConnection();
 
-			const collection = mongodb.client.db(model.dbname).collection(model.getTable());
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
 
 			sandbox.stub(collection, 'deleteMany').callsFake(async filter => {
 				if(filter) {
