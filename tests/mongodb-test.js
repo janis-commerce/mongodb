@@ -33,6 +33,10 @@ class Model {
 	getTable() {
 		return 'table';
 	}
+
+	get totalsParams() {
+		return { limit: 10, page: 5 };
+	}
 }
 
 const mongodb = new MongoDB({
@@ -426,6 +430,90 @@ describe('MongoDB', () => {
 
 		it('should reject when try to multi remove items with an invalid model', async () => {
 			await assert.rejects(mongodb.multiRemove(), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
+	});
+
+	describe('getTotals()', () => {
+
+		it('should return the totals object when get the totals without last empty query in the model', async () => {
+
+			await mongodb.checkConnection();
+
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+
+			sandbox.stub(collection, 'countDocuments').callsFake(() => {
+				return 100;
+			});
+
+			sandbox.stub(model, 'lastQueryEmpty').get(() => false);
+
+			assert.deepEqual(await mongodb.getTotals(model), {
+				total: 100,
+				pageSize: 10,
+				pages: 10,
+				page: 5
+			});
+		});
+
+		it('should return the totals object with the last avaliable page when the model params look for more than available pages', async () => {
+
+			await mongodb.checkConnection();
+
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+
+			sandbox.stub(collection, 'countDocuments').callsFake(() => {
+				return 100;
+			});
+
+			sandbox.stub(model, 'lastQueryEmpty').get(() => false);
+
+			sandbox.stub(model, 'totalsParams').get(() => {
+				return { limit: 10, page: 100 };
+			});
+
+			assert.deepEqual(await mongodb.getTotals(model), {
+				total: 100,
+				pageSize: 10,
+				pages: 10,
+				page: 10
+			});
+		});
+
+		it('should return the defualt totals object when get the totals without totals params in the model', async () => {
+
+			await mongodb.checkConnection();
+
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+
+			sandbox.stub(collection, 'countDocuments').callsFake(() => {
+				return 100;
+			});
+
+			sandbox.stub(model, 'lastQueryEmpty').get(() => false);
+			sandbox.stub(model, 'totalsParams').get(() => null);
+
+			assert.deepEqual(await mongodb.getTotals(model), {
+				total: 100,
+				pageSize: 500,
+				pages: 1,
+				page: 1
+			});
+		});
+
+		it('should return zero totals when get the totals with a last empty query in the model', async () => {
+			sandbox.stub(model, 'lastQueryEmpty').get(() => true);
+			assert.deepEqual(await mongodb.getTotals(model), {
+				total: 0,
+				pages: 0
+			});
+		});
+
+		it('should throw when try to get totals without a valid model', async () => {
+			await assert.rejects(mongodb.getTotals(), {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.INVALID_MODEL
 			});
