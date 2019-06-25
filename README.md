@@ -79,6 +79,21 @@ Removes multiple items from the database.
 Requires a `model [Model]` and `filter [Object]` (MongoDB filter).  
 Returns `deletedCount [Number]`.  
 
+- *async* `getTotals(model)`  
+Get the totals of the items database count with pagination.
+Requires a `model [Model]`, also uses `totalsParams [Object]` from the model.
+Returns an `[Object]` with the total count, page size, pages and selected page.  
+
+### getTotals return example
+```js
+{
+   total: 1000,
+   pageSize: 500, //Default value
+   pages: 2,
+   page: 1
+}
+```
+
 ## Errors
 
 The errors are informed with a `MongoDBError`.  

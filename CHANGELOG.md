@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - remove and multiRemove methods
 - `lib` folder into `package.json` files
 - Git hooks
+- `getTotals` method
 
 ### Changed
 - Database name is loaded from config instead model
