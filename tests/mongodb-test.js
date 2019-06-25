@@ -6,13 +6,15 @@ const mock = require('mock-require');
 
 mock('mongodb', 'mongo-mock');
 
+const MongoMock = require('mongodb');
+
+MongoMock.max_delay = 0; // Evitar que los tests demoren mas de lo necesario
+
 const { MongoClient } = require('mongodb');
 
 const MongoDB = require('./../index');
 
 const { MongoDBError } = require('./../lib');
-
-/* eslint-disable prefer-arrow-callback */
 
 class Model {
 
@@ -41,7 +43,7 @@ const mongodb = new MongoDB({
 
 const model = new Model();
 
-describe('MongoDB', function() {
+describe('MongoDB', () => {
 
 	beforeEach(() => {
 		sandbox.restore();
@@ -51,9 +53,9 @@ describe('MongoDB', function() {
 		mock.stopAll();
 	});
 
-	describe('checkConnection()', function() {
+	describe('checkConnection()', () => {
 
-		it('should call MongoClient connect', async function() {
+		it('should call MongoClient connect when checks the connection', async () => {
 
 			const spy = sandbox.spy(MongoClient, 'connect');
 
@@ -67,43 +69,43 @@ describe('MongoDB', function() {
 		});
 	});
 
-	describe('formatIndex()', function() {
+	describe('formatIndex()', () => {
 
-		it('should return forrmated index object (array param)', function() {
+		it('should return formatted index object when recieves an array as parameter', () => {
 			assert.deepEqual(mongodb.formatIndex(['foo', 'bar']), { foo: 1, bar: 1 });
 		});
 
-		it('should return formatted index object', function() {
+		it('should return formatted index object when recieves a string as parameter', () => {
 			assert.deepEqual(mongodb.formatIndex('foo'), { foo: 1 });
 		});
 
 	});
 
-	describe('createIndexes()', function() {
+	describe('createIndexes()', () => {
 
-		it('should not reject while creating indexes without uniqueIndexes', async function() {
+		it('should not reject when create indexes without unique indexes in the model', async () => {
 
 			sandbox.stub(model.constructor, 'uniqueIndexes').get(() => {
-				return undefined;
+				return null;
 			});
 
 			await assert.doesNotReject(mongodb.createIndexes(model));
 		});
 
-		it('should not reject while creating indexes without indexes', async function() {
+		it('should not reject when create indexes without indexes in the model', async () => {
 
 			sandbox.stub(model.constructor, 'indexes').get(() => {
-				return undefined;
+				return null;
 			});
 
 			await assert.doesNotReject(mongodb.createIndexes(model));
 		});
 
-		it('should not reject while creating indexes normally', async function() {
+		it('should not reject when create indexes with indexes and unique indexes in the model', async () => {
 			await assert.doesNotReject(mongodb.createIndexes(model));
 		});
 
-		it('should reject with "Invalid or empty model"', async function() {
+		it('should reject when try to create indexes with an invalid model', async () => {
 			await assert.rejects(mongodb.createIndexes(), {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.INVALID_MODEL
@@ -112,9 +114,9 @@ describe('MongoDB', function() {
 
 	});
 
-	describe('prepareFields()', function() {
+	describe('prepareFields()', () => {
 
-		it('should call mongodb ObjectID then change the fields._id value', function() {
+		it('should call mongodb ObjectID when prepare the fields and must change the "fields._id" value', () => {
 
 			const fields = {
 				_id: 1,
@@ -127,9 +129,9 @@ describe('MongoDB', function() {
 		});
 	});
 
-	describe('getFilter()', function() {
+	describe('getFilter()', () => {
 
-		it('should return non empty filter object (with array index)', function() {
+		it('should return non empty filter object when get filters with an array as parameter', () => {
 
 			sandbox.stub(model.constructor, 'indexes').get(() => {
 				return [['value']];
@@ -140,14 +142,14 @@ describe('MongoDB', function() {
 			assert.deepEqual(result.value, 'sarasa');
 		});
 
-		it('should return non empty filter object', function() {
+		it('should return non empty filter object when get filters with an object as parameter', () => {
 
 			const result = mongodb.getFilter(model, { value: 'sarasa' });
 
 			assert.deepEqual(result.value, 'sarasa');
 		});
 
-		it('should throw "model requires indexes"', function() {
+		it('should throw when get filters with a model without indexes', () => {
 
 			assert.throws(() => {
 				mongodb.getFilter({});
@@ -157,7 +159,7 @@ describe('MongoDB', function() {
 			});
 		});
 
-		it('should throw "operation requires indexes"', function() {
+		it('should throw when get filters if the model indexes not matches with any of the filters', () => {
 
 			assert.throws(() => {
 				mongodb.getFilter(model);
@@ -168,7 +170,7 @@ describe('MongoDB', function() {
 
 		});
 
-		it('should throw "Invalid or empty model"', function() {
+		it('should throw when get filters with an invalid model', () => {
 			assert.throws(() => {
 				mongodb.getFilter();
 			}, {
@@ -179,23 +181,23 @@ describe('MongoDB', function() {
 
 	});
 
-	describe('insert()', function() {
+	describe('insert()', () => {
 
-		it('should return true (returned if the data was successfully inserted into db)', async function() {
+		it('should return true when the data was successfully inserted into db', async () => {
 
 			const result = await mongodb.insert(model, {	value: 'sarasa' });
 
 			assert.deepEqual(result, true);
 		});
 
-		it('should return false (returned if the insertion was failed)', async function() {
+		it('should return false when the data insertion was failed', async () => {
 
 			const result = await mongodb.insert({ dbname: 'sarasa' });
 
 			assert.deepEqual(result, false);
 		});
 
-		it('should reject with "Invalid or empty model', async function() {
+		it('should reject when try to insert with an invalid model', async () => {
 			await assert.rejects(mongodb.insert(), {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.INVALID_MODEL
@@ -204,9 +206,9 @@ describe('MongoDB', function() {
 
 	});
 
-	describe('get()', function() {
+	describe('get()', () => {
 
-		it('should return data object from db', async function() {
+		it('should return data object when get the data from db', async () => {
 
 			await mongodb.insert(model, { value: 'sarasa' });
 
@@ -215,7 +217,7 @@ describe('MongoDB', function() {
 			assert.deepEqual(result[0].value, 'sarasa');
 		});
 
-		it('should reject with "Invalid or empty model', async function() {
+		it('should reject when try to get data with an invalid model', async () => {
 			await assert.rejects(mongodb.get(), {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.INVALID_MODEL
@@ -224,16 +226,16 @@ describe('MongoDB', function() {
 
 	});
 
-	describe('save()', function() {
+	describe('save()', () => {
 
-		it('should return true (if can find object to update in db)', async function() {
+		it('should return true when only one item was sucessfully updated/upserted', async () => {
 
 			const result = await mongodb.save(model, { value: 'sarasa' });
 
 			assert.deepEqual(result, true);
 		});
 
-		it('should return false (if can\'t find object to update in db)', async function() {
+		it('should return false when no items was updated/upserted', async () => {
 
 			await mongodb.checkConnection();
 
@@ -248,7 +250,7 @@ describe('MongoDB', function() {
 			assert.deepEqual(result, false);
 		});
 
-		it('should reject with "Invalid or empty model"', async function() {
+		it('should reject when try to save with an invalid model', async () => {
 			await assert.rejects(mongodb.save(), {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.INVALID_MODEL
@@ -257,9 +259,9 @@ describe('MongoDB', function() {
 
 	});
 
-	describe('update()', function() {
+	describe('update()', () => {
 
-		it('should return 1 (modified count from mongodb)', async function() {
+		it('should return modified count when updates an item', async () => {
 
 			await mongodb.insert(model, { value: 'foobar' });
 
@@ -268,7 +270,7 @@ describe('MongoDB', function() {
 			assert.deepEqual(result, 1);
 		});
 
-		it('should reject with "Invalid or empty model', async function() {
+		it('should reject when try to updated with an invalid model', async () => {
 			await assert.rejects(mongodb.update(), {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.INVALID_MODEL
@@ -277,9 +279,9 @@ describe('MongoDB', function() {
 
 	});
 
-	describe('multiInsert()', function() {
+	describe('multiInsert()', () => {
 
-		it('should return true if the operation was successful', async function() {
+		it('should return true when the multi insert operation was successful', async () => {
 
 			const items = [
 				{ value: 'sarasa1' },
@@ -292,7 +294,7 @@ describe('MongoDB', function() {
 			assert.deepEqual(result, true);
 		});
 
-		it('should reject with "Invalid or empty model', async function() {
+		it('should reject when try to multi insert with an invalid model', async () => {
 			await assert.rejects(mongodb.multiInsert(), {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.INVALID_MODEL
@@ -301,9 +303,9 @@ describe('MongoDB', function() {
 
 	});
 
-	describe('multiSave', function() {
+	describe('multiSave', () => {
 
-		it('should call mongodb bulkWrite then return true', async function() {
+		it('should call bulkWrite when multi saving items and must return true if the result was successful', async () => {
 
 			const items = [
 				{ value: 'sarasa1' },
@@ -333,14 +335,14 @@ describe('MongoDB', function() {
 			assert.deepEqual(result, true);
 		});
 
-		it('should return false (updateItems.length is 0)', async function() {
+		it('should return false when try to multi save without items', async () => {
 
 			const result = await mongodb.multiSave(model, []);
 
 			assert.deepEqual(result, false);
 		});
 
-		it('should return false if any of the save stacks rejects', async function() {
+		it('should return false when any of the save stacks rejects', async () => {
 
 			const items = Array(30).fill()
 				.map((item, i) => {
@@ -364,7 +366,7 @@ describe('MongoDB', function() {
 			assert.deepEqual(result, false);
 		});
 
-		it('should reject with "Invalid or empty model', async function() {
+		it('should reject when try to multi save with an invalid model', async () => {
 			await assert.rejects(mongodb.multiSave(), {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.INVALID_MODEL
@@ -373,18 +375,25 @@ describe('MongoDB', function() {
 
 	});
 
-	describe('remove()', function() {
+	describe('remove()', () => {
 
-		it('should return 1 (deleted count from mongodb)', async function() {
+		it('should return true when successfully removes the item', async () => {
 
 			await mongodb.insert(model, { value: 'foobar' });
 
 			const result = await mongodb.remove(model, { value: 'foobar' });
 
-			assert.deepEqual(result, 1);
+			assert.deepEqual(result, true);
 		});
 
-		it('should reject with "Invalid or empty model', async function() {
+		it('should return false when can\'t remove the item', async () => {
+
+			const result = await mongodb.remove(model, { value: 'foobar' });
+
+			assert.deepEqual(result, false);
+		});
+
+		it('should reject when try to remove an item with an invalid model', async () => {
 			await assert.rejects(mongodb.remove(), {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.INVALID_MODEL
@@ -392,9 +401,9 @@ describe('MongoDB', function() {
 		});
 	});
 
-	describe('multiRemove()', function() {
+	describe('multiRemove()', () => {
 
-		it('should return 2 (deleted count from mongodb)', async function() {
+		it('should return deleted count from mongodb when multi remove items', async () => {
 
 			await mongodb.checkConnection();
 
@@ -415,7 +424,7 @@ describe('MongoDB', function() {
 			assert.deepEqual(result, 2);
 		});
 
-		it('should reject with "Invalid or empty model', async function() {
+		it('should reject when try to multi remove items with an invalid model', async () => {
 			await assert.rejects(mongodb.multiRemove(), {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.INVALID_MODEL
