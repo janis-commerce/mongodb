@@ -16,10 +16,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `lib` folder into `package.json` files
 - Git hooks
 - `getTotals` method
+- `update`, `save`, `multiSave`, `remove` and `multiRemove` now supports `_id` field as filter
 
 ### Changed
 - Database name is loaded from config instead model
 - Changed modules files folder into `lib`
-
-### Fixed
-- Performance issues with multiRemove and multiSave methods
