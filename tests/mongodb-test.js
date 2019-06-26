@@ -163,7 +163,7 @@ describe('MongoDB', () => {
 			});
 		});
 
-		it('should throw when get filters if the model indexes not matches with any of the filters', () => {
+		it('should throw when try to get filters and the model indexes not matches with any of the filters', () => {
 
 			assert.throws(() => {
 				mongodb.getFilter(model);
@@ -234,7 +234,13 @@ describe('MongoDB', () => {
 
 		it('should return true when only one item was sucessfully updated/upserted', async () => {
 
-			const result = await mongodb.save(model, { value: 'sarasa' });
+			let result = await mongodb.save(model, { value: 'save_test_with_id' });
+
+			assert.deepEqual(result, true);
+
+			const id = await mongodb.get(model, { value: 'save_test_with_id' });
+
+			result = await mongodb.save(model, { _id: id[0]._id, value: 'sarasa' });
 
 			assert.deepEqual(result, true);
 		});
@@ -307,13 +313,14 @@ describe('MongoDB', () => {
 
 	});
 
-	describe('multiSave', () => {
+	describe('multiSave()', () => {
 
 		it('should call bulkWrite when multi saving items and must return true if the result was successful', async () => {
 
 			const items = [
 				{ value: 'sarasa1' },
-				{ value: 'sarasa2' }
+				{ value: 'sarasa2' },
+				{ _id: '123456789012', value: 'sarasa3' }
 			];
 
 			await mongodb.checkConnection();
