@@ -33,10 +33,6 @@ class Model {
 	getTable() {
 		return 'table';
 	}
-
-	get totalsParams() {
-		return { limit: 10, page: 5 };
-	}
 }
 
 const mongodb = new MongoDB({
@@ -46,6 +42,8 @@ const mongodb = new MongoDB({
 });
 
 const model = new Model();
+
+model.totalsParams = { limit: 10, page: 5 };
 
 describe('MongoDB', () => {
 
