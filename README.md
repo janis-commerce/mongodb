@@ -43,7 +43,8 @@ Search elements from the database then returns an `[Array]` with the results `[O
 Requires a `model [Model]`, `parameters [Object]` are optional. 
 
 Parameters (all are optional):
-- limit: Max amount of items to get. Default: 500 or setted on config when constructs.
+- limit: Max amount of items per page to get. Default: 500 or setted on config when constructs.
+- page: Items of the specified page
 - filters: MongoDB filters, leave empty for all items.
 
 ### Parameters example
@@ -145,7 +146,20 @@ const model = new Model();
 
    // get
    result = await mongo.get(model, {}) // expected return: all entries
-   result = await mongo.get(model, { id: 1 }) // expected return: row with _id == 1
+   result = await mongo.get(model, { filters: { _id: 1 } }) // expected return: row with _id == 1
+   result = await mongo.get(model, { limit: 10, page: 2 filters: { value: 'foo' } }) // expected return: page 2 of elements with value "foo" with a page size of 10 elements.
+
+   // getTotals
+   result = await mongo.getTotals(model);
+
+   /* Example return
+      {
+         page: 2,
+         limit: 10,
+         pages: 5,
+         total: 50
+      }
+   */
 
    // save
    result = await mongo.save(model, {
