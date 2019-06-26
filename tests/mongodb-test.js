@@ -43,7 +43,7 @@ const mongodb = new MongoDB({
 
 const model = new Model();
 
-model.totalsParams = { limit: 10, page: 5 };
+model.lastQueryEmpty = false;
 
 describe('MongoDB', () => {
 
@@ -448,19 +448,24 @@ describe('MongoDB', () => {
 
 			await mongodb.checkConnection();
 
-			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+			const inserts = Array(10).fill()
+				.map((item, i) => {
+					return {
+						value: `get-totals-test ${i}`
+					};
+				});
 
-			sandbox.stub(collection, 'countDocuments').callsFake(() => {
-				return 100;
-			});
+			await mongodb.multiInsert(model, inserts);
+
+			await mongodb.get(model, { limit: 5, page: 1, filters: { value: /get-totals-test/ } });
 
 			sandbox.stub(model, 'lastQueryEmpty').get(() => false);
 
 			assert.deepEqual(await mongodb.getTotals(model), {
-				total: 100,
-				pageSize: 10,
-				pages: 10,
-				page: 5
+				total: 10,
+				pageSize: 5,
+				pages: 2,
+				page: 1
 			});
 		});
 
