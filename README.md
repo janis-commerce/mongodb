@@ -18,7 +18,7 @@ Constructs the MongoDB driver instance, connected with the `config [Object]`.
 ```js
 {
    host: 'mongodb://localhost:27017',
-   limit: 1000 // Default 500,
+   limit: 1000, // Default 500
    database: 'myDB'
 }
 ```
