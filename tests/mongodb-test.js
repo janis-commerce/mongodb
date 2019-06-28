@@ -36,7 +36,8 @@ class Model {
 }
 
 const mongodb = new MongoDB({
-	host: 'mongodb://localhost:3306/fizzmod',
+	host: 'mongodb://localhost',
+	port: 27017,
 	user: 'root',
 	database: 'myDB'
 });
