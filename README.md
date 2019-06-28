@@ -23,6 +23,10 @@ Constructs the MongoDB driver instance, connected with the `config [Object]`.
 }
 ```
 
+- *async* `createIndexes(model)`
+Creates indexes and unique indexes from the model to the MongoDB database.  
+Requires a `model [Model]`  
+
 - *async* `insert(model, {item})`  
 Insert a item into the database.  
 Requires a `model [Model]` and `item [Object]`.  
@@ -114,12 +118,15 @@ const MongoDB = require('@janiscommerce/mongodb');
 const Model = require('myModel');
 
 const mongo = new MongoDB({
-   host: 'mongodb://foo:3306/foobar',
+   host: 'mongodb://foo',
+   port: 27017
    user: 'sarasa',
    database: 'myDB'
 });
 
 const model = new Model();
+
+mongo.createIndexes(model);
 
 (async function() {
 
