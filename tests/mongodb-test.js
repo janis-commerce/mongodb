@@ -56,19 +56,46 @@ describe('MongoDB', () => {
 		mock.stopAll();
 	});
 
+	describe('constructor', () => {
+		it('should throw when the config is not valid', () => {
+			assert.throws(() => {
+				return new MongoDB();
+			}, {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.INVALID_CONFIG
+			});
+		});
+
+		it('should use default values when the config is incomplete', () => {
+			assert.doesNotThrow(() => {
+				return new MongoDB({});
+			});
+		});
+	});
+
 	describe('checkConnection()', () => {
 
 		it('should call MongoClient connect when checks the connection', async () => {
 
 			const spy = sandbox.spy(MongoClient, 'connect');
 
-			try {
-				await mongodb.checkConnection();
-			} catch(err) {
-				// nothing...
-			}
+			await assert.doesNotReject(mongodb.checkConnection());
 
 			sandbox.assert.calledOnce(spy);
+		});
+
+		it('should reject when MongoClient connect can\'t connect', async () => {
+
+			if(mongodb.client)
+				delete mongodb.client;
+
+			sandbox.stub(MongoClient, 'connect').rejects(new Error('Invalid connection string'));
+
+			await assert.rejects(mongodb.checkConnection(), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
 		});
 	});
 
@@ -112,6 +139,20 @@ describe('MongoDB', () => {
 			await assert.rejects(mongodb.createIndexes(), {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
+		it('should throw when mongodb rejects the operation', async () => {
+
+			await mongodb.checkConnection();
+
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+
+			sandbox.stub(collection, 'createIndex').rejects(new Error('Internal mongodb error'));
+
+			await assert.rejects(mongodb.createIndexes(model), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
 		});
 
@@ -227,6 +268,20 @@ describe('MongoDB', () => {
 			});
 		});
 
+		it('should throw when mongodb rejects the operation', async () => {
+
+			await mongodb.checkConnection();
+
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+
+			sandbox.stub(collection, 'find').throws(new Error('Internal mongodb error'));
+
+			await assert.rejects(mongodb.get(model), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+		});
+
 	});
 
 	describe('save()', () => {
@@ -259,6 +314,34 @@ describe('MongoDB', () => {
 			assert.deepEqual(result, false);
 		});
 
+		it('should return false when mongodb rejects the operation', async () => {
+
+			await mongodb.checkConnection();
+
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+
+			sandbox.stub(collection, 'updateOne').rejects(new Error('Internal mongodb error'));
+
+			const result = await mongodb.save(model, { value: 'sarasa' });
+
+			assert.deepEqual(result, false);
+		});
+
+		it('should throw when mongodb update rejects the operation', async () => {
+
+			await mongodb.checkConnection();
+
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+
+			sandbox.stub(collection, 'updateMany').rejects(new Error('Internal mongodb error'));
+
+			await assert.rejects(mongodb.save(model, { _id: '123456789012' }), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+		});
+
+
 		it('should reject when try to save with an invalid model', async () => {
 			await assert.rejects(mongodb.save(), {
 				name: 'MongoDBError',
@@ -283,6 +366,20 @@ describe('MongoDB', () => {
 			await assert.rejects(mongodb.update(), {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
+		it('should throw when mongodb rejects the operation', async () => {
+
+			mongodb.checkConnection();
+
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+
+			sandbox.stub(collection, 'updateMany').rejects(new Error('Internal mongodb error'));
+
+			await assert.rejects(mongodb.update(model, { value: 'sarasa' }, { value: 'foobar' }), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
 		});
 
@@ -409,6 +506,19 @@ describe('MongoDB', () => {
 				code: MongoDBError.codes.INVALID_MODEL
 			});
 		});
+
+		it('should return false when mongodb rejects the operation', async () => {
+
+			await mongodb.checkConnection();
+
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+
+			sandbox.stub(collection, 'deleteOne').rejects(new Error('Internal mongodb error'));
+
+			const result = await mongodb.remove(model, { value: 'foobar' });
+
+			assert.deepEqual(result, false);
+		});
 	});
 
 	describe('multiRemove()', () => {
@@ -438,6 +548,20 @@ describe('MongoDB', () => {
 			await assert.rejects(mongodb.multiRemove(), {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
+		it('should reject when mongodb rejects the operation', async () => {
+
+			await mongodb.checkConnection();
+
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+
+			sandbox.stub(collection, 'deleteMany').rejects(new Error('Internal mongodb error'));
+
+			await assert.rejects(mongodb.multiRemove(model, { value: 'sarasa' }), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
 		});
 
@@ -528,6 +652,21 @@ describe('MongoDB', () => {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.INVALID_MODEL
 			});
+		});
+
+		it('should throw when mongodb rejects the operation', async () => {
+
+			await mongodb.checkConnection();
+
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+
+			sandbox.stub(collection, 'countDocuments').rejects(new Error('Internal mongodb error'));
+
+			await assert.rejects(mongodb.getTotals(model), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
 		});
 
 	});
