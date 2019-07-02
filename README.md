@@ -14,11 +14,12 @@ npm install --save @janiscommerce/mongodb
 - `new MongoDB({config})`  
 Constructs the MongoDB driver instance, connected with the `config [Object]`. 
 
-### Config usage
+Config usage:
 ```js
 {
-   host: 'mongodb://localhost:27017',
-   limit: 1000, // Default 500
+   host: 'mongodb://localhost',
+   port: 27017, // Default 27017
+   limit: 500, // Default 500
    database: 'myDB'
 }
 ```
@@ -51,15 +52,32 @@ Parameters (all are optional):
 - page: Items of the specified page
 - filters: MongoDB filters, leave empty for all items.
 
-### Parameters example
+Parameters example:
 ```js
 {
-   limit: 1000,
+   limit: 1000, // Default 500 from config
+   page: 2,
    filters: {
-      itemField: {
+      itemField: 'foobar',
+      otherItemField: {
          $in: ['foo', 'bar']
-      }
+      },
    }
+}
+```
+
+- *async* `getTotals(model)`  
+Get the totals of the items from the latest get operation with pagination.
+Requires a `model [Model]`
+Returns an `[Object]` with the total count, page size, pages and selected page.  
+
+getTotals return example:
+```js
+{
+   total: 1000,
+   pageSize: 1000, // Limit from latest get operation or 500 by default
+   pages: 2,
+   page: 1
 }
 ```
 
@@ -84,21 +102,6 @@ Removes multiple items from the database.
 Requires a `model [Model]` and `filter [Object]` (MongoDB filter).  
 Returns `deletedCount [Number]`.  
 
-- *async* `getTotals(model)`  
-Get the totals of the items database count with pagination.
-Requires a `model [Model]`, also uses `totalsParams [Object]` from the model.
-Returns an `[Object]` with the total count, page size, pages and selected page.  
-
-### getTotals return example
-```js
-{
-   total: 1000,
-   pageSize: 500, //Default value
-   pages: 2,
-   page: 1
-}
-```
-
 ## Errors
 
 The errors are informed with a `MongoDBError`.  
@@ -110,6 +113,8 @@ The codes are the following:
 | 1    | Model with empty indexes      |
 | 2    | Empty indexes                 |
 | 3    | Invalid or empty model        |
+| 4    | Internal mongodb error        |
+| 5    | Invalid config                |
 
 ## Usage
 

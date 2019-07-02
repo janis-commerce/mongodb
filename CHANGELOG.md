@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Git hooks
 - `getTotals` method
 - `update`, `save`, `multiSave`, `remove` and `multiRemove` now supports `_id` field as filter
+- Internal MongoDB errors handling
 
 ### Changed
 - Database name is loaded from config instead model
