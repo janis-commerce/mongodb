@@ -30,7 +30,7 @@ class Model {
 		];
 	}
 
-	getTable() {
+	static get table() {
 		return 'table';
 	}
 }
@@ -146,7 +146,7 @@ describe('MongoDB', () => {
 
 			await mongodb.checkConnection();
 
-			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.constructor.table);
 
 			sandbox.stub(collection, 'createIndex').rejects(new Error('Internal mongodb error'));
 
@@ -234,13 +234,6 @@ describe('MongoDB', () => {
 			assert.deepEqual(result, true);
 		});
 
-		it('should return false when the data insertion was failed', async () => {
-
-			const result = await mongodb.insert({ dbname: 'sarasa' });
-
-			assert.deepEqual(result, false);
-		});
-
 		it('should reject when try to insert with an invalid model', async () => {
 			await assert.rejects(mongodb.insert(), {
 				name: 'MongoDBError',
@@ -272,7 +265,7 @@ describe('MongoDB', () => {
 
 			await mongodb.checkConnection();
 
-			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.constructor.table);
 
 			sandbox.stub(collection, 'find').throws(new Error('Internal mongodb error'));
 
@@ -303,7 +296,7 @@ describe('MongoDB', () => {
 
 			await mongodb.checkConnection();
 
-			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.constructor.table);
 
 			sandbox.stub(collection, 'updateOne').returns({
 				matchedCount: 2
@@ -318,7 +311,7 @@ describe('MongoDB', () => {
 
 			await mongodb.checkConnection();
 
-			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.constructor.table);
 
 			sandbox.stub(collection, 'updateOne').rejects(new Error('Internal mongodb error'));
 
@@ -331,7 +324,7 @@ describe('MongoDB', () => {
 
 			await mongodb.checkConnection();
 
-			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.constructor.table);
 
 			sandbox.stub(collection, 'updateMany').rejects(new Error('Internal mongodb error'));
 
@@ -373,7 +366,7 @@ describe('MongoDB', () => {
 
 			mongodb.checkConnection();
 
-			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.constructor.table);
 
 			sandbox.stub(collection, 'updateMany').rejects(new Error('Internal mongodb error'));
 
@@ -421,7 +414,7 @@ describe('MongoDB', () => {
 
 			await mongodb.checkConnection();
 
-			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.constructor.table);
 
 			sandbox.stub(collection, 'bulkWrite').callsFake(updateItems => {
 
@@ -460,7 +453,7 @@ describe('MongoDB', () => {
 
 			await mongodb.checkConnection();
 
-			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.constructor.table);
 
 			const stub = sandbox.stub(collection, 'bulkWrite');
 
@@ -511,7 +504,7 @@ describe('MongoDB', () => {
 
 			await mongodb.checkConnection();
 
-			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.constructor.table);
 
 			sandbox.stub(collection, 'deleteOne').rejects(new Error('Internal mongodb error'));
 
@@ -527,7 +520,7 @@ describe('MongoDB', () => {
 
 			await mongodb.checkConnection();
 
-			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.constructor.table);
 
 			sandbox.stub(collection, 'deleteMany').callsFake(async filter => {
 				if(filter) {
@@ -555,7 +548,7 @@ describe('MongoDB', () => {
 
 			await mongodb.checkConnection();
 
-			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.constructor.table);
 
 			sandbox.stub(collection, 'deleteMany').rejects(new Error('Internal mongodb error'));
 
@@ -598,7 +591,7 @@ describe('MongoDB', () => {
 
 			await mongodb.checkConnection();
 
-			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.constructor.table);
 
 			sandbox.stub(collection, 'countDocuments').callsFake(() => {
 				return 100;
@@ -622,7 +615,7 @@ describe('MongoDB', () => {
 
 			await mongodb.checkConnection();
 
-			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.constructor.table);
 
 			sandbox.stub(collection, 'countDocuments').callsFake(() => {
 				return 100;
@@ -658,7 +651,7 @@ describe('MongoDB', () => {
 
 			await mongodb.checkConnection();
 
-			const collection = mongodb.client.db(mongodb.config.database).collection(model.getTable());
+			const collection = mongodb.client.db(mongodb.config.database).collection(model.constructor.table);
 
 			sandbox.stub(collection, 'countDocuments').rejects(new Error('Internal mongodb error'));
 
