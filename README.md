@@ -24,26 +24,26 @@ Config usage:
 }
 ```
 
-- *async* `createIndexes(model)`
+- ***async*** `createIndexes(model)`
 Creates indexes and unique indexes from the model to the MongoDB database.  
 Requires a `model [Model]`  
 
-- *async* `insert(model, {item})`  
+- ***async*** `insert(model, {item})`  
 Insert a item into the database.  
 Requires a `model [Model]` and `item [Object]`.  
 Returns `true` if the operation was successfull or `false` if not.  
 
-- *async* `multiInsert(model, [{items}])`  
+- ***async*** `multiInsert(model, [{items}])`  
 Inserts multiple items into the database.  
 Requires a `model [Model]` and `item [Object array]`.  
 Returns `true` if the operation was successfull or `false` if not.  
 
-- *async* `update(model, {values}, {filter})`  
+- ***async*** `update(model, {values}, {filter})`  
 Updates one or multiple items from the database.  
 Requires a `model [Model]`, `values [Object]` and `filter [Object]` (MongoDB filter).  
 Returns the modified/updated elements count.  
 
-- *async* `get(model, {parameters})`  
+- ***async*** `get(model, {parameters})`  
 Search elements from the database then returns an `[Array]` with the results `[Object]`.
 Requires a `model [Model]`, `parameters [Object]` are optional. 
 
@@ -66,7 +66,7 @@ Parameters example:
 }
 ```
 
-- *async* `getTotals(model)`  
+- ***async*** `getTotals(model)`  
 Get the totals of the items from the latest get operation with pagination.
 Requires a `model [Model]`
 Returns an `[Object]` with the total count, page size, pages and selected page.  
@@ -81,23 +81,23 @@ getTotals return example:
 }
 ```
 
-- *async* `save(model, {item})`  
+- ***async*** `save(model, {item})`  
 Insert/update a item into the database.  
 Requires a `model [Model]` and `item [Object]`.  
 Returns `true/false` if the result was successfully or not.  
 
-- *async* `multiSave(model, [{items}], limit)`  
+- ***async*** `multiSave(model, [{items}], limit)`  
 Insert/update multiple items into the database.
 Requires a `model [Model]` and `items [Object array]`.  
 `limit [Number]` (optional, default 1000): Specifies the max amount of items that can be written at same time.  
 Returns `true/false` if the result was successfully or not.  
 
-- *async* `remove(model, {item})`  
+- ***async*** `remove(model, {item})`  
 Removes the specified item from the database.
 Requires a `model [Model]` and `item [Object]`.  
 Returns `true/false` if the result was successfully or not.  
 
-- *async* `multiRemove(model, {filter})`  
+- ***async*** `multiRemove(model, {filter})`  
 Removes multiple items from the database.  
 Requires a `model [Model]` and `filter [Object]` (MongoDB filter).  
 Returns `deletedCount [Number]`.  
