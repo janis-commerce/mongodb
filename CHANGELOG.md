@@ -22,3 +22,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Database name is loaded from config instead model
 - Changed modules files folder into `lib`
+- Model `getTable()` method into `table` static getter
