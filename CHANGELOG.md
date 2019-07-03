@@ -18,8 +18,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `getTotals` method
 - `update`, `save`, `multiSave`, `remove` and `multiRemove` now supports `_id` field as filter
 - Internal MongoDB errors handling
+- Mapping of `_id` from mongo into `id`
 
 ### Changed
 - Database name is loaded from config instead model
 - Changed modules files folder into `lib`
 - Model `getTable()` method into `table` static getter
+- `getFilter()` now only get filters from the unique indexes of the model
+- `get()`, `update()` and `multiRemove()` can use any items in the filters

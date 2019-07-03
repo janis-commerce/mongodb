@@ -48,9 +48,9 @@ Search elements from the database then returns an `[Array]` with the results `[O
 Requires a `model [Model]`, `parameters [Object]` are optional. 
 
 Parameters (all are optional):
-- limit: Max amount of items per page to get. Default: 500 or setted on config when constructs.
-- page: Items of the specified page
-- filters: MongoDB filters, leave empty for all items.
+- limit `[Number]`: Max amount of items per page to get. Default: 500 or setted on config when constructs.
+- page `[Number]`: Items of the specified page
+- filters `[Object]`: MongoDB filters, leave empty for all items.
 
 Parameters example:
 ```js
@@ -108,13 +108,13 @@ The errors are informed with a `MongoDBError`.
 This object has a code that can be useful for a correct error handling.  
 The codes are the following:  
 
-| Code | Description                   |
-|------|-------------------------------|
-| 1    | Model with empty indexes      |
-| 2    | Empty indexes                 |
-| 3    | Invalid or empty model        |
-| 4    | Internal mongodb error        |
-| 5    | Invalid config                |
+| Code | Description                    |
+|------|--------------------------------|
+| 1    | Model with empty unique indexes|
+| 2    | Empty unique indexes           |
+| 3    | Invalid or empty model         |
+| 4    | Internal mongodb error         |
+| 5    | Invalid config                 |
 
 ## Usage
 
@@ -139,26 +139,26 @@ mongo.createIndexes(model);
 
    // Insert
    result = await mongo.insert(model, {
-      _id: 1,
+      id: 1,
       value: 'sarasa'
    }); // expected return: true
 
    // multiInsert
    result = await mongo.multiInsert(model, [
-      { _id: 1, value: 'sarasa 1' },
-      { _id: 2, value: 'sarasa 2' },
-      { _id: 3, value: 'sarasa 3' }
+      { id: 1, value: 'sarasa 1' },
+      { id: 2, value: 'sarasa 2' },
+      { id: 3, value: 'sarasa 3' }
    ]); // expected return: true
 
    // update
    result = await mongo.update(model,
       { value: 'foobar' },
-      { _id: 1 }
-   ); // expected return: 1 (row with _id == 1 will change his "value" from "sarasa" to "foobar")
+      { id: 1 }
+   ); // expected return: 1 (row with id == 1 will change his "value" from "sarasa" to "foobar")
 
    // get
    result = await mongo.get(model, {}) // expected return: all entries
-   result = await mongo.get(model, { filters: { _id: 1 } }) // expected return: row with _id == 1
+   result = await mongo.get(model, { filters: { id: 1 } }) // expected return: row with id == 1
    result = await mongo.get(model, { limit: 10, page: 2 filters: { value: 'foo' } }) // expected return: page 2 of elements with value "foo" with a page size of 10 elements.
 
    // getTotals
@@ -175,19 +175,19 @@ mongo.createIndexes(model);
 
    // save
    result = await mongo.save(model, {
-      _id: 1,
+      id: 1,
       value: 'sarasa'
    }); // expected return: true
 
    // multiSave
    result = await mongo.multiSave(model, [
-      { _id: 1, value: 'sarasa 1' },
-      { _id: 2, value: 'sarasa 2' },
-      { _id: 3, value: 'sarasa 3' }
+      { id: 1, value: 'sarasa 1' },
+      { id: 2, value: 'sarasa 2' },
+      { id: 3, value: 'sarasa 3' }
    ]); // expected return: true
 
    // remove
-   result = await mongo.remove(model, { id: 1 }); // expected return: true
+   result = await mongo.remove(model, { id: '0000000055f2255a1a8e0c54' }); // expected return: true
 
    // multiRemove
    result = await mongo.multiRemove(model, { value: /sarasa/ });
