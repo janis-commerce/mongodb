@@ -21,7 +21,7 @@ class Model {
 	static get uniqueIndexes() {
 		return [
 			'id',
-			'sku'
+			'unique'
 		];
 	}
 
@@ -37,9 +37,8 @@ class Model {
 }
 
 const mongodb = new MongoDB({
-	host: 'mongodb://localhost',
+	host: 'localhost',
 	port: 27017,
-	user: 'root',
 	database: 'myDB'
 });
 
@@ -93,11 +92,28 @@ describe('MongoDB', () => {
 
 	describe('checkConnection()', () => {
 
-		it('should call MongoClient connect when checks the connection', async () => {
+		it('should call MongoClient connect when checks the connection (without user and password)', async () => {
 
 			const spy = sandbox.spy(MongoClient, 'connect');
 
 			await assert.doesNotReject(mongodb.checkConnection());
+
+			sandbox.assert.calledOnce(spy);
+
+		});
+
+		it('should call MongoClient connect when checks the connection (using user and password)', async () => {
+
+			const newMongo = new MongoDB({
+				host: 'localhost',
+				user: 'root',
+				password: 1234,
+				db: 'myDB'
+			});
+
+			const spy = sandbox.spy(MongoClient, 'connect');
+
+			await assert.doesNotReject(newMongo.checkConnection());
 
 			sandbox.assert.calledOnce(spy);
 
