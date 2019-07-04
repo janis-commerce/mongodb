@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `update`, `save`, `multiSave`, `remove` and `multiRemove` now supports `_id` field as filter
 - Internal MongoDB errors handling
 - Mapping of `_id` from mongo into `id`
+- Error handling for bad items in methods parameters
 
 ### Changed
 - Database name is loaded from config instead model

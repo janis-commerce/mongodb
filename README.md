@@ -115,6 +115,7 @@ The codes are the following:
 | 3    | Invalid or empty model         |
 | 4    | Internal mongodb error         |
 | 5    | Invalid config                 |
+| 6    | Invalid item                   |
 
 ## Usage
 
