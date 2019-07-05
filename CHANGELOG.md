@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2019-07-05
+## [1.1.0] - 2019-07-05
 ### Added
 - MongoDB wrapper
 - Tests
@@ -28,3 +28,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `getFilter()` now only get filters from the unique indexes of the model
 - `get()`, `update()` and `multiRemove()` can use any items in the filters
 - host field in config not need mongodb protocol anymore
+
+## [1.0.0] - 2019-05-17
+### Added
+- Initial version
