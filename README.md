@@ -1,7 +1,7 @@
 # MongoDB
 
-[![Build Status](https://travis-ci.org/janis-commerce/mongodb.svg?branch=JCN-50-mongodb)](https://travis-ci.org/janis-commerce/mongodb)
-[![Coverage Status](https://coveralls.io/repos/github/janis-commerce/mongodb/badge.svg?branch=JCN-50-mongodb)](https://coveralls.io/github/janis-commerce/mongodb?branch=JCN-50-mongodb)
+[![Build Status](https://travis-ci.org/janis-commerce/mongodb.svg?branch=master)](https://travis-ci.org/janis-commerce/mongodb)
+[![Coverage Status](https://coveralls.io/repos/github/janis-commerce/mongodb/badge.svg?branch=master)](https://coveralls.io/github/janis-commerce/mongodb?branch=master)
 
 ## Installation
 
@@ -11,8 +11,8 @@ npm install --save @janiscommerce/mongodb
 
 ## API
 
-- `new MongoDB({config})`  
-Constructs the MongoDB driver instance, connected with the `config [Object]`.  
+- `new MongoDB({config})`
+Constructs the MongoDB driver instance, connected with the `config [Object]`.
 
 Config usage:
 ```js
@@ -27,27 +27,27 @@ Config usage:
 ```
 
 - ***async*** `createIndexes(model)`
-Creates indexes and unique indexes from the model to the MongoDB database.  
-Requires a `model [Model]`  
+Creates indexes and unique indexes from the model to the MongoDB database.
+Requires a `model [Model]`
 
-- ***async*** `insert(model, {item})`  
-Insert a item into the database.  
-Requires a `model [Model]` and `item [Object]`.  
-Returns `true` if the operation was successfull or `false` if not.  
+- ***async*** `insert(model, {item})`
+Insert a item into the database.
+Requires a `model [Model]` and `item [Object]`.
+Returns `true` if the operation was successfull or `false` if not.
 
-- ***async*** `multiInsert(model, [{items}])`  
-Inserts multiple items into the database.  
-Requires a `model [Model]` and `item [Object array]`.  
-Returns `true` if the operation was successfull or `false` if not.  
+- ***async*** `multiInsert(model, [{items}])`
+Inserts multiple items into the database.
+Requires a `model [Model]` and `item [Object array]`.
+Returns `true` if the operation was successfull or `false` if not.
 
-- ***async*** `update(model, {values}, {filter})`  
-Updates one or multiple items from the database.  
-Requires a `model [Model]`, `values [Object]` and `filter [Object]` (MongoDB filter).  
-Returns the modified/updated elements count.  
+- ***async*** `update(model, {values}, {filter})`
+Updates one or multiple items from the database.
+Requires a `model [Model]`, `values [Object]` and `filter [Object]` (MongoDB filter).
+Returns the modified/updated elements count.
 
-- ***async*** `get(model, {parameters})`  
+- ***async*** `get(model, {parameters})`
 Search elements from the database then returns an `[Array]` with the results `[Object]`.
-Requires a `model [Model]`, `parameters [Object]` are optional. 
+Requires a `model [Model]`, `parameters [Object]` are optional.
 
 Parameters (all are optional):
 - limit `[Number]`: Max amount of items per page to get. Default: 500 or setted on config when constructs.
@@ -68,10 +68,10 @@ Parameters example:
 }
 ```
 
-- ***async*** `getTotals(model)`  
+- ***async*** `getTotals(model)`
 Get the totals of the items from the latest get operation with pagination.
 Requires a `model [Model]`
-Returns an `[Object]` with the total count, page size, pages and selected page.  
+Returns an `[Object]` with the total count, page size, pages and selected page.
 
 getTotals return example:
 ```js
@@ -83,32 +83,32 @@ getTotals return example:
 }
 ```
 
-- ***async*** `save(model, {item})`  
-Insert/update a item into the database.  
-Requires a `model [Model]` and `item [Object]`.  
-Returns `true/false` if the result was successfully or not.  
+- ***async*** `save(model, {item})`
+Insert/update a item into the database.
+Requires a `model [Model]` and `item [Object]`.
+Returns `true/false` if the result was successfully or not.
 
-- ***async*** `multiSave(model, [{items}], limit)`  
+- ***async*** `multiSave(model, [{items}], limit)`
 Insert/update multiple items into the database.
-Requires a `model [Model]` and `items [Object array]`.  
-`limit [Number]` (optional, default 1000): Specifies the max amount of items that can be written at same time.  
-Returns `true/false` if the result was successfully or not.  
+Requires a `model [Model]` and `items [Object array]`.
+`limit [Number]` (optional, default 1000): Specifies the max amount of items that can be written at same time.
+Returns `true/false` if the result was successfully or not.
 
-- ***async*** `remove(model, {item})`  
+- ***async*** `remove(model, {item})`
 Removes the specified item from the database.
-Requires a `model [Model]` and `item [Object]`.  
-Returns `true/false` if the result was successfully or not.  
+Requires a `model [Model]` and `item [Object]`.
+Returns `true/false` if the result was successfully or not.
 
-- ***async*** `multiRemove(model, {filter})`  
-Removes multiple items from the database.  
-Requires a `model [Model]` and `filter [Object]` (MongoDB filter).  
-Returns `deletedCount [Number]`.  
+- ***async*** `multiRemove(model, {filter})`
+Removes multiple items from the database.
+Requires a `model [Model]` and `filter [Object]` (MongoDB filter).
+Returns `deletedCount [Number]`.
 
 ## Errors
 
-The errors are informed with a `MongoDBError`.  
-This object has a code that can be useful for a correct error handling.  
-The codes are the following:  
+The errors are informed with a `MongoDBError`.
+This object has a code that can be useful for a correct error handling.
+The codes are the following:
 
 | Code | Description                    |
 |------|--------------------------------|
