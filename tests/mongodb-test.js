@@ -387,15 +387,16 @@ describe('MongoDB', () => {
 			assert.deepEqual(result, false);
 		});
 
-		it('should return false when mongodb rejects the operation', async () => {
+		it('should throw when mongodb rejects the operation', async () => {
 
 			const collection = await getCollection();
 
 			sandbox.stub(collection, 'updateOne').rejects(new Error('Internal mongodb error'));
 
-			const result = await mongodb.save(model, { id: 1, value: 'save_test_data' });
-
-			assert.deepEqual(result, false);
+			await assert.rejects(mongodb.save(model, { id: 1, value: 'save_test_data' }), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
 		});
 
 		it('should reject when try to save with an invalid model', async () => {
@@ -535,7 +536,7 @@ describe('MongoDB', () => {
 			assert.deepEqual(result, false);
 		});
 
-		it('should return false when any of the save stacks rejects', async () => {
+		it('should throw when any of the save stacks rejects', async () => {
 
 			const items = Array(30).fill()
 				.map((item, i) => {
@@ -553,9 +554,10 @@ describe('MongoDB', () => {
 			stub.onCall(1).rejects();
 			stub.onCall(2).resolves();
 
-			const result = await mongodb.multiSave(model, items, 10);
-
-			assert.deepEqual(result, false);
+			await assert.rejects(mongodb.multiSave(model, items, 10), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
 		});
 
 		it('should reject when try to multi insert an invalid items array ', async () => {
@@ -601,15 +603,16 @@ describe('MongoDB', () => {
 			});
 		});
 
-		it('should return false when mongodb rejects the operation', async () => {
+		it('should throw when mongodb rejects the operation', async () => {
 
 			const collection = await getCollection();
 
 			sandbox.stub(collection, 'deleteOne').rejects(new Error('Internal mongodb error'));
 
-			const result = await mongodb.remove(model, { id: 1 });
-
-			assert.deepEqual(result, false);
+			await assert.rejects(mongodb.remove(model, { id: 1 }), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
 		});
 	});
 
