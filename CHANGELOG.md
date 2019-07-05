@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Mapping of `_id` from mongo into `id`
 - Error handling for bad items in methods parameters
 - User and password support
+- Internal MongoDB errors handling in save, multiSave and remove methods
 
 ### Changed
 - Database name is loaded from config instead model
