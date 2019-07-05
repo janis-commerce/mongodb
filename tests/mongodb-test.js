@@ -208,22 +208,7 @@ describe('MongoDB', () => {
 
 	describe('prepareFields()', () => {
 
-		it('should replace the \'_id\' field with \'id\' when \'_id\' exists (for normal operations)', () => {
-
-			const ObjID = ObjectID(1);
-
-			const fields = {
-				_id: ObjID
-			};
-
-			mongodb.prepareFields(fields);
-
-			assert.deepEqual(typeof fields._id, 'undefined');
-
-			assert.deepEqual(fields.id, ObjID);
-		});
-
-		it('should replace the \'id\' field with \'_id\' when \'id\' exists (for internal mongodb operations)', () => {
+		it('should replace the \'id\' field with \'_id\' when \'id\' exists', () => {
 
 			const ObjID = ObjectID(1);
 
@@ -236,6 +221,39 @@ describe('MongoDB', () => {
 			assert.deepEqual(typeof fields.id, 'undefined');
 
 			assert.deepEqual(fields._id, ObjID);
+		});
+
+		it('should do nothing when the \'_id\' exists and \'id\' not exists', () => {
+
+			const ObjID = ObjectID(1);
+
+			const fields = {
+				_id: ObjID
+			};
+
+			mongodb.prepareFields(fields);
+
+			assert.deepEqual(typeof fields.id, 'undefined');
+
+			assert.deepEqual(fields._id, ObjID);
+		});
+	});
+
+	describe('prepareFieldsForOutput()', () => {
+
+		it('should replace the \'_id\' field with \'id\' when \'_id\' exists', () => {
+
+			const ObjID = ObjectID(1);
+
+			const fields = {
+				_id: ObjID
+			};
+
+			mongodb.prepareFieldsForOutput(fields);
+
+			assert.deepEqual(typeof fields._id, 'undefined');
+
+			assert.deepEqual(fields.id, ObjID);
 		});
 	});
 
@@ -369,7 +387,7 @@ describe('MongoDB', () => {
 		});
 
 		it('should insert an item and auto fix \'_id\' unexpected fields when save an item', async () => {
-			const result = await mongodb.save(model, { id: 1, _id: 1, value: 'save_test_data' });
+			const result = await mongodb.save(model, { id: undefined, value: 'save_test_data' });
 			assert.deepEqual(result, true);
 			await clearMockedDatabase();
 		});
