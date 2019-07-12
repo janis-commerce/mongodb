@@ -17,7 +17,8 @@ Constructs the MongoDB driver instance, connected with the `config [Object]`.
 Config usage:
 ```js
 {
-   host: 'localhost', // "mongodb://" not needed
+   protocol: 'mongodb://', // Default "mongodb://"
+   host: 'localhost', // Default "localhost"
    port: 27017, // Default 27017
    limit: 500, // Default 500
    user: 'fizzmod',
@@ -126,7 +127,8 @@ const MongoDB = require('@janiscommerce/mongodb');
 const Model = require('myModel');
 
 const mongo = new MongoDB({
-   host: 'localhost', // mongodb:// not needed
+   protocol: 'mongodb://',
+   host: 'localhost', 
    port: 27017
    user: 'fizzmod',
    password: 'sarasa',
