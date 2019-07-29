@@ -342,7 +342,7 @@ describe('MongoDB', () => {
 
 			await mongodb.insert(model, { value: 'get_test_data' });
 
-			const result = await mongodb.get(model);
+			const result = await mongodb.get(model, { order: { id: 'asc' } });
 
 			assert.deepEqual(result[0].value, 'get_test_data');
 
@@ -525,7 +525,7 @@ describe('MongoDB', () => {
 			const items = [
 				{ id: 1, value: 'multiSave_test_data' },
 				{ id: 2, value: 'multiSave_test_data' },
-				{ id: 3, value: 'multiSave_test_data' }
+				{ id: undefined, value: 'multiSave_test_data' }
 			];
 
 			const collection = await getCollection();
@@ -771,6 +771,28 @@ describe('MongoDB', () => {
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
 		});
+	});
+
+	describe('parseSortingParams()', () => {
+
+		it('should convert \'asc\' into 1 and \'desc\' into -1', async () => {
+
+			const order = {
+				field1: 'asc',
+				field2: 'desc',
+				field3: 1
+			};
+
+			mongodb.parseSortingParams(order);
+
+			assert.deepStrictEqual(order, {
+				field1: 1,
+				field2: -1,
+				field3: 1
+			});
+
+		});
+
 	});
 
 });
