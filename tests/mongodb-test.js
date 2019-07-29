@@ -775,7 +775,7 @@ describe('MongoDB', () => {
 
 	describe('parseSortingParams()', () => {
 
-		it('should convert \'asc\' into 1 and \'desc\' into -1', async () => {
+		it('should convert \'asc\' into 1 and \'desc\' into -1', () => {
 
 			const order = {
 				field1: 'asc',
@@ -790,9 +790,25 @@ describe('MongoDB', () => {
 				field2: -1,
 				field3: 1
 			});
-
 		});
+	});
 
+	describe('cleanFields()', () => {
+
+		it('should remove lastModified and dateCreated from the specified field', () => {
+
+			const fields = {
+				value: 'sarasa',
+				lastModified: 'something',
+				dateCreated: 'something'
+			};
+
+			mongodb.cleanFields(fields);
+
+			assert.deepStrictEqual(fields, {
+				value: 'sarasa'
+			});
+		});
 	});
 
 });
