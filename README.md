@@ -51,6 +51,7 @@ Search elements from the database then returns an `[Array]` with the results `[O
 Requires a `model [Model]`, `parameters [Object]` are optional.
 
 Parameters (all are optional):
+- order `[Object]`: Order params for getted items, Example: `{ myField: 'asc', myOtherField: 'desc' }`
 - limit `[Number]`: Max amount of items per page to get. Default: 500 or setted on config when constructs.
 - page `[Number]`: Items of the specified page
 - filters `[Object]`: MongoDB filters, leave empty for all items.
@@ -60,6 +61,9 @@ Parameters example:
 {
    limit: 1000, // Default 500 from config
    page: 2,
+   order: {
+      itemField: 'asc'
+   },
    filters: {
       itemField: 'foobar',
       otherItemField: {
@@ -166,6 +170,7 @@ mongo.createIndexes(model);
    result = await mongo.get(model, {}) // expected return: all entries
    result = await mongo.get(model, { filters: { id: 1 } }) // expected return: row with id == 1
    result = await mongo.get(model, { limit: 10, page: 2 filters: { value: 'foo' } }) // expected return: page 2 of elements with value "foo" with a page size of 10 elements.
+   result = await mongo.get(model, { order: { id: 'desc' } }); // expected return: all entries ordered descendently by id
 
    // getTotals
    result = await mongo.getTotals(model);
