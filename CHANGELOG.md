@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Added
 - Order parameter for `get()` method
+- `cleanFields()` method, used for remove the`lastModified` and `dateCreated` fields in update, save and multiSave methods.
 
 ### Fixed
 - `multiSave()` upsert errors when saving items with id
