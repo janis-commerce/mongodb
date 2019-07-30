@@ -775,20 +775,28 @@ describe('MongoDB', () => {
 
 	describe('parseSortingParams()', () => {
 
-		it('should convert \'asc\' into 1 and \'desc\' into -1', () => {
+		it('should convert \'asc\' into 1 and \'desc\' into -1 and delete invalid elements', () => {
 
 			const order = {
 				field1: 'asc',
 				field2: 'desc',
-				field3: 1
+				field3: 123,
+				field4: 'sarasa'
 			};
 
 			mongodb.parseSortingParams(order);
 
 			assert.deepStrictEqual(order, {
 				field1: 1,
-				field2: -1,
-				field3: 1
+				field2: -1
+			});
+		});
+
+		['string', ['some', 'array'], null].forEach(order => {
+
+			it('should do nothing when the params are invalid', () => {
+				mongodb.parseSortingParams(order);
+				assert.deepStrictEqual(order, order);
 			});
 		});
 	});
