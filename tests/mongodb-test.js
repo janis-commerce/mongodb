@@ -473,9 +473,10 @@ describe('MongoDB', () => {
 				{ id: 3, value: 'multiInsert_test_data' }
 			];
 
-			const result = await mongodb.multiInsert(model, items);
+			const results = await mongodb.multiInsert(model, items);
 
-			assert.deepEqual(result, true);
+			for(const result of results)
+				assert(MongoDriver.ObjectID.isValid(result));
 
 			items = await mongodb.get(model, { filters: { value: 'multiInsert_test_data' } });
 

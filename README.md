@@ -34,12 +34,12 @@ Requires a `model [Model]`
 - ***async*** `insert(model, {item})`
 Insert a item into the database.
 Requires a `model [Model]` and `item [Object]`.
-Returns `true` if the operation was successfull or `false` if not.
+Returns `id` of the item inserted or rejects if cannot.
 
 - ***async*** `multiInsert(model, [{items}])`
 Inserts multiple items into the database.
 Requires a `model [Model]` and `item [Object array]`.
-Returns `true` if the operation was successfull or `false` if not.
+Returns `[Array]` with the `id` of the objects inserted.
 
 - ***async*** `update(model, {values}, {filter})`
 Updates one or multiple items from the database.
@@ -151,14 +151,14 @@ mongo.createIndexes(model);
    result = await mongo.insert(model, {
       id: 1,
       value: 'sarasa'
-   }); // expected return: true
+   }); // expected return: '000000054361564751d8516f'
 
    // multiInsert
    result = await mongo.multiInsert(model, [
       { id: 1, value: 'sarasa 1' },
       { id: 2, value: 'sarasa 2' },
       { id: 3, value: 'sarasa 3' }
-   ]); // expected return: true
+   ]); // expected return: ['00000058faf66849077316ba', '00000059faf66849077316bb', '0000005afaf66849077316bc']
 
    // update
    result = await mongo.update(model,
