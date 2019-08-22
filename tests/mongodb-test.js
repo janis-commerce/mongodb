@@ -375,35 +375,36 @@ describe('MongoDB', () => {
 		it('should upsert an item when save an unexisting and existing item', async () => {
 			// Insert
 			let result = await mongodb.save(model, { id: 1, value: 'save_test_data' });
-			assert.deepEqual(result, true);
+			assert.deepEqual(MongoDriver.ObjectID.isValid(result), true);
 			let item = await mongodb.get(model, { filters: { value: 'save_test_data' } });
 			assert.deepEqual(item[0].value, 'save_test_data');
 			// Update
 			result = await mongodb.save(model, { id: item[0].id, value: 'save_test_data_updated' });
-			assert.deepEqual(result, true);
+			assert.deepEqual(result, item[0].id.toString());
 			item = await mongodb.get(model, { filters: { id: item[0].id } });
 			assert.deepEqual(item[0].value, 'save_test_data_updated');
 
 			await clearMockedDatabase();
 		});
 
-		it('should insert an item and auto fix \'_id\' unexpected fields when save an item', async () => {
-			const result = await mongodb.save(model, { id: undefined, value: 'save_test_data' });
-			assert.deepEqual(result, true);
-			await clearMockedDatabase();
-		});
-
-		it('should return false when no items was updated/upserted', async () => {
+		it('should updated an existing item', async () => {
+			// To simulate real Updated MongoDB response, Mock response always response with the upsertId even in Update (and Mongo driver not)
+			const itemSaved = { id: '00000000ef72e55d7436f9ba', value: 'save_test_data' };
 
 			const collection = await getCollection();
+			sandbox.stub(collection, 'updateOne').returns({ matchedCount: 1, modifiedCount: 1 });
 
-			sandbox.stub(collection, 'updateOne').returns({
-				matchedCount: 0
-			});
+			const result = await mongodb.save(model, { id: itemSaved.id, value: 'save_test_data_updated' });
+			assert.deepEqual(result, itemSaved.id);
 
-			const result = await mongodb.save(model, { id: 1, value: 'save_test_data' });
+		});
 
-			assert.deepEqual(result, false);
+		it('should insert an item and auto fix \'_id\' unexpected fields when save an item', async () => {
+
+			const result = await mongodb.save(model, { id: undefined, value: 'save_test_data' });
+
+			assert.deepEqual(MongoDriver.ObjectID.isValid(result), true);
+			await clearMockedDatabase();
 		});
 
 		it('should throw when mongodb rejects the operation', async () => {

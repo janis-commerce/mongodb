@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Chanded
 - `insert` returns ID of the object inserted
 - `multiInsert` returns an `array` with ID of the objects inserted
+- `save` returns ID of the object if it was inserted, or the Unique Index used as filter if it was updated
 
 ## [1.3.0] - 2019-07-30
 ### Added
