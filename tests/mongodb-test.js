@@ -3,6 +3,7 @@
 const assert = require('assert');
 const sandbox = require('sinon').createSandbox();
 const mockRequire = require('mock-require');
+const MongoDriver = require('mongodb');
 
 mockRequire('mongodb', 'mongo-mock');
 
@@ -314,7 +315,7 @@ describe('MongoDB', () => {
 
 			const result = await mongodb.insert(model, {	value: 'insert_test_data' });
 
-			assert.deepEqual(result, true);
+			assert(MongoDriver.ObjectID.isValid(result));
 
 			await clearMockedDatabase();
 		});
