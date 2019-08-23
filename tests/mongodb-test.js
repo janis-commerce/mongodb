@@ -217,11 +217,11 @@ describe('MongoDB', () => {
 				id: ObjID
 			};
 
-			mongodb.prepareFields(fields);
+			const fieldsPrepared = mongodb.prepareFields(fields);
 
-			assert.deepEqual(typeof fields.id, 'undefined');
+			assert.deepEqual(typeof fieldsPrepared.id, 'undefined');
 
-			assert.deepEqual(fields._id, ObjID);
+			assert.deepEqual(fieldsPrepared._id, ObjID);
 		});
 
 		it('should do nothing when the \'_id\' exists and \'id\' not exists', () => {
@@ -232,11 +232,11 @@ describe('MongoDB', () => {
 				_id: ObjID
 			};
 
-			mongodb.prepareFields(fields);
+			const fieldsPrepared = mongodb.prepareFields(fields);
 
-			assert.deepEqual(typeof fields.id, 'undefined');
+			assert.deepEqual(typeof fieldsPrepared.id, 'undefined');
 
-			assert.deepEqual(fields._id, ObjID);
+			assert.deepEqual(fieldsPrepared._id, ObjID);
 		});
 	});
 
@@ -526,35 +526,69 @@ describe('MongoDB', () => {
 		it('should call bulkWrite when multi saving items and must return true if the result was successful', async () => {
 
 			const items = [
-				{ id: 1, value: 'multiSave_test_data' },
-				{ id: 2, value: 'multiSave_test_data' },
+				{ id: '00000061ea926a322ce28d34', value: 'multiSave_test_data' },
+				{ id: '0000005aea926a322ce28d26', value: 'multiSave_test_data' },
 				{ id: undefined, value: 'multiSave_test_data' }
 			];
 
 			const collection = await getCollection();
 
 			sandbox.stub(collection, 'bulkWrite').callsFake(updateItems => {
-				const fakeResult = {
-					result: {
-						ok: false
-					}
-				};
-				if(Array.isArray(updateItems) && typeof updateItems[0] === 'object')
-					fakeResult.result.ok = true;
+				const fakeResult = {};
+
+				if(Array.isArray(updateItems)) {
+					fakeResult.modifiedCount = 2;
+					fakeResult.upsertedCount = 1;
+					fakeResult.upsertedIds = { 2: '00000060ea926a322ce28d32' };
+				}
 
 				return fakeResult;
 			});
 
-			const result = await mongodb.multiSave(model, items);
+			const results = await mongodb.multiSave(model, items);
 
-			assert.deepEqual(result, true);
+			assert.strictEqual(Array.isArray(results), true);
+			results.forEach(id => assert.strictEqual(MongoDriver.ObjectID.isValid(id), true));
+		});
+
+		it('should call bulkWrite when multi saving items and must return true if the result was successful', async () => {
+
+			const items = [
+				{ id: undefined, value: 'multiSave_test_data_1' },
+				{ id: undefined, value: 'multiSave_test_data_2' },
+				{ id: undefined, value: 'multiSave_test_data_3' }
+			];
+
+			const collection = await getCollection();
+
+			sandbox.stub(collection, 'bulkWrite').callsFake(updateItems => {
+				const fakeResult = {};
+
+				if(Array.isArray(updateItems)) {
+					fakeResult.modifiedCount = 0;
+					fakeResult.upsertedCount = 3;
+					fakeResult.upsertedIds = {
+						0: '00000061ea926a322ce28d34',
+						1: '0000005aea926a322ce28d26',
+						2: '00000060ea926a322ce28d32'
+					};
+				}
+
+				return fakeResult;
+			});
+
+			const results = await mongodb.multiSave(model, items);
+
+			assert.strictEqual(Array.isArray(results), true);
+			results.forEach(id => assert.strictEqual(MongoDriver.ObjectID.isValid(id), true));
 		});
 
 		it('should return false when try to multi save without items', async () => {
 
-			const result = await mongodb.multiSave(model, []);
+			const results = await mongodb.multiSave(model, []);
 
-			assert.deepEqual(result, false);
+			assert.strictEqual(Array.isArray(results), true);
+			assert.deepEqual(results, []);
 		});
 
 		it('should throw when any of the save stacks rejects', async () => {

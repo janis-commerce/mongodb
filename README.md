@@ -91,13 +91,13 @@ getTotals return example:
 - ***async*** `save(model, {item})`
 Insert/update a item into the database.
 Requires a `model [Model]` and `item [Object]`.
-Returns `ID` if element was inserted or Unique Index used as filter if it was updated.
+Returns `ID` if element was inserted/updated.
 
 - ***async*** `multiSave(model, [{items}], limit)`
 Insert/update multiple items into the database.
 Requires a `model [Model]` and `items [Object array]`.
 `limit [Number]` (optional, default 1000): Specifies the max amount of items that can be written at same time.
-Returns `true/false` if the result was successfully or not.
+Returns `[Array]` with the `id` of the objects inserted/updated.
 
 - ***async*** `remove(model, {item})`
 Removes the specified item from the database.
@@ -195,7 +195,7 @@ mongo.createIndexes(model);
       { id: 1, value: 'sarasa 1' },
       { id: 2, value: 'sarasa 2' },
       { id: 3, value: 'sarasa 3' }
-   ]); // expected return: true
+   ]); // expected return: ['00000058faf66849077316ba', '00000059faf66849077316bb', '0000005afaf66849077316bc']
 
    // remove
    result = await mongo.remove(model, { id: '0000000055f2255a1a8e0c54' }); // expected return: true
