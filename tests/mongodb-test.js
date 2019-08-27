@@ -803,11 +803,11 @@ describe('MongoDB', () => {
 
 	describe('cleanFields()', () => {
 
-		it('should remove lastModified and dateCreated from the specified field', () => {
+		it('should remove dateModified and dateCreated from the specified field', () => {
 
 			const fields = {
 				value: 'sarasa',
-				lastModified: 'something',
+				dateModified: 'something',
 				dateCreated: 'something'
 			};
 
