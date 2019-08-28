@@ -210,10 +210,10 @@ describe('MongoDB', () => {
 
 		it('should replace the \'id\' field with \'_id\' when \'id\' exists', () => {
 
-			const ObjID = ObjectID(1);
+			const ObjID = ObjectID();
 
 			const fields = {
-				id: ObjID
+				id: ObjID.toString()
 			};
 
 			mongodb.prepareFields(fields);
@@ -223,9 +223,54 @@ describe('MongoDB', () => {
 			assert.deepEqual(fields._id, ObjID);
 		});
 
+		it('should replace the \'id\' field with \'_id\' when \'id\' exists and is an array', () => {
+
+			const ObjID = ObjectID();
+
+			const fields = {
+				id: [ObjID.toString()]
+			};
+
+			mongodb.prepareFields(fields);
+
+			assert.deepEqual(typeof fields.id, 'undefined');
+
+			assert.deepEqual(fields._id, [ObjID]);
+		});
+
+		it('should replace the \'id\' field with \'_id\' when \'id\' exists for filters', () => {
+
+			const ObjID = ObjectID();
+
+			const fields = {
+				id: ObjID.toString()
+			};
+
+			mongodb.prepareFields(fields, true);
+
+			assert.deepEqual(typeof fields.id, 'undefined');
+
+			assert.deepEqual(fields._id, ObjID);
+		});
+
+		it('should replace the \'id\' field with \'_id\' when \'id\' exists and is an array for filters', () => {
+
+			const ObjID = ObjectID();
+
+			const fields = {
+				id: [ObjID.toString()]
+			};
+
+			mongodb.prepareFields(fields, true);
+
+			assert.deepEqual(typeof fields.id, 'undefined');
+
+			assert.deepEqual(fields._id, { $in: [ObjID] });
+		});
+
 		it('should do nothing when the \'_id\' exists and \'id\' not exists', () => {
 
-			const ObjID = ObjectID(1);
+			const ObjID = ObjectID();
 
 			const fields = {
 				_id: ObjID
@@ -243,7 +288,7 @@ describe('MongoDB', () => {
 
 		it('should replace the \'_id\' field with \'id\' when \'_id\' exists', () => {
 
-			const ObjID = ObjectID(1);
+			const ObjID = ObjectID();
 
 			const fields = {
 				_id: ObjID
