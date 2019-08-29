@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ## Changed
 - `insert` returns ID of the object inserted
-- `save` returns ID of the object if it was inserted / updated
+- `save` returns ID of the object if it was inserted / Unique Index used as filter if it was updated
 
 ## [1.3.2] - 2019-08-28
 ### Fixed
