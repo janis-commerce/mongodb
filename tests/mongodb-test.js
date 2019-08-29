@@ -444,6 +444,36 @@ describe('MongoDB', () => {
 
 		});
 
+		it('should return unique Index (not ID) when try to save with that unique Index', async () => {
+
+			const itemToSave = { id: 1, unique: 'Not Equal', value: 'save_test_data' };
+
+			// Insert
+			let result = await mongodb.save(model, itemToSave);
+			assert.deepEqual(MongoDriver.ObjectID.isValid(result), true);
+
+			const itemSaved = await mongodb.get(model, { filters: { value: itemToSave.value } });
+			assert.deepEqual(itemSaved[0].value, itemToSave.value);
+			assert.deepEqual(itemSaved[0].unique, itemToSave.unique);
+
+			const itemToUpdate = { unique: itemToSave.unique, value: 'save_test_data_updated' };
+
+			// Update
+			result = await mongodb.save(model, itemToUpdate);
+			assert.deepEqual(result, itemToUpdate.unique);
+
+			const itemUpdated = await mongodb.get(model, { filters: { value: itemToUpdate.value } });
+			assert.deepEqual(itemUpdated[0].value, itemToUpdate.value);
+			assert.deepEqual(itemUpdated[0].unique, itemToUpdate.unique);
+
+			// Should be the same
+			assert.deepEqual(itemUpdated[0].unique, itemSaved[0].unique);
+			assert.deepEqual(itemUpdated[0].id, itemSaved[0].id);
+
+			await clearMockedDatabase();
+
+		});
+
 		it('should insert an item and auto fix \'_id\' unexpected fields when save an item', async () => {
 
 			const result = await mongodb.save(model, { id: undefined, value: 'save_test_data' });
