@@ -34,7 +34,7 @@ Requires a `model [Model]`
 - ***async*** `insert(model, {item})`
 Insert a item into the database.
 Requires a `model [Model]` and `item [Object]`.
-Returns `true` if the operation was successfull or `false` if not.
+Returns `String` *ID* of the item inserted or rejects if cannot.
 
 - ***async*** `multiInsert(model, [{items}])`
 Inserts multiple items into the database.
@@ -91,7 +91,7 @@ getTotals return example:
 - ***async*** `save(model, {item})`
 Insert/update a item into the database.
 Requires a `model [Model]` and `item [Object]`.
-Returns `true/false` if the result was successfully or not.
+Returns `String` **ID** of the item *inserted* or **Unique Index** used as filter if it was *updated* or rejects if cannot.
 
 - ***async*** `multiSave(model, [{items}], limit)`
 Insert/update multiple items into the database.
@@ -151,7 +151,7 @@ mongo.createIndexes(model);
    result = await mongo.insert(model, {
       id: 1,
       value: 'sarasa'
-   }); // expected return: true
+   }); // expected return: '000000054361564751d8516f'
 
    // multiInsert
    result = await mongo.multiInsert(model, [
@@ -188,7 +188,7 @@ mongo.createIndexes(model);
    result = await mongo.save(model, {
       id: 1,
       value: 'sarasa'
-   }); // expected return: true
+   }); // expected return: '00000058faf66849077316ba'
 
    // multiSave
    result = await mongo.multiSave(model, [

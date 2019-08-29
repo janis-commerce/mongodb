@@ -3,6 +3,7 @@
 const assert = require('assert');
 const sandbox = require('sinon').createSandbox();
 const mockRequire = require('mock-require');
+const MongoDriver = require('mongodb');
 
 mockRequire('mongodb', 'mongo-mock');
 
@@ -359,7 +360,7 @@ describe('MongoDB', () => {
 
 			const result = await mongodb.insert(model, {	value: 'insert_test_data' });
 
-			assert.deepEqual(result, true);
+			assert(MongoDriver.ObjectID.isValid(result));
 
 			await clearMockedDatabase();
 		});
@@ -419,35 +420,66 @@ describe('MongoDB', () => {
 		it('should upsert an item when save an unexisting and existing item', async () => {
 			// Insert
 			let result = await mongodb.save(model, { id: 1, value: 'save_test_data' });
-			assert.deepEqual(result, true);
+			assert.deepEqual(MongoDriver.ObjectID.isValid(result), true);
 			let item = await mongodb.get(model, { filters: { value: 'save_test_data' } });
 			assert.deepEqual(item[0].value, 'save_test_data');
 			// Update
 			result = await mongodb.save(model, { id: item[0].id, value: 'save_test_data_updated' });
-			assert.deepEqual(result, true);
+			assert.deepEqual(result, item[0].id.toString());
 			item = await mongodb.get(model, { filters: { id: item[0].id } });
 			assert.deepEqual(item[0].value, 'save_test_data_updated');
 
 			await clearMockedDatabase();
 		});
 
-		it('should insert an item and auto fix \'_id\' unexpected fields when save an item', async () => {
-			const result = await mongodb.save(model, { id: undefined, value: 'save_test_data' });
-			assert.deepEqual(result, true);
-			await clearMockedDatabase();
-		});
-
-		it('should return false when no items was updated/upserted', async () => {
+		it('should updated an existing item', async () => {
+			// To simulate real Updated MongoDB response, Mock response always response with the upsertId even in Update (and Mongo driver not)
+			const itemSaved = { id: '00000000ef72e55d7436f9ba', value: 'save_test_data' };
 
 			const collection = await getCollection();
+			sandbox.stub(collection, 'updateOne').returns({ matchedCount: 1, modifiedCount: 1 });
 
-			sandbox.stub(collection, 'updateOne').returns({
-				matchedCount: 0
-			});
+			const result = await mongodb.save(model, { id: itemSaved.id, value: 'save_test_data_updated' });
+			assert.deepEqual(result, itemSaved.id);
 
-			const result = await mongodb.save(model, { id: 1, value: 'save_test_data' });
+		});
 
-			assert.deepEqual(result, false);
+		it('should return unique Index (not ID) when try to save with that unique Index', async () => {
+
+			const itemToSave = { id: 1, unique: 'Not Equal', value: 'save_test_data' };
+
+			// Insert
+			let result = await mongodb.save(model, itemToSave);
+			assert.deepEqual(MongoDriver.ObjectID.isValid(result), true);
+
+			const itemSaved = await mongodb.get(model, { filters: { value: itemToSave.value } });
+			assert.deepEqual(itemSaved[0].value, itemToSave.value);
+			assert.deepEqual(itemSaved[0].unique, itemToSave.unique);
+
+			const itemToUpdate = { unique: itemToSave.unique, value: 'save_test_data_updated' };
+
+			// Update
+			result = await mongodb.save(model, itemToUpdate);
+			assert.deepEqual(result, itemToUpdate.unique);
+
+			const itemUpdated = await mongodb.get(model, { filters: { value: itemToUpdate.value } });
+			assert.deepEqual(itemUpdated[0].value, itemToUpdate.value);
+			assert.deepEqual(itemUpdated[0].unique, itemToUpdate.unique);
+
+			// Should be the same
+			assert.deepEqual(itemUpdated[0].unique, itemSaved[0].unique);
+			assert.deepEqual(itemUpdated[0].id, itemSaved[0].id);
+
+			await clearMockedDatabase();
+
+		});
+
+		it('should insert an item and auto fix \'_id\' unexpected fields when save an item', async () => {
+
+			const result = await mongodb.save(model, { id: undefined, value: 'save_test_data' });
+
+			assert.deepEqual(MongoDriver.ObjectID.isValid(result), true);
+			await clearMockedDatabase();
 		});
 
 		it('should throw when mongodb rejects the operation', async () => {
@@ -635,6 +667,46 @@ describe('MongoDB', () => {
 			await assert.rejects(mongodb.multiSave(), {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+	});
+
+	describe('remove()', () => {
+
+		it('should return true when successfully removes the item', async () => {
+
+			await mongodb.insert(model, { value: 'test_remove_item' });
+
+			const item = await mongodb.get(model, { filters: { value: 'test_remove_item' } });
+
+			const result = await mongodb.remove(model, { id: item[0].id });
+
+			assert.deepEqual(result, true);
+		});
+
+		it('should return false when can\'t remove the item', async () => {
+
+			const result = await mongodb.remove(model, { id: 1 });
+
+			assert.deepEqual(result, false);
+		});
+
+		it('should reject when try to remove an item with an invalid model', async () => {
+			await assert.rejects(mongodb.remove(), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
+		it('should throw when mongodb rejects the operation', async () => {
+
+			const collection = await getCollection();
+
+			sandbox.stub(collection, 'deleteOne').rejects(new Error('Internal mongodb error'));
+
+			await assert.rejects(mongodb.remove(model, { id: 1 }), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
 		});
 	});
