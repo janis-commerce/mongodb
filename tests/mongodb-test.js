@@ -211,32 +211,77 @@ describe('MongoDB', () => {
 
 		it('should replace the \'id\' field with \'_id\' when \'id\' exists', () => {
 
-			const ObjID = ObjectID(1);
+			const ObjID = ObjectID();
 
 			const fields = {
-				id: ObjID
+				id: ObjID.toString()
 			};
 
-			const fieldsPrepared = mongodb.prepareFields(fields);
+			mongodb.prepareFields(fields);
 
-			assert.deepEqual(typeof fieldsPrepared.id, 'undefined');
+			assert.deepEqual(typeof fields.id, 'undefined');
 
-			assert.deepEqual(fieldsPrepared._id, ObjID);
+			assert.deepEqual(fields._id, ObjID);
+		});
+
+		it('should replace the \'id\' field with \'_id\' when \'id\' exists and is an array', () => {
+
+			const ObjID = ObjectID();
+
+			const fields = {
+				id: [ObjID.toString()]
+			};
+
+			mongodb.prepareFields(fields);
+
+			assert.deepEqual(typeof fields.id, 'undefined');
+
+			assert.deepEqual(fields._id, [ObjID]);
+		});
+
+		it('should replace the \'id\' field with \'_id\' when \'id\' exists for filters', () => {
+
+			const ObjID = ObjectID();
+
+			const fields = {
+				id: ObjID.toString()
+			};
+
+			mongodb.prepareFields(fields, true);
+
+			assert.deepEqual(typeof fields.id, 'undefined');
+
+			assert.deepEqual(fields._id, ObjID);
+		});
+
+		it('should replace the \'id\' field with \'_id\' when \'id\' exists and is an array for filters', () => {
+
+			const ObjID = ObjectID();
+
+			const fields = {
+				id: [ObjID.toString()]
+			};
+
+			mongodb.prepareFields(fields, true);
+
+			assert.deepEqual(typeof fields.id, 'undefined');
+
+			assert.deepEqual(fields._id, { $in: [ObjID] });
 		});
 
 		it('should do nothing when the \'_id\' exists and \'id\' not exists', () => {
 
-			const ObjID = ObjectID(1);
+			const ObjID = ObjectID();
 
 			const fields = {
 				_id: ObjID
 			};
 
-			const fieldsPrepared = mongodb.prepareFields(fields);
+			mongodb.prepareFields(fields);
 
-			assert.deepEqual(typeof fieldsPrepared.id, 'undefined');
+			assert.deepEqual(typeof fields.id, 'undefined');
 
-			assert.deepEqual(fieldsPrepared._id, ObjID);
+			assert.deepEqual(fields._id, ObjID);
 		});
 	});
 
@@ -244,7 +289,7 @@ describe('MongoDB', () => {
 
 		it('should replace the \'_id\' field with \'id\' when \'_id\' exists', () => {
 
-			const ObjID = ObjectID(1);
+			const ObjID = ObjectID();
 
 			const fields = {
 				_id: ObjID
@@ -474,10 +519,9 @@ describe('MongoDB', () => {
 				{ id: 3, value: 'multiInsert_test_data' }
 			];
 
-			const results = await mongodb.multiInsert(model, items);
+			const result = await mongodb.multiInsert(model, items);
 
-			for(const result of results)
-				assert(MongoDriver.ObjectID.isValid(result));
+			assert.deepEqual(result, true);
 
 			items = await mongodb.get(model, { filters: { value: 'multiInsert_test_data' } });
 
@@ -526,69 +570,35 @@ describe('MongoDB', () => {
 		it('should call bulkWrite when multi saving items and must return true if the result was successful', async () => {
 
 			const items = [
-				{ id: '00000061ea926a322ce28d34', value: 'multiSave_test_data' },
-				{ id: '0000005aea926a322ce28d26', value: 'multiSave_test_data' },
+				{ id: 1, value: 'multiSave_test_data' },
+				{ id: 2, value: 'multiSave_test_data' },
 				{ id: undefined, value: 'multiSave_test_data' }
 			];
 
 			const collection = await getCollection();
 
 			sandbox.stub(collection, 'bulkWrite').callsFake(updateItems => {
-				const fakeResult = {};
-
-				if(Array.isArray(updateItems)) {
-					fakeResult.modifiedCount = 2;
-					fakeResult.upsertedCount = 1;
-					fakeResult.upsertedIds = { 2: '00000060ea926a322ce28d32' };
-				}
-
-				return fakeResult;
-			});
-
-			const results = await mongodb.multiSave(model, items);
-
-			assert.strictEqual(Array.isArray(results), true);
-			results.forEach(id => assert.strictEqual(MongoDriver.ObjectID.isValid(id), true));
-		});
-
-		it('should call bulkWrite when multi saving items and must return true if the result was successful', async () => {
-
-			const items = [
-				{ id: undefined, value: 'multiSave_test_data_1' },
-				{ id: undefined, value: 'multiSave_test_data_2' },
-				{ id: undefined, value: 'multiSave_test_data_3' }
-			];
-
-			const collection = await getCollection();
-
-			sandbox.stub(collection, 'bulkWrite').callsFake(updateItems => {
-				const fakeResult = {};
-
-				if(Array.isArray(updateItems)) {
-					fakeResult.modifiedCount = 0;
-					fakeResult.upsertedCount = 3;
-					fakeResult.upsertedIds = {
-						0: '00000061ea926a322ce28d34',
-						1: '0000005aea926a322ce28d26',
-						2: '00000060ea926a322ce28d32'
-					};
-				}
+				const fakeResult = {
+					result: {
+						ok: false
+					}
+				};
+				if(Array.isArray(updateItems) && typeof updateItems[0] === 'object')
+					fakeResult.result.ok = true;
 
 				return fakeResult;
 			});
 
-			const results = await mongodb.multiSave(model, items);
+			const result = await mongodb.multiSave(model, items);
 
-			assert.strictEqual(Array.isArray(results), true);
-			results.forEach(id => assert.strictEqual(MongoDriver.ObjectID.isValid(id), true));
+			assert.deepEqual(result, true);
 		});
 
 		it('should return false when try to multi save without items', async () => {
 
-			const results = await mongodb.multiSave(model, []);
+			const result = await mongodb.multiSave(model, []);
 
-			assert.strictEqual(Array.isArray(results), true);
-			assert.deepEqual(results, []);
+			assert.deepEqual(result, false);
 		});
 
 		it('should throw when any of the save stacks rejects', async () => {
@@ -627,6 +637,46 @@ describe('MongoDB', () => {
 			await assert.rejects(mongodb.multiSave(), {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+	});
+
+	describe('remove()', () => {
+
+		it('should return true when successfully removes the item', async () => {
+
+			await mongodb.insert(model, { value: 'test_remove_item' });
+
+			const item = await mongodb.get(model, { filters: { value: 'test_remove_item' } });
+
+			const result = await mongodb.remove(model, { id: item[0].id });
+
+			assert.deepEqual(result, true);
+		});
+
+		it('should return false when can\'t remove the item', async () => {
+
+			const result = await mongodb.remove(model, { id: 1 });
+
+			assert.deepEqual(result, false);
+		});
+
+		it('should reject when try to remove an item with an invalid model', async () => {
+			await assert.rejects(mongodb.remove(), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
+		it('should throw when mongodb rejects the operation', async () => {
+
+			const collection = await getCollection();
+
+			sandbox.stub(collection, 'deleteOne').rejects(new Error('Internal mongodb error'));
+
+			await assert.rejects(mongodb.remove(model, { id: 1 }), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
 		});
 	});
@@ -840,11 +890,11 @@ describe('MongoDB', () => {
 
 	describe('cleanFields()', () => {
 
-		it('should remove lastModified and dateCreated from the specified field', () => {
+		it('should remove dateModified and dateCreated from the specified field', () => {
 
 			const fields = {
 				value: 'sarasa',
-				lastModified: 'something',
+				dateModified: 'something',
 				dateCreated: 'something'
 			};
 

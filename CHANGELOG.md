@@ -5,12 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [Unreleased]
 ## Changed
 - `insert` returns ID of the object inserted
-- `multiInsert` returns an `array` with ID of the objects inserted
-- `save` returns ID of the object if it was inserted, or the Unique Index used as filter if it was updated
-- `multiSave` returns an `array` with ID of the objects inserted/updated
+- `save` returns ID of the object if it was inserted / updated
+
+## [1.3.2] - 2019-08-28
+### Fixed
+- `lastModified` field name was changed into `dateModified`
+
+## [1.3.1] - 2019-08-28
+### Fixed
+- Filtering by multiple IDs now works properly
 
 ## [1.3.0] - 2019-07-30
 ### Added

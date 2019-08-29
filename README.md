@@ -158,7 +158,7 @@ mongo.createIndexes(model);
       { id: 1, value: 'sarasa 1' },
       { id: 2, value: 'sarasa 2' },
       { id: 3, value: 'sarasa 3' }
-   ]); // expected return: ['00000058faf66849077316ba', '00000059faf66849077316bb', '0000005afaf66849077316bc']
+   ]); // expected return: true
 
    // update
    result = await mongo.update(model,
@@ -195,7 +195,7 @@ mongo.createIndexes(model);
       { id: 1, value: 'sarasa 1' },
       { id: 2, value: 'sarasa 2' },
       { id: 3, value: 'sarasa 3' }
-   ]); // expected return: ['00000058faf66849077316ba', '00000059faf66849077316bb', '0000005afaf66849077316bc']
+   ]); // expected return: true
 
    // remove
    result = await mongo.remove(model, { id: '0000000055f2255a1a8e0c54' }); // expected return: true
