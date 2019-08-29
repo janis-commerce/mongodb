@@ -34,12 +34,12 @@ Requires a `model [Model]`
 - ***async*** `insert(model, {item})`
 Insert a item into the database.
 Requires a `model [Model]` and `item [Object]`.
-Returns `id` of the item inserted or rejects if cannot.
+Returns `String` *ID* of the item inserted or rejects if cannot.
 
 - ***async*** `multiInsert(model, [{items}])`
 Inserts multiple items into the database.
 Requires a `model [Model]` and `item [Object array]`.
-Returns `[Array]` with the `id` of the objects inserted.
+Returns `true` if the operation was successfull or `false` if not.
 
 - ***async*** `update(model, {values}, {filter})`
 Updates one or multiple items from the database.
@@ -91,13 +91,13 @@ getTotals return example:
 - ***async*** `save(model, {item})`
 Insert/update a item into the database.
 Requires a `model [Model]` and `item [Object]`.
-Returns `ID` if element was inserted/updated.
+Returns `String` *ID* of the item inserted / updated or rejects if cannot.
 
 - ***async*** `multiSave(model, [{items}], limit)`
 Insert/update multiple items into the database.
 Requires a `model [Model]` and `items [Object array]`.
 `limit [Number]` (optional, default 1000): Specifies the max amount of items that can be written at same time.
-Returns `[Array]` with the `id` of the objects inserted/updated.
+Returns `true/false` if the result was successfully or not.
 
 - ***async*** `remove(model, {item})`
 Removes the specified item from the database.
