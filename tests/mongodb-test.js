@@ -15,7 +15,7 @@ MongoMock.max_delay = 0; // Evitar lags en los tests
 
 const MongoDB = require('./../index');
 
-const { MongoDBError, MongoDBConfigError } = require('./../lib');
+const { MongoDBError } = require('./../lib');
 
 class Model {
 
@@ -927,39 +927,5 @@ describe('MongoDB', () => {
 				value: 'sarasa'
 			});
 		});
-	});
-
-	describe('ConfigValidator', () => {
-
-		it('should throw invalid config when the config is not an object', () => {
-
-			assert.throws(() => new MongoDB([]), {
-				name: 'MongoDBConfigError',
-				code: MongoDBConfigError.codes.INVALID_CONFIG
-			});
-
-		});
-
-		it('should throw required setting when a required setting is missing', () => {
-
-			assert.throws(() => new MongoDB({}), {
-				name: 'MongoDBConfigError',
-				code: MongoDBConfigError.codes.REQUIRED_SETTING
-			});
-
-		});
-
-		it('should throw invalid setting when a setting has an unexpected type', () => {
-
-			assert.throws(() => new MongoDB({
-				database: 'myDB',
-				port: 'string'
-			}), {
-				name: 'MongoDBConfigError',
-				code: MongoDBConfigError.codes.INVALID_SETTING
-			});
-
-		});
-
 	});
 });
