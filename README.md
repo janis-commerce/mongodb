@@ -14,13 +14,23 @@ npm install --save @janiscommerce/mongodb
 - `new MongoDB({config})`
 Constructs the MongoDB driver instance, connected with the `config [Object]`.
 
-Config usage:
+**Config validations:**  
+
+- host `[String]` (optional): MongoDB host, default: `localhost`  
+- protocol `[String]` (optional): host protocol, default: `mongodb://`  
+- port `[Number]` (optional): host port, default: `27017`  
+- user `[String]` (optional): host username, default none  
+- password `[String]` (optional): host user password, default none  
+- database `[String]` **(required)**: MongoDB database
+- limit `[Number]` (optional): Limit for `get`/`getTotals` operations, default: `500`  
+
+**Config usage:**
 ```js
 {
-   protocol: 'mongodb://', // Default "mongodb://"
-   host: 'localhost', // Default "localhost"
-   port: 27017, // Default 27017
-   limit: 500, // Default 500
+   protocol: 'mongodb://',
+   host: 'localhost',
+   port: 27017,
+   limit: 500,
    user: 'fizzmod',
    password: 'sarasa',
    database: 'myDB'
@@ -112,7 +122,7 @@ Returns `deletedCount [Number]`.
 ## Errors
 
 The errors are informed with a `MongoDBError`.
-This object has a code that can be useful for a correct error handling.
+This object has a code that can be useful for a correct error handling.  
 The codes are the following:
 
 | Code | Description                    |
@@ -121,8 +131,17 @@ The codes are the following:
 | 2    | Empty unique indexes           |
 | 3    | Invalid or empty model         |
 | 4    | Internal mongodb error         |
-| 5    | Invalid config                 |
-| 6    | Invalid item                   |
+| 5    | Invalid item                   |
+
+The config validation errors are informed with a `MongoDBConfigError`
+This object has a code that can be useful for a correct error handling.  
+The codes are the following:
+
+| Code | Description                    |
+|------|--------------------------------|
+| 1    | Invalid config                 |
+| 2    | Invalid setting                |
+| 3    | Required setting               |
 
 ## Usage
 

@@ -6,9 +6,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- `config-validator` module
+- `MongoDBConfigError` module
+- config validations
 
 ## [1.3.3] - 2019-08-29
-## Fixed
+### Fixed
 - Now `insert` returns ID of the object inserted, as it was expected
 - Now `save` returns ID of the object if it was inserted / Unique Index used as filter if it was updated, as it was expected
 
