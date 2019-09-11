@@ -1,5 +1,8 @@
 'use strict';
 
+// Clear node require caches
+Object.keys(require.cache).forEach(key => { delete require.cache[key]; });
+
 const assert = require('assert');
 const sandbox = require('sinon').createSandbox();
 const mockRequire = require('mock-require');
