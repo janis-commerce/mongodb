@@ -303,7 +303,7 @@ describe('MongoDB', () => {
 		});
 	});
 
-	describe('getFilter()', () => {
+	describe('getFilters()', () => {
 
 		it('should return non empty filter object when get filters with an array as parameter', () => {
 
@@ -311,14 +311,14 @@ describe('MongoDB', () => {
 				return [['id']];
 			});
 
-			const result = mongodb.getFilter(model, { id: 1 });
+			const result = mongodb.getFilters(model, { id: 1 });
 
 			assert.deepEqual(result.id, 1);
 		});
 
 		it('should return non empty filter object when get filters with an object as parameter', () => {
 
-			const result = mongodb.getFilter(model, { id: 1 });
+			const result = mongodb.getFilters(model, { id: 1 });
 
 			assert.deepEqual(result.id, 1);
 		});
@@ -326,7 +326,7 @@ describe('MongoDB', () => {
 		it('should throw when get filters with a model without unique indexes', () => {
 
 			assert.throws(() => {
-				mongodb.getFilter({});
+				mongodb.getFilters({});
 			}, {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.MODEL_EMPTY_UNIQUE_INDEXES
@@ -336,7 +336,7 @@ describe('MongoDB', () => {
 		it('should throw when try to get filters and the model unique indexes not matches with any of the filters', () => {
 
 			assert.throws(() => {
-				mongodb.getFilter(model);
+				mongodb.getFilters(model);
 			}, {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.EMPTY_UNIQUE_INDEXES
@@ -346,7 +346,7 @@ describe('MongoDB', () => {
 
 		it('should throw when get filters with an invalid model', () => {
 			assert.throws(() => {
-				mongodb.getFilter();
+				mongodb.getFilters();
 			}, {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.INVALID_MODEL
