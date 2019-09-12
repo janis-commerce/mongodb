@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - `config-validator` module
 - `MongoDBConfigError` module
-- config validations
+- config validations  
+- indexes and uniqueIndexes docs
 
 ## [1.3.3] - 2019-08-29
 ### Fixed

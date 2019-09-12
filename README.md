@@ -11,7 +11,7 @@ npm install --save @janiscommerce/mongodb
 
 ## API
 
-- `new MongoDB({config})`
+### `new MongoDB({config})`
 Constructs the MongoDB driver instance, connected with the `config [Object]`.
 
 **Config validations:**  
@@ -37,26 +37,55 @@ Constructs the MongoDB driver instance, connected with the `config [Object]`.
 }
 ```
 
-- ***async*** `createIndexes(model)`
-Creates indexes and unique indexes from the model to the MongoDB database.
-Requires a `model [Model]`
+### ***async*** `createIndexes(model)`
+Creates indexes and unique indexes from the model to the MongoDB database.  
+Requires a `model [Model]`  
+**Important:** This method must be executed before any operation with new databases. If not, the unique indexes will not have any effect in your database.  
 
-- ***async*** `insert(model, {item})`
+**Indexes and unique indexes in Model:**  
+In order to avoid errors you must to specify your indexes and unique indexes in the Model:  
+- indexes `[Array]`: The indexes of your model, also you can add an `[Array]` for combine indexes. See example below.  
+- uniqueIndexes `[Array]`: The unique indexes of your model, also you can add an `[Array]` for combine unique indexes. See example below.  
+
+**Combined indexes are used for getting filters with multiple indexes due they are combined as one**
+
+**Model example**  
+```js
+class MyModel extends Model {
+
+   static get uniqueIndexes() {
+      return [
+         'myUniqueIndex',
+         ['my', 'combined','unique','indexes']
+      ];
+   }
+
+   static get indexes() {
+      return [
+         'myIndex',
+         ['my', 'combined', 'indexes']
+      ];
+   }
+
+}
+```
+
+### ***async*** `insert(model, {item})`
 Insert a item into the database.
 Requires a `model [Model]` and `item [Object]`.
 Returns `String` *ID* of the item inserted or rejects if cannot.
 
-- ***async*** `multiInsert(model, [{items}])`
+### ***async*** `multiInsert(model, [{items}])`
 Inserts multiple items into the database.
 Requires a `model [Model]` and `item [Object array]`.
 Returns `true` if the operation was successfull or `false` if not.
 
-- ***async*** `update(model, {values}, {filter})`
+### ***async*** `update(model, {values}, {filter})`
 Updates one or multiple items from the database.
 Requires a `model [Model]`, `values [Object]` and `filter [Object]` (MongoDB filter).
 Returns the modified/updated elements count.
 
-- ***async*** `get(model, {parameters})`
+### ***async*** `get(model, {parameters})`
 Search elements from the database then returns an `[Array]` with the results `[Object]`.
 Requires a `model [Model]`, `parameters [Object]` are optional.
 
@@ -83,7 +112,7 @@ Parameters example:
 }
 ```
 
-- ***async*** `getTotals(model)`
+### ***async*** `getTotals(model)`
 Get the totals of the items from the latest get operation with pagination.
 Requires a `model [Model]`
 Returns an `[Object]` with the total count, page size, pages and selected page.
@@ -98,23 +127,23 @@ getTotals return example:
 }
 ```
 
-- ***async*** `save(model, {item})`
+### ***async*** `save(model, {item})`
 Insert/update a item into the database.
 Requires a `model [Model]` and `item [Object]`.
 Returns `String` **ID** of the item *inserted* or **Unique Index** used as filter if it was *updated* or rejects if cannot.
 
-- ***async*** `multiSave(model, [{items}], limit)`
+### ***async*** `multiSave(model, [{items}], limit)`
 Insert/update multiple items into the database.
 Requires a `model [Model]` and `items [Object array]`.
 `limit [Number]` (optional, default 1000): Specifies the max amount of items that can be written at same time.
 Returns `true/false` if the result was successfully or not.
 
-- ***async*** `remove(model, {item})`
+### ***async*** `remove(model, {item})`
 Removes the specified item from the database.
 Requires a `model [Model]` and `item [Object]`.
 Returns `true/false` if the result was successfully or not.
 
-- ***async*** `multiRemove(model, {filter})`
+### ***async*** `multiRemove(model, {filter})`
 Removes multiple items from the database.
 Requires a `model [Model]` and `filter [Object]` (MongoDB filter).
 Returns `deletedCount [Number]`.
