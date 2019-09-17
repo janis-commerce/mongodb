@@ -82,7 +82,7 @@ describe('MongoDB', () => {
 				result = newMongo.config;
 			});
 
-			assert.deepEqual(result.port, 27017);
+			assert.deepStrictEqual(result.port, 27017);
 
 		});
 	});
@@ -133,11 +133,11 @@ describe('MongoDB', () => {
 	describe('formatIndex()', () => {
 
 		it('should return a formatted index object when recieves an array as parameter', async () => {
-			assert.deepEqual(mongodb.formatIndex(['foo', 'bar']), { foo: 1, bar: 1 });
+			assert.deepStrictEqual(mongodb.formatIndex(['foo', 'bar']), { foo: 1, bar: 1 });
 		});
 
 		it('should return formatted index object when recieves a string as parameter', () => {
-			assert.deepEqual(mongodb.formatIndex('foo'), { foo: 1 });
+			assert.deepStrictEqual(mongodb.formatIndex('foo'), { foo: 1 });
 		});
 	});
 
@@ -159,7 +159,7 @@ describe('MongoDB', () => {
 			});
 
 			await assert.doesNotReject(mongodb.createIndexes(model));
-			assert.deepEqual(createIndex.called, true);
+			assert.deepStrictEqual(createIndex.called, true);
 		});
 
 		it('should not reject when create indexes without indexes in the model', async () => {
@@ -171,7 +171,7 @@ describe('MongoDB', () => {
 			});
 
 			await assert.doesNotReject(mongodb.createIndexes(model));
-			assert.deepEqual(createIndex.called, true);
+			assert.deepStrictEqual(createIndex.called, true);
 		});
 
 		it('should not reject when create indexes with indexes and unique indexes in the model', async () => {
@@ -180,7 +180,7 @@ describe('MongoDB', () => {
 
 			await assert.doesNotReject(mongodb.createIndexes(model));
 
-			assert.deepEqual(createIndex.called, true);
+			assert.deepStrictEqual(createIndex.called, true);
 		});
 
 		it('should reject when try to create indexes with an invalid model', async () => {
@@ -215,9 +215,9 @@ describe('MongoDB', () => {
 
 			mongodb.prepareFields(fields);
 
-			assert.deepEqual(typeof fields.id, 'undefined');
+			assert.deepStrictEqual(typeof fields.id, 'undefined');
 
-			assert.deepEqual(fields._id, ObjID);
+			assert.deepStrictEqual(fields._id, ObjID);
 		});
 
 		it('should replace the \'id\' field with \'_id\' when \'id\' exists and is an array', () => {
@@ -230,9 +230,9 @@ describe('MongoDB', () => {
 
 			mongodb.prepareFields(fields);
 
-			assert.deepEqual(typeof fields.id, 'undefined');
+			assert.deepStrictEqual(typeof fields.id, 'undefined');
 
-			assert.deepEqual(fields._id, [ObjID]);
+			assert.deepStrictEqual(fields._id, [ObjID]);
 		});
 
 		it('should replace the \'id\' field with \'_id\' when \'id\' exists for filters', () => {
@@ -245,9 +245,9 @@ describe('MongoDB', () => {
 
 			mongodb.prepareFields(fields, true);
 
-			assert.deepEqual(typeof fields.id, 'undefined');
+			assert.deepStrictEqual(typeof fields.id, 'undefined');
 
-			assert.deepEqual(fields._id, ObjID);
+			assert.deepStrictEqual(fields._id, ObjID);
 		});
 
 		it('should replace the \'id\' field with \'_id\' when \'id\' exists and is an array for filters', () => {
@@ -260,9 +260,9 @@ describe('MongoDB', () => {
 
 			mongodb.prepareFields(fields, true);
 
-			assert.deepEqual(typeof fields.id, 'undefined');
+			assert.deepStrictEqual(typeof fields.id, 'undefined');
 
-			assert.deepEqual(fields._id, { $in: [ObjID] });
+			assert.deepStrictEqual(fields._id, { $in: [ObjID] });
 		});
 
 		it('should do nothing when the \'_id\' exists and \'id\' not exists', () => {
@@ -275,9 +275,9 @@ describe('MongoDB', () => {
 
 			mongodb.prepareFields(fields);
 
-			assert.deepEqual(typeof fields.id, 'undefined');
+			assert.deepStrictEqual(typeof fields.id, 'undefined');
 
-			assert.deepEqual(fields._id, ObjID);
+			assert.deepStrictEqual(fields._id, ObjID);
 		});
 	});
 
@@ -293,9 +293,9 @@ describe('MongoDB', () => {
 
 			mongodb.prepareFieldsForOutput(fields);
 
-			assert.deepEqual(typeof fields._id, 'undefined');
+			assert.deepStrictEqual(typeof fields._id, 'undefined');
 
-			assert.deepEqual(fields.id, ObjID);
+			assert.deepStrictEqual(fields.id, ObjID);
 		});
 	});
 
@@ -309,14 +309,14 @@ describe('MongoDB', () => {
 
 			const result = mongodb.getFilter(model, { id: 1 });
 
-			assert.deepEqual(result.id, 1);
+			assert.deepStrictEqual(result.id, 1);
 		});
 
 		it('should return non empty filter object when get filters with an object as parameter', () => {
 
 			const result = mongodb.getFilter(model, { id: 1 });
 
-			assert.deepEqual(result.id, 1);
+			assert.deepStrictEqual(result.id, 1);
 		});
 
 		it('should throw when get filters with a model without unique indexes', () => {
@@ -386,7 +386,7 @@ describe('MongoDB', () => {
 
 			const result = await mongodb.get(model, { order: { id: 'asc' } });
 
-			assert.deepEqual(result[0].value, 'get_test_data');
+			assert.deepStrictEqual(result[0].value, 'get_test_data');
 
 			await clearMockedDatabase();
 		});
@@ -415,16 +415,15 @@ describe('MongoDB', () => {
 
 		it('should upsert an item when save an unexisting and existing item', async () => {
 			// Insert
-			let result = await mongodb.save(model, { id: 1, value: 'save_test_data' });
-			assert.deepEqual(MongoDriver.ObjectID.isValid(result), true);
+			let result = await mongodb.save(model, { id: '5d5476783cb30600068170df', value: 'save_test_data' });
+			assert.deepStrictEqual(MongoDriver.ObjectID.isValid(result), true);
 			let item = await mongodb.get(model, { filters: { value: 'save_test_data' } });
-			assert.deepEqual(item[0].value, 'save_test_data');
+			assert.deepStrictEqual(item[0].value, 'save_test_data');
 			// Update
 			result = await mongodb.save(model, { id: item[0].id, value: 'save_test_data_updated' });
-			assert.deepEqual(result, item[0].id.toString());
+			assert.deepStrictEqual(result, item[0].id.toString());
 			item = await mongodb.get(model, { filters: { id: item[0].id } });
-			assert.deepEqual(item[0].value, 'save_test_data_updated');
-
+			assert.deepStrictEqual(item[0].value, 'save_test_data_updated');
 			await clearMockedDatabase();
 		});
 
@@ -436,7 +435,7 @@ describe('MongoDB', () => {
 			sandbox.stub(collection, 'updateOne').returns({ matchedCount: 1, modifiedCount: 1 });
 
 			const result = await mongodb.save(model, { id: itemSaved.id, value: 'save_test_data_updated' });
-			assert.deepEqual(result, itemSaved.id);
+			assert.deepStrictEqual(result, itemSaved.id);
 
 		});
 
@@ -446,25 +445,25 @@ describe('MongoDB', () => {
 
 			// Insert
 			let result = await mongodb.save(model, itemToSave);
-			assert.deepEqual(MongoDriver.ObjectID.isValid(result), true);
+			assert.deepStrictEqual(MongoDriver.ObjectID.isValid(result), true);
 
 			const itemSaved = await mongodb.get(model, { filters: { value: itemToSave.value } });
-			assert.deepEqual(itemSaved[0].value, itemToSave.value);
-			assert.deepEqual(itemSaved[0].unique, itemToSave.unique);
+			assert.deepStrictEqual(itemSaved[0].value, itemToSave.value);
+			assert.deepStrictEqual(itemSaved[0].unique, itemToSave.unique);
 
 			const itemToUpdate = { unique: itemToSave.unique, value: 'save_test_data_updated' };
 
 			// Update
 			result = await mongodb.save(model, itemToUpdate);
-			assert.deepEqual(result, itemToUpdate.unique);
+			assert.deepStrictEqual(result, itemToUpdate.unique);
 
 			const itemUpdated = await mongodb.get(model, { filters: { value: itemToUpdate.value } });
-			assert.deepEqual(itemUpdated[0].value, itemToUpdate.value);
-			assert.deepEqual(itemUpdated[0].unique, itemToUpdate.unique);
+			assert.deepStrictEqual(itemUpdated[0].value, itemToUpdate.value);
+			assert.deepStrictEqual(itemUpdated[0].unique, itemToUpdate.unique);
 
 			// Should be the same
-			assert.deepEqual(itemUpdated[0].unique, itemSaved[0].unique);
-			assert.deepEqual(itemUpdated[0].id, itemSaved[0].id);
+			assert.deepStrictEqual(itemUpdated[0].unique, itemSaved[0].unique);
+			assert.deepStrictEqual(itemUpdated[0].id, itemSaved[0].id);
 
 			await clearMockedDatabase();
 
@@ -474,7 +473,7 @@ describe('MongoDB', () => {
 
 			const result = await mongodb.save(model, { id: undefined, value: 'save_test_data' });
 
-			assert.deepEqual(MongoDriver.ObjectID.isValid(result), true);
+			assert.deepStrictEqual(MongoDriver.ObjectID.isValid(result), true);
 			await clearMockedDatabase();
 		});
 
@@ -506,11 +505,11 @@ describe('MongoDB', () => {
 
 			const result = await mongodb.update(model, { value: 'update_test_data_updated' }, { value: 'update_test_data' });
 
-			assert.deepEqual(result, 1);
+			assert.deepStrictEqual(result, 1);
 
 			const item = await mongodb.get(model, { value: 'update_test_data_updated' });
 
-			assert.deepEqual(item[0].value, 'update_test_data_updated');
+			assert.deepStrictEqual(item[0].value, 'update_test_data_updated');
 
 			await clearMockedDatabase();
 		});
@@ -547,11 +546,11 @@ describe('MongoDB', () => {
 
 			const result = await mongodb.multiInsert(model, items);
 
-			assert.deepEqual(result, true);
+			assert.deepStrictEqual(result, true);
 
 			items = await mongodb.get(model, { filters: { value: 'multiInsert_test_data' } });
 
-			assert.deepEqual(items.length, 3);
+			assert.deepStrictEqual(items.length, 3);
 
 			await clearMockedDatabase();
 		});
@@ -617,14 +616,14 @@ describe('MongoDB', () => {
 
 			const result = await mongodb.multiSave(model, items);
 
-			assert.deepEqual(result, true);
+			assert.deepStrictEqual(result, true);
 		});
 
 		it('should return false when try to multi save without items', async () => {
 
 			const result = await mongodb.multiSave(model, []);
 
-			assert.deepEqual(result, false);
+			assert.deepStrictEqual(result, false);
 		});
 
 		it('should throw when any of the save stacks rejects', async () => {
@@ -677,14 +676,14 @@ describe('MongoDB', () => {
 
 			const result = await mongodb.remove(model, { id: item[0].id });
 
-			assert.deepEqual(result, true);
+			assert.deepStrictEqual(result, true);
 		});
 
 		it('should return false when can\'t remove the item', async () => {
 
 			const result = await mongodb.remove(model, { id: 1 });
 
-			assert.deepEqual(result, false);
+			assert.deepStrictEqual(result, false);
 		});
 
 		it('should reject when try to remove an item with an invalid model', async () => {
@@ -761,11 +760,11 @@ describe('MongoDB', () => {
 				return { deletedCount: 0 };
 			});
 
-			await mongodb.multiInsert(model, [{ value: 'deleteThis' }, { value: 'deleteThis2' }]);
+			await mongodb.multiInsert(model, [{ store: 'deleteThis' }, { store: 'deleteThis2' }]);
 
-			const result = await mongodb.multiRemove(model, { value: { $in: ['deleteThis', 'deleteThis2'] } });
+			const result = await mongodb.multiRemove(model, { filter: { store: { value: ['deleteThis', 'deleteThis2'], type: 'in' } } });
 
-			assert.deepEqual(result, 2);
+			assert.deepStrictEqual(result, 2);
 
 			await clearMockedDatabase();
 		});
@@ -803,15 +802,15 @@ describe('MongoDB', () => {
 				.map((item, i) => {
 					return {
 						id: i,
-						value: `get_totals_test ${i}`
+						field: `get_totals_test ${i}`
 					};
 				});
 
 			await mongodb.multiInsert(model, inserts);
 
-			await mongodb.get(model, { limit: 5, page: 1, filters: { value: /get_totals_test/ } });
+			await mongodb.get(model, { limit: 5, page: 1, filters: { field: { value: /get_totals_test/, type: 'reg' } } });
 
-			assert.deepEqual(await mongodb.getTotals(model), {
+			assert.deepStrictEqual(await mongodb.getTotals(model), {
 				total: 10,
 				pageSize: 5,
 				pages: 2,
@@ -834,7 +833,7 @@ describe('MongoDB', () => {
 				page: 100
 			};
 
-			assert.deepEqual(await mongodb.getTotals(model), {
+			assert.deepStrictEqual(await mongodb.getTotals(model), {
 				total: 100,
 				pageSize: 10,
 				pages: 10,
@@ -850,7 +849,7 @@ describe('MongoDB', () => {
 				return 100;
 			});
 
-			assert.deepEqual(await mongodb.getTotals(model), {
+			assert.deepStrictEqual(await mongodb.getTotals(model), {
 				total: 100,
 				pageSize: 500,
 				pages: 1,
@@ -860,7 +859,7 @@ describe('MongoDB', () => {
 
 		it('should return zero totals when get the totals with a last empty query in the model', async () => {
 			model.lastQueryEmpty = true;
-			assert.deepEqual(await mongodb.getTotals(model), {
+			assert.deepStrictEqual(await mongodb.getTotals(model), {
 				total: 0,
 				pages: 0
 			});

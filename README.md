@@ -106,11 +106,98 @@ Parameters example:
    filters: {
       itemField: 'foobar',
       otherItemField: {
-         $in: ['foo', 'bar']
-      },
+         'value': ['foo', 'bar'],
+         'type' : 'in'
+      }
    }
 }
 ```
+##### Filters
+
+The filters has a structure to apply, by default uses `equal`.
+For example:
+```js
+{
+   filters: {
+    'aField': 'valueToFilter'
+   }
+}
+```
+Transforms to:
+```js
+{
+   <aField>: { $eq: <valueToFilter> }
+}
+```
+If you want to apply different filters it should be as follows:
+```js
+{
+    filters: {
+        'aField': { 
+            value: 'valueToFilter', // required(string or array)
+            type: 'aTypeChoosen' //optional
+        }
+   }
+}
+```
+
+The possible types to use are:
+
+| Filter        | Mongo filter          |
+|---------------|-----------------------|
+| equal         | $eq                   |
+| not           | $ne                   |
+| greater       | $gt                   |
+| greaterOrEqual| $gte                  |
+| lesser        | $lt                   |
+| lesserOrEqual | $lte                  |
+| in            | $in                   |
+| notIn         | $nin                  |
+| reg           | $reg                  |
+| all           | $all                  |
+
+
+You can also add filters in the model defining the `fields` function as follow:
+```js
+static get fields() {
+    return {
+        'aFieldWithName': {
+            type: 'aTypeDefined',
+            field: 'fieldInMongoDB'
+        },
+        'anotherFieldName': {
+            type: 'aTypeDefined',
+            field: 'fieldInMongoDB'
+        },
+        {
+            ...
+        }
+    }
+}
+```
+In which we have:
+
+`afieldWithName` and `anotherFieldName` as name default in Model <br/>
+`aTypeDefined` as a possible type to use as filter<br/>
+`fieldInMongoDB` as the field in MongoDB to compare<br/>
+
+For example:
+
+```js
+static get fields() {
+    return {
+        date_from: {
+            type: 'greaterOrEqual',
+            field: 'date'
+        },
+        date_from_g: {
+            type: 'greater',
+            field: 'date'
+        }
+    }
+}
+```
+
 
 ### ***async*** `getTotals(model)`
 Get the totals of the items from the latest get operation with pagination.
