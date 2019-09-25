@@ -762,7 +762,7 @@ describe('MongoDB', () => {
 
 			await mongodb.multiInsert(model, [{ store: 'deleteThis' }, { store: 'deleteThis2' }]);
 
-			const result = await mongodb.multiRemove(model, { filter: { store: { value: ['deleteThis', 'deleteThis2'], type: 'in' } } });
+			const result = await mongodb.multiRemove(model, { store: { value: ['deleteThis', 'deleteThis2'], type: 'in' } });
 
 			assert.deepStrictEqual(result, 2);
 

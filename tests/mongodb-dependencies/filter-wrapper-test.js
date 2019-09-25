@@ -123,7 +123,7 @@ describe('MongoDB', () => {
 
 	describe('Using FilterWrapper with filters', () => {
 
-		it('should get an equal value if isnt defined type', async () => {
+		it('should get an equal value if isn\'t defined type', async () => {
 			collectionStub.toArray.returns([response]);
 			const item = await mongodb.get(model, { filters: { bla: 'foo', gain: 10 } });
 			assert.deepStrictEqual(item[0], response);
