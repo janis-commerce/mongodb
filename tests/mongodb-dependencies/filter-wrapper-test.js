@@ -51,7 +51,7 @@ class Model {
 				field: 'date'
 			},
 			store_dist: {
-				type: 'not',
+				type: 'notEqual',
 				field: 'store'
 			},
 			store_equal: 'AB'
@@ -156,7 +156,7 @@ describe('MongoDB', () => {
 				{
 					store: {
 						value: 'Janis',
-						type: 'not'
+						type: 'notEqual'
 					},
 					bla: 'afoo'
 				},
