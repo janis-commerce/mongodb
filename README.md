@@ -112,7 +112,7 @@ Parameters example:
    }
 }
 ```
-##### Filters
+#### Filters
 
 The filters has a structure to apply, by default uses `equal`.
 For example:
@@ -141,19 +141,32 @@ If you want to apply different filters it should be as follows:
 }
 ```
 
+#### Nested filters
+Also you can use nested filters, for example:
+```js
+{
+   filters: {
+      'aField.property':{
+         value: 'valueToFilter', // required(string or array)
+         type: 'aTypeChoosen' //optional
+      }
+   }
+}
+```
+
 The possible types to use are:
 
 | Filter        | Mongo filter          |
 |---------------|-----------------------|
 | equal         | $eq                   |
-| not           | $ne                   |
+| notEqual      | $ne                   |
 | greater       | $gt                   |
 | greaterOrEqual| $gte                  |
 | lesser        | $lt                   |
 | lesserOrEqual | $lte                  |
 | in            | $in                   |
 | notIn         | $nin                  |
-| reg           | $reg                  |
+| search        | $regex                |
 | all           | $all                  |
 
 

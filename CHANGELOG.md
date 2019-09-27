@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - `filter-wrapper` Module
 - Model filter handling
+- `search` filter support
+- nested filters documentation
+### Fixed
+- `notEqual` filter type
 
 ## [1.4.0] - 2019-09-12
 ### Added
