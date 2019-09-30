@@ -142,13 +142,23 @@ If you want to apply different filters it should be as follows:
 ```
 
 #### Nested filters
-Also you can use nested filters, for example:
+If you want to filter by fields inside objects, you can use nested filters. For example:
 ```js
 {
+
+   /* item example
+   {
+      id: 'some-id',
+      aField: {
+         property: 'foobar'
+      }
+   }
+   */
+
    filters: {
       'aField.property':{
-         value: 'valueToFilter', // required(string or array)
-         type: 'aTypeChoosen' //optional
+         value: 'foobar', // required(string or array)
+         type: 'equal' //optional
       }
    }
 }
