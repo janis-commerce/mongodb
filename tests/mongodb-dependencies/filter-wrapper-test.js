@@ -260,12 +260,19 @@ describe('MongoDB', () => {
 		});
 
 		it('should get all values that accomplish one value of filter if define a array to search', async () => {
-			// Insert
 			const resultIn = [{ id: 1, store: ['save_test_data', 'blabla'] }, { id: 2, store: ['blabla', 'new_foo_value'] }];
 			collectionStub.toArray.returns(resultIn);
 			const item = await mongodb.get(model, { filters: { store: { value: ['blabla'], type: 'in' } } });
 			assert.deepStrictEqual(item.length, 2);
 			sandbox.assert.calledWithExactly(collectionStub.find, { store: { $in: ['blabla'] } });
+		});
+
+		it('should get between values that accomplish the two filters if define as an and', async () => {
+			const resultIn = [{ id: 1, store: 'blabla', date: '2019-07-20' }, { id: 2, date: '2019-08-20', store: 'blabla' }];
+			collectionStub.toArray.returns(resultIn);
+			const item = await mongodb.get(model, { filters: { date_from: '2019-08-10', date_to: '2019-09-09' } });
+			assert.deepStrictEqual(item.length, 2);
+			sandbox.assert.calledWithExactly(collectionStub.find, { date: { $lte: '2019-09-09', $gte: '2019-08-10' } });
 		});
 
 	});
