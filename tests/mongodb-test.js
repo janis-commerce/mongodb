@@ -50,7 +50,7 @@ const model = new Model();
 
 const getCollection = async () => {
 	await mongodb.checkConnection();
-	return mongodb.client.db(mongodb.config.database)
+	return mongodb.db
 		.collection(model.constructor.table);
 };
 
@@ -118,8 +118,8 @@ describe('MongoDB', () => {
 
 		it('should reject when MongoClient cant\'t connect', async () => {
 
-			if(mongodb.client)
-				delete mongodb.client;
+			if(mongodb.db)
+				delete mongodb.db;
 
 			sandbox.stub(MongoClient, 'connect').rejects(new Error('Invalid connection string'));
 
@@ -145,7 +145,7 @@ describe('MongoDB', () => {
 
 		const createIndexesStub = async () => {
 			await mongodb.checkConnection();
-			const collection = mongodb.client.db(mongodb.config.database)
+			const collection = mongodb.db
 				.collection(model.constructor.table);
 			return sandbox.stub(collection, 'createIndex');
 		};
