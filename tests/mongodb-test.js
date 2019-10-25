@@ -130,6 +130,25 @@ describe('MongoDB', () => {
 			sandbox.assert.calledOnce(spy);
 
 		});
+
+		it('should cache connection and call connect method just once when multiple checkConnection called', async () => {
+
+			const newMongo = new MongoDB({
+				host: 'localhost',
+				user: 'root',
+				password: '1234',
+				database: 'myDB'
+			});
+
+			// sandbox.stub(newMongo, 'db').returns('asdf');
+			newMongo.cleanCache();
+			const spy = sandbox.spy(MongoClient, 'connect');
+
+			await assert.doesNotReject(newMongo.checkConnection());
+			await assert.doesNotReject(newMongo.checkConnection());
+
+			sandbox.assert.calledOnce(spy);
+		});
 	});
 
 	describe('formatIndex()', () => {
@@ -280,22 +299,6 @@ describe('MongoDB', () => {
 			assert.deepStrictEqual(typeof fields.id, 'undefined');
 
 			assert.deepStrictEqual(fields._id, ObjID);
-		});
-
-		it('should not reject when MongoClient can\'t reject cause is in cache the const clients is used', async () => {
-
-			const newMongo = new MongoDB({
-				host: 'localhost',
-				user: 'root',
-				password: '1234',
-				database: 'myDB'
-			});
-
-			sandbox.mock(MongoClient).expects('connect')
-				.once()
-				.rejects('Error when connects');
-
-			await assert.doesNotReject(newMongo.checkConnection());
 		});
 
 	});
