@@ -70,6 +70,21 @@ describe('MongoDB', () => {
 	});
 
 	describe('constructor', () => {
+		it('should reject when MongoClient can\'t connect', async () => {
+
+			const newMongo = new MongoDB({
+				host: 'localhost',
+				user: 'root',
+				password: '1234',
+				database: 'myDB'
+			});
+
+			sandbox.mock(MongoClient).expects('connect')
+				.once()
+				.rejects('Error when connects');
+
+			await assert.rejects(newMongo.checkConnection(), 'Error when connects');
+		});
 
 		it('should use default values when the config is incomplete', () => {
 
@@ -114,19 +129,6 @@ describe('MongoDB', () => {
 
 			sandbox.assert.calledOnce(spy);
 
-		});
-
-		it('should reject when MongoClient cant\'t connect', async () => {
-
-			if(mongodb.db)
-				delete mongodb.db;
-
-			sandbox.stub(MongoClient, 'connect').rejects(new Error('Invalid connection string'));
-
-			await assert.rejects(mongodb.checkConnection(), {
-				name: 'MongoDBError',
-				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
-			});
 		});
 	});
 
@@ -279,6 +281,23 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(fields._id, ObjID);
 		});
+
+		it('should not reject when MongoClient can\'t reject cause is in cache the const clients is used', async () => {
+
+			const newMongo = new MongoDB({
+				host: 'localhost',
+				user: 'root',
+				password: '1234',
+				database: 'myDB'
+			});
+
+			sandbox.mock(MongoClient).expects('connect')
+				.once()
+				.rejects('Error when connects');
+
+			await assert.doesNotReject(newMongo.checkConnection());
+		});
+
 	});
 
 	describe('prepareFieldsForOutput()', () => {
