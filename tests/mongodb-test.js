@@ -131,7 +131,7 @@ describe('MongoDB', () => {
 
 		});
 
-		it('should cache connection and call connect method just once when multiple checkConnection called', async () => {
+		it('should cache connection and call connect method just once when calls again for the value cached returns undefined', async () => {
 
 			const newMongo = new MongoDB({
 				host: 'localhost',
@@ -140,7 +140,19 @@ describe('MongoDB', () => {
 				database: 'myDB'
 			});
 
-			// sandbox.stub(newMongo, 'db').returns('asdf');
+			await assert.doesNotReject(newMongo.checkConnection());
+			assert.deepStrictEqual(await newMongo.checkConnection(), undefined);
+		});
+
+		it('should cache connection don\'t connect to DB cause exists', async () => {
+
+			const newMongo = new MongoDB({
+				host: 'localhost',
+				user: 'root',
+				password: '1234',
+				database: 'myDB'
+			});
+
 			newMongo.cleanCache();
 			const spy = sandbox.spy(MongoClient, 'connect');
 
