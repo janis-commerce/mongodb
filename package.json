@@ -1,14 +1,14 @@
 {
   "name": "@janiscommerce/mongodb",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "description": "",
-  "main": "index.js",
+  "main": "lib/mongodb.js",
   "scripts": {
     "test": "export TEST_ENV=true; mocha --exit -R nyan --recursive tests/",
     "test-ci": "nyc --reporter=html --reporter=text mocha --exit --recursive tests/",
     "watch-test": "export TEST_ENV=true; mocha --exit -R nyan -w --recursive tests/",
     "coverage": "nyc npm test",
-    "lint": "eslint index.js lib/ tests/"
+    "lint": "eslint lib/ tests/"
   },
   "repository": {
     "type": "git",
@@ -21,8 +21,8 @@
   },
   "homepage": "https://github.com/janis-commerce/mongodb#readme",
   "dependencies": {
-    "@janiscommerce/logger": "^1.1.0",
-    "lodash": "^4.17.15",
+    "lllog": "^1.1.2",
+    "lodash.pick": "^4.4.0",
     "mongodb": "^3.3.2"
   },
   "devDependencies": {

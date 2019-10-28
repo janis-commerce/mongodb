@@ -8,6 +8,8 @@ const sandbox = require('sinon').createSandbox();
 const mockRequire = require('mock-require');
 const MongoDriver = require('mongodb');
 
+require('lllog')('none');
+
 mockRequire('mongodb', 'mongo-mock');
 
 const MongoMock = require('mongodb');
@@ -16,9 +18,8 @@ const { MongoClient, ObjectID } = MongoMock;
 
 MongoMock.max_delay = 0; // Evitar lags en los tests
 
-const MongoDB = require('./../index');
-
-const { MongoDBError } = require('./../lib');
+const MongoDB = require('./../lib/mongodb');
+const MongoDBError = require('./../lib/mongodb-error');
 
 class Model {
 

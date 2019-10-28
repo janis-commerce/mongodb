@@ -9,7 +9,8 @@ const { MongoClient } = require('mongodb');
 
 sandbox.stub(MongoClient, 'connect');
 
-const MongoDB = require('../../index');
+const MongoDB = require('./../..//lib/mongodb');
+
 const MongoDBFilterWrapper = require('../../lib/mongodb-filter-wrapper');
 
 

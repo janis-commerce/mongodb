@@ -4,7 +4,7 @@ const assert = require('assert');
 
 const ConfigValidator = require('./../lib/config-validator');
 
-const { MongoDBConfigError } = require('./../lib');
+const MongoDBConfigError = require('./../lib/mongodb-config-error');
 
 describe('ConfigValidator', () => {
 
