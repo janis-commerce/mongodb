@@ -448,9 +448,7 @@ describe('MongoDB', () => {
 			await mongodb.checkConnection();
 			const collection = mongodb.db.collection(model.constructor.table);
 
-			collection.distinct = () => ({
-				toArray: () => Promise.resolve([...mongoDbResponse])
-			});
+			collection.distinct = () => Promise.resolve([...mongoDbResponse]);
 
 			sandbox.spy(collection, 'distinct');
 
@@ -468,9 +466,7 @@ describe('MongoDB', () => {
 			await mongodb.checkConnection();
 			const collection = mongodb.db.collection(model.constructor.table);
 
-			collection.distinct = () => ({
-				toArray: () => Promise.reject(new Error('Some internal error'))
-			});
+			collection.distinct = () => Promise.reject(new Error('Some internal error'));
 
 			await assert.rejects(mongodb.distinct(model, { key: 'myKey' }), {
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
