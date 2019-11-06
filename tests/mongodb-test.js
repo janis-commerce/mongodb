@@ -413,6 +413,69 @@ describe('MongoDB', () => {
 		});
 	});
 
+	describe('distinct()', () => {
+
+		it('should throw if distinct model is not passed', async () => {
+			await assert.rejects(mongodb.distinct(null), {
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
+		it('should throw if distinct key is not passed', async () => {
+			await assert.rejects(mongodb.distinct(model, {}), {
+				code: MongoDBError.codes.INVALID_DISTINCT_KEY
+			});
+		});
+
+		it('should throw if distinct key is not a string', async () => {
+			await assert.rejects(mongodb.distinct(model, { key: ['invalidKey'] }), {
+				code: MongoDBError.codes.INVALID_DISTINCT_KEY
+			});
+		});
+
+		it('should return data object when get the data from db', async () => {
+
+			// Distinct is not implemented in mongo-mock so far. So it needs to be defined here.
+
+			const mongoDbResponse = [
+				'Value 1',
+				'Value 2',
+				'Value 3'
+			];
+
+			await mongodb.checkConnection();
+			const collection = mongodb.db.collection(model.constructor.table);
+
+			collection.distinct = () => ({
+				toArray: () => Promise.resolve([...mongoDbResponse])
+			});
+
+			sandbox.spy(collection, 'distinct');
+
+			const result = await mongodb.distinct(model, { key: 'myKey' });
+
+			assert.deepStrictEqual(result, [...mongoDbResponse]);
+			sandbox.assert.calledOnce(collection.distinct);
+			sandbox.assert.calledWithExactly(collection.distinct, 'myKey', {});
+		});
+
+		it('should throw if distinct fails', async () => {
+
+			// Distinct is not implemented in mongo-mock so far. So it needs to be defined here.
+
+			await mongodb.checkConnection();
+			const collection = mongodb.db.collection(model.constructor.table);
+
+			collection.distinct = () => ({
+				toArray: () => Promise.reject(new Error('Some internal error'))
+			});
+
+			await assert.rejects(mongodb.distinct(model, { key: 'myKey' }), {
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+		});
+	});
+
 	describe('get()', () => {
 
 		it('should return data object when get the data from db', async () => {
