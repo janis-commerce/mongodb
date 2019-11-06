@@ -82,9 +82,11 @@ describe('MongoDB', () => {
 
 			sandbox.mock(MongoClient).expects('connect')
 				.once()
-				.rejects('Error when connects');
+				.rejects(new Error('Error when connects'));
 
-			await assert.rejects(newMongo.checkConnection(), 'Error when connects');
+			await assert.rejects(newMongo.checkConnection(), {
+				message: 'Error when connects'
+			});
 		});
 
 		it('should use default values when the config is incomplete', () => {
