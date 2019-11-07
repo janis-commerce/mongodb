@@ -14,15 +14,15 @@ npm install --save @janiscommerce/mongodb
 ### `new MongoDB({config})`
 Constructs the MongoDB driver instance, connected with the `config [Object]`.
 
-**Config validations:**  
+**Config validations:**
 
-- host `[String]` (optional): MongoDB host, default: `localhost`  
-- protocol `[String]` (optional): host protocol, default: `mongodb://`  
-- port `[Number]` (optional): host port, default: `27017`  
-- user `[String]` (optional): host username, default none  
-- password `[String]` (optional): host user password, default none  
+- host `[String]` (optional): MongoDB host, default: `localhost`
+- protocol `[String]` (optional): host protocol, default: `mongodb://`
+- port `[Number]` (optional): host port, default: `27017`
+- user `[String]` (optional): host username, default none
+- password `[String]` (optional): host user password, default none
 - database `[String]` **(required)**: MongoDB database
-- limit `[Number]` (optional): Limit for `get`/`getTotals` operations, default: `500`  
+- limit `[Number]` (optional): Limit for `get`/`getTotals` operations, default: `500`
 
 **Config usage:**
 ```js
@@ -38,18 +38,18 @@ Constructs the MongoDB driver instance, connected with the `config [Object]`.
 ```
 
 ### ***async*** `createIndexes(model)`
-Creates indexes and unique indexes from the model to the MongoDB database.  
-Requires a `model [Model]`  
-**Important:** This method must be executed before any operation with new databases. If not, the unique indexes will not have any effect in your database.  
+Creates indexes and unique indexes from the model to the MongoDB database.
+Requires a `model [Model]`
+**Important:** This method must be executed before any operation with new databases. If not, the unique indexes will not have any effect in your database.
 
-**Indexes and unique indexes in Model:**  
-In order to avoid errors you must to specify your indexes and unique indexes in the Model:  
-- indexes `[Array]`: The indexes of your model, also you can add an `[Array]` for combine indexes. See example below.  
-- uniqueIndexes `[Array]`: The unique indexes of your model, also you can add an `[Array]` for combine unique indexes. See example below.  
+**Indexes and unique indexes in Model:**
+In order to avoid errors you must to specify your indexes and unique indexes in the Model:
+- indexes `[Array]`: The indexes of your model, also you can add an `[Array]` for combine indexes. See example below.
+- uniqueIndexes `[Array]`: The unique indexes of your model, also you can add an `[Array]` for combine unique indexes. See example below.
 
 **Combined indexes are used for getting filters with multiple indexes due they are combined as one**
 
-**Model example**  
+**Model example**
 ```js
 class MyModel extends Model {
 
@@ -133,7 +133,7 @@ If you want to apply different filters it should be as follows:
 ```js
 {
     filters: {
-        'aField': { 
+        'aField': {
             value: 'valueToFilter', // required(string or array)
             type: 'aTypeChoosen' //optional
         }
@@ -178,6 +178,7 @@ The possible types to use are:
 | notIn         | $nin                  |
 | search        | $regex                |
 | all           | $all                  |
+| exists        | $exists               |
 
 
 You can also add filters in the model defining the `fields` function as follow:
@@ -261,7 +262,7 @@ Returns `deletedCount [Number]`.
 ## Errors
 
 The errors are informed with a `MongoDBError`.
-This object has a code that can be useful for a correct error handling.  
+This object has a code that can be useful for a correct error handling.
 The codes are the following:
 
 | Code | Description                    |
@@ -273,7 +274,7 @@ The codes are the following:
 | 5    | Invalid item                   |
 
 The config validation errors are informed with a `MongoDBConfigError`
-This object has a code that can be useful for a correct error handling.  
+This object has a code that can be useful for a correct error handling.
 The codes are the following:
 
 | Code | Description                    |
@@ -290,7 +291,7 @@ const Model = require('myModel');
 
 const mongo = new MongoDB({
    protocol: 'mongodb://',
-   host: 'localhost', 
+   host: 'localhost',
    port: 27017
    user: 'fizzmod',
    password: 'sarasa',
