@@ -509,87 +509,91 @@ describe('MongoDB', () => {
 
 	describe('save()', () => {
 
-		it('should upsert an item when save an unexisting and existing item', async () => {
-			// Insert
-			let result = await mongodb.save(model, { id: '5d5476783cb30600068170df', value: 'save_test_data' });
-			assert.deepStrictEqual(MongoDriver.ObjectID.isValid(result), true);
-			let item = await mongodb.get(model, { filters: { value: 'save_test_data' } });
-			assert.deepStrictEqual(item[0].value, 'save_test_data');
-			// Update
-			result = await mongodb.save(model, { id: item[0].id, value: 'save_test_data_updated' });
-			assert.deepStrictEqual(result, item[0].id.toString());
-			item = await mongodb.get(model, { filters: { id: item[0].id } });
-			assert.deepStrictEqual(item[0].value, 'save_test_data_updated');
-			await clearMockedDatabase();
-		});
-
-		it('should updated an existing item', async () => {
-			// To simulate real Updated MongoDB response, Mock response always response with the upsertId even in Update (and Mongo driver not)
-			const itemSaved = { id: '00000000ef72e55d7436f9ba', value: 'save_test_data' };
-
-			const collection = await getCollection();
-			sandbox.stub(collection, 'updateOne').returns({ matchedCount: 1, modifiedCount: 1 });
-
-			const result = await mongodb.save(model, { id: itemSaved.id, value: 'save_test_data_updated' });
-			assert.deepStrictEqual(result, itemSaved.id);
-
-		});
-
-		it('should return unique Index (not ID) when try to save with that unique Index', async () => {
-
-			const itemToSave = { id: 1, unique: 'Not Equal', value: 'save_test_data' };
-
-			// Insert
-			let result = await mongodb.save(model, itemToSave);
-			assert.deepStrictEqual(MongoDriver.ObjectID.isValid(result), true);
-
-			const itemSaved = await mongodb.get(model, { filters: { value: itemToSave.value } });
-			assert.deepStrictEqual(itemSaved[0].value, itemToSave.value);
-			assert.deepStrictEqual(itemSaved[0].unique, itemToSave.unique);
-
-			const itemToUpdate = { unique: itemToSave.unique, value: 'save_test_data_updated' };
-
-			// Update
-			result = await mongodb.save(model, itemToUpdate);
-			assert.deepStrictEqual(result, itemToUpdate.unique);
-
-			const itemUpdated = await mongodb.get(model, { filters: { value: itemToUpdate.value } });
-			assert.deepStrictEqual(itemUpdated[0].value, itemToUpdate.value);
-			assert.deepStrictEqual(itemUpdated[0].unique, itemToUpdate.unique);
-
-			// Should be the same
-			assert.deepStrictEqual(itemUpdated[0].unique, itemSaved[0].unique);
-			assert.deepStrictEqual(itemUpdated[0].id, itemSaved[0].id);
-
-			await clearMockedDatabase();
-
-		});
-
-		it('should insert an item and auto fix \'_id\' unexpected fields when save an item', async () => {
-
-			const result = await mongodb.save(model, { id: undefined, value: 'save_test_data' });
-
-			assert.deepStrictEqual(MongoDriver.ObjectID.isValid(result), true);
-			await clearMockedDatabase();
+		it('should reject when try to save with an invalid model', async () => {
+			await assert.rejects(mongodb.save(), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.INVALID_MODEL
+			});
 		});
 
 		it('should throw when mongodb rejects the operation', async () => {
 
 			const collection = await getCollection();
 
-			sandbox.stub(collection, 'updateOne').rejects(new Error('Internal mongodb error'));
+			sandbox.stub(collection, 'findAndModify').rejects(new Error('Internal mongodb error'));
 
 			await assert.rejects(mongodb.save(model, { id: 1, value: 'save_test_data' }), {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
+
+			sandbox.assert.calledOnce(collection.findAndModify);
 		});
 
-		it('should reject when try to save with an invalid model', async () => {
-			await assert.rejects(mongodb.save(), {
-				name: 'MongoDBError',
-				code: MongoDBError.codes.INVALID_MODEL
+		it('should return upserted id', async () => {
+
+			const collection = await getCollection();
+
+			sandbox.stub(collection, 'findAndModify').returns({
+				value: {
+					_id: ObjectID('5de85c6f3929ca50ea230d1b'),
+					value: 'some-value',
+					unique: 'some-unique'
+				}
 			});
+
+			sandbox.useFakeTimers(new Date(2019, 11, 1).getTime());
+
+			assert.strictEqual(await mongodb.save(model, { unique: 'some-unique', value: 'some-value' }), '5de85c6f3929ca50ea230d1b');
+
+			sandbox.assert.calledOnce(collection.findAndModify);
+			sandbox.assert.calledWithExactly(collection.findAndModify,
+				{ unique: 'some-unique' },
+				{},
+				{ $set: { unique: 'some-unique', value: 'some-value' }, $currentDate: { dateModified: true }, $setOnInsert: { dateCreated: new Date() } },
+				{ upsert: true, new: true }
+			);
+		});
+
+		it('should return upserted id and not use _id', async () => {
+
+			const collection = await getCollection();
+
+			sandbox.stub(collection, 'findAndModify').returns({
+				value: {
+					_id: ObjectID('5de85c6f3929ca50ea230d1b'),
+					value: 'some-value',
+					unique: 'some-unique'
+				}
+			});
+
+			sandbox.useFakeTimers(new Date(2019, 11, 1).getTime());
+
+			assert.strictEqual(await mongodb.save(model,
+				{
+					_id: '5de85c6f3929ca50ea230d1b',
+					unique: 'some-unique',
+					value: 'some-value'
+				}), '5de85c6f3929ca50ea230d1b');
+
+			sandbox.assert.calledOnce(collection.findAndModify);
+			sandbox.assert.calledWithExactly(collection.findAndModify,
+				{ unique: 'some-unique' },
+				{},
+				{ $set: { unique: 'some-unique', value: 'some-value' }, $currentDate: { dateModified: true }, $setOnInsert: { dateCreated: new Date() } },
+				{ upsert: true, new: true }
+			);
+		});
+
+		it('should return null if cannot insert or update', async () => {
+
+			const collection = await getCollection();
+
+			sandbox.stub(collection, 'findAndModify').returns(null);
+
+			assert.strictEqual(await mongodb.save(model, { unique: 'some-unique', value: 'some-value' }), null);
+
+			sandbox.assert.calledOnce(collection.findAndModify);
 		});
 	});
 
