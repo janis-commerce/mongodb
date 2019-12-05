@@ -222,6 +222,21 @@ static get fields() {
 }
 ```
 
+#### ObjectID fields
+
+To filter by a field of type ObjectID, you have to set the property `isID` in the model field.
+
+For example:
+
+```js
+static get fields() {
+    return {
+        someId: {
+            isID: true
+        }
+    }
+}
+```
 
 ### ***async*** `getTotals(model)`
 Get the totals of the items from the latest get operation with pagination.

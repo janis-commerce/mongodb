@@ -5,7 +5,7 @@ Object.keys(require.cache).forEach(key => { delete require.cache[key]; });
 
 const assert = require('assert');
 const sandbox = require('sinon').createSandbox();
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectID } = require('mongodb');
 
 sandbox.stub(MongoClient, 'connect');
 
@@ -54,6 +54,9 @@ class Model {
 			store_dist: {
 				type: 'notEqual',
 				field: 'store'
+			},
+			someId: {
+				isID: true
 			},
 			store_equal: 'AB'
 		};
@@ -133,6 +136,27 @@ describe('MongoDB', () => {
 				bla: 'foo', gain: 10
 			});
 
+		});
+
+		it('should filter by an ObjectID if field isID', async () => {
+			collectionStub.toArray.returns([response]);
+			await mongodb.get(model, { filters: { someId: '5de9568c47a18000122caf27' } });
+
+			sandbox.assert.calledWithExactly(collectionStub.find, {
+				someId: ObjectID('5de9568c47a18000122caf27')
+			});
+		});
+
+		it('should filter by an ObjectID if field isID with multiple values', async () => {
+			collectionStub.toArray.returns([response]);
+			await mongodb.get(model, { filters: { someId: ['5de9568c47a18000122caf27', '5de9568c47a18000122caf28'] } });
+
+			sandbox.assert.calledWithExactly(collectionStub.find, {
+				someId: [
+					ObjectID('5de9568c47a18000122caf27'),
+					ObjectID('5de9568c47a18000122caf28')
+				]
+			});
 		});
 
 
