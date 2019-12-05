@@ -241,7 +241,7 @@ getTotals return example:
 ### ***async*** `save(model, {item})`
 Insert/update a item into the database.
 Requires a `model [Model]` and `item [Object]`.
-Returns `String` **ID** of the item *inserted* or **Unique Index** used as filter if it was *updated* or rejects if cannot.
+Returns `String` **ID** of the item inserted or updated.
 
 ### ***async*** `multiSave(model, [{items}], limit)`
 Insert/update multiple items into the database.
@@ -343,9 +343,16 @@ mongo.createIndexes(model);
       }
    */
 
-   // save
+  // save insert
    result = await mongo.save(model, {
-      id: 1,
+      unique: 1,
+      value: 'sarasa'
+   }); // expected return: '00000058faf66849077316ba'
+
+   // save update
+   result = await mongo.save(model, {
+      id: '00000058faf66849077316ba',
+      unique: 1,
       value: 'sarasa'
    }); // expected return: '00000058faf66849077316ba'
 
