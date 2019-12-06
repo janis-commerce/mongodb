@@ -21,6 +21,8 @@ MongoMock.max_delay = 0; // Evitar lags en los tests
 const MongoDB = require('./../lib/mongodb');
 const MongoDBError = require('./../lib/mongodb-error');
 
+const objectID = ObjectID();
+
 class Model {
 
 	static get uniqueIndexes() {
@@ -243,77 +245,110 @@ describe('MongoDB', () => {
 
 		it('Should replace the \'id\' field with \'_id\' when \'id\' exists', () => {
 
-			const ObjID = ObjectID();
-
 			const fields = {
-				id: ObjID.toString()
+				id: objectID.toString()
 			};
 
 			mongodb.prepareFields(fields);
 
 			assert.deepStrictEqual(typeof fields.id, 'undefined');
 
-			assert.deepStrictEqual(fields._id, ObjID);
+			assert.deepStrictEqual(fields._id, objectID);
 		});
 
 		it('Should replace the \'id\' field with \'_id\' when \'id\' exists and is an array', () => {
 
-			const ObjID = ObjectID();
-
 			const fields = {
-				id: [ObjID.toString()]
+				id: [objectID.toString()]
 			};
 
 			mongodb.prepareFields(fields);
 
 			assert.deepStrictEqual(typeof fields.id, 'undefined');
 
-			assert.deepStrictEqual(fields._id, [ObjID]);
+			assert.deepStrictEqual(fields._id, [objectID]);
+		});
+
+		it('Should replace the \'id\' field with \'_id\' when \'id\' exists and is an $eq filter', () => {
+
+			const fields = {
+				id: {
+					$eq: objectID.toString()
+				}
+			};
+
+			mongodb.prepareFields(fields);
+
+			assert.deepStrictEqual(typeof fields.id, 'undefined');
+
+			assert.deepStrictEqual(fields._id, { $eq: objectID });
+		});
+
+		it('Should replace the \'id\' field with \'_id\' when \'id\' exists and is a $in filter', () => {
+
+			const fields = {
+				id: {
+					$in: [objectID.toString()]
+				}
+			};
+
+			mongodb.prepareFields(fields);
+
+			assert.deepStrictEqual(typeof fields.id, 'undefined');
+
+			assert.deepStrictEqual(fields._id, { $in: [objectID] });
+		});
+
+		it('Should replace the \'id\' field with \'_id\' when \'id\' exists and is an ObjectID', () => {
+
+			const fields = {
+				id: objectID
+			};
+
+			mongodb.prepareFields(fields);
+
+			assert.deepStrictEqual(typeof fields.id, 'undefined');
+
+			assert.deepStrictEqual(fields._id, objectID);
 		});
 
 		it('Should replace the \'id\' field with \'_id\' when \'id\' exists for filters', () => {
 
-			const ObjID = ObjectID();
-
 			const fields = {
-				id: ObjID.toString()
+				id: objectID.toString()
 			};
 
 			mongodb.prepareFields(fields, true);
 
 			assert.deepStrictEqual(typeof fields.id, 'undefined');
 
-			assert.deepStrictEqual(fields._id, ObjID);
+			assert.deepStrictEqual(fields._id, objectID);
 		});
 
 		it('Should replace the \'id\' field with \'_id\' when \'id\' exists and is an array for filters', () => {
 
-			const ObjID = ObjectID();
-
 			const fields = {
-				id: [ObjID.toString()]
+				id: [objectID.toString()]
 			};
 
 			mongodb.prepareFields(fields, true);
 
 			assert.deepStrictEqual(typeof fields.id, 'undefined');
 
-			assert.deepStrictEqual(fields._id, { $in: [ObjID] });
+			assert.deepStrictEqual(fields._id, { $in: [objectID] });
 		});
 
 		it('Should do nothing when the \'_id\' exists and \'id\' not exists', () => {
 
-			const ObjID = ObjectID();
-
 			const fields = {
-				_id: ObjID
+				_id: objectID
 			};
 
 			mongodb.prepareFields(fields);
 
 			assert.deepStrictEqual(typeof fields.id, 'undefined');
 
-			assert.deepStrictEqual(fields._id, ObjID);
+			assert.deepStrictEqual(fields._id, objectID);
 		});
 
 	});
@@ -322,17 +357,15 @@ describe('MongoDB', () => {
 
 		it('Should replace the \'_id\' field with \'id\' when \'_id\' exists', () => {
 
-			const ObjID = ObjectID();
-
 			const fields = {
-				_id: ObjID
+				_id: objectID
 			};
 
 			mongodb.prepareFieldsForOutput(fields);
 
 			assert.deepStrictEqual(typeof fields._id, 'undefined');
 
-			assert.deepStrictEqual(fields.id, ObjID);
+			assert.deepStrictEqual(fields.id, objectID);
 		});
 	});
 
@@ -344,16 +377,16 @@ describe('MongoDB', () => {
 				return [['id']];
 			});
 
-			const result = mongodb.getFilter(model, { id: 1 });
+			const result = mongodb.getFilter(model, { id: objectID });
 
-			assert.deepStrictEqual(result.id, 1);
+			assert.deepStrictEqual(result.id, objectID);
 		});
 
 		it('Should return non empty filter object when get filters with an object as parameter', () => {
 
-			const result = mongodb.getFilter(model, { id: 1 });
+			const result = mongodb.getFilter(model, { id: objectID });
 
-			assert.deepStrictEqual(result.id, 1);
+			assert.deepStrictEqual(result.id, objectID);
 		});
 
 		it('Should throw when get filters with a model without unique indexes', () => {
@@ -522,7 +555,7 @@ describe('MongoDB', () => {
 
 			sandbox.stub(collection, 'findAndModify').rejects(new Error('Internal mongodb error'));
 
-			await assert.rejects(mongodb.save(model, { id: 1, value: 'save_test_data' }), {
+			await assert.rejects(mongodb.save(model, { id: objectID, value: 'save_test_data' }), {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
@@ -639,9 +672,9 @@ describe('MongoDB', () => {
 		it('Should return true when the multi insert operation was successful', async () => {
 
 			let items = [
-				{ id: 1, value: 'multiInsert_test_data' },
-				{ id: 2, value: 'multiInsert_test_data' },
-				{ id: 3, value: 'multiInsert_test_data' }
+				{ id: ObjectID(), value: 'multiInsert_test_data' },
+				{ id: ObjectID(), value: 'multiInsert_test_data' },
+				{ id: ObjectID(), value: 'multiInsert_test_data' }
 			];
 
 			const result = await mongodb.multiInsert(model, items);
@@ -657,7 +690,7 @@ describe('MongoDB', () => {
 
 		it('Should reject when try to multi insert an invalid items array ', async () => {
 
-			await assert.rejects(mongodb.multiInsert(model, { id: 1, value: 'multiInsert_test_data' }), {
+			await assert.rejects(mongodb.multiInsert(model, { id: objectID, value: 'multiInsert_test_data' }), {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.INVALID_ITEM
 			});
@@ -679,8 +712,8 @@ describe('MongoDB', () => {
 			sandbox.stub(collection, 'insertMany').rejects(new Error('Internal mongodb error'));
 
 			await assert.rejects(mongodb.multiInsert(model, [
-				{ id: 1, value: 'multiInsert_test_data' },
-				{ id: 1, value: 'multiInsert_test_data' }
+				{ id: ObjectID(), value: 'multiInsert_test_data' },
+				{ id: ObjectID(), value: 'multiInsert_test_data' }
 			]), {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
@@ -695,8 +728,8 @@ describe('MongoDB', () => {
 		it('Should call bulkWrite when multi saving items and must return true if the result was successful', async () => {
 
 			const items = [
-				{ id: 1, value: 'multiSave_test_data' },
-				{ id: 2, value: 'multiSave_test_data' },
+				{ id: ObjectID(), value: 'multiSave_test_data' },
+				{ id: ObjectID(), value: 'multiSave_test_data' },
 				{ id: undefined, value: 'multiSave_test_data' }
 			];
 
@@ -731,7 +764,7 @@ describe('MongoDB', () => {
 			const items = Array(30).fill()
 				.map((item, i) => {
 					return {
-						id: i,
+						id: ObjectID(),
 						value: 'sarasa' + i
 					};
 				});
@@ -752,7 +785,7 @@ describe('MongoDB', () => {
 
 		it('Should reject when try to multi insert an invalid items array ', async () => {
 
-			await assert.rejects(mongodb.multiSave(model, { id: 1, value: 'multiSave_test_data' }), {
+			await assert.rejects(mongodb.multiSave(model, { id: objectID, value: 'multiSave_test_data' }), {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.INVALID_ITEM
 			});
@@ -781,7 +814,7 @@ describe('MongoDB', () => {
 
 		it('Should return false when can\'t remove the item', async () => {
 
-			const result = await mongodb.remove(model, { id: 1 });
+			const result = await mongodb.remove(model, { id: objectID });
 
 			assert.deepStrictEqual(result, false);
 		});
@@ -799,7 +832,7 @@ describe('MongoDB', () => {
 
 			sandbox.stub(collection, 'deleteOne').rejects(new Error('Internal mongodb error'));
 
-			await assert.rejects(mongodb.remove(model, { id: 1 }), {
+			await assert.rejects(mongodb.remove(model, { id: objectID }), {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
@@ -821,7 +854,7 @@ describe('MongoDB', () => {
 
 		it('Should return false when can\'t remove the item', async () => {
 
-			const result = await mongodb.remove(model, { id: 1 });
+			const result = await mongodb.remove(model, { id: objectID });
 
 			assert.deepEqual(result, false);
 		});
@@ -839,7 +872,7 @@ describe('MongoDB', () => {
 
 			sandbox.stub(collection, 'deleteOne').rejects(new Error('Internal mongodb error'));
 
-			await assert.rejects(mongodb.remove(model, { id: 1 }), {
+			await assert.rejects(mongodb.remove(model, { id: objectID }), {
 				name: 'MongoDBError',
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
@@ -901,7 +934,7 @@ describe('MongoDB', () => {
 			const inserts = Array(10).fill()
 				.map((item, i) => {
 					return {
-						id: i,
+						id: ObjectID(),
 						field: `get_totals_test ${i}`
 					};
 				});
