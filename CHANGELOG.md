@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - `isID` support in model fields for ObjectID filters
 
+### Fixed
+- Multi value filters now work as expected
+
 ## [1.7.2] - 2019-12-05
 ### Changed
 - `save` uses `findAndModify` with `upsert: true` and `new: true`, to return always `_id`
