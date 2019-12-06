@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.8.1] - 2019-12-05
+### Fixed
+- Multi value filters now search as `$in` when filter type is not defined
+
 ## [1.8.0] - 2019-12-05
 ### Added
 - `isID` support in model fields for ObjectID filters

@@ -10,7 +10,7 @@ describe('ConfigValidator', () => {
 
 	describe('validate()', () => {
 
-		it('should throw invalid config when the config is empty', () => {
+		it('Should throw invalid config when the config is empty', () => {
 
 			assert.throws(() => ConfigValidator.validate(), {
 				name: 'MongoDBConfigError',
@@ -20,7 +20,7 @@ describe('ConfigValidator', () => {
 		});
 
 
-		it('should throw invalid config when the config is not an object', () => {
+		it('Should throw invalid config when the config is not an object', () => {
 
 			assert.throws(() => ConfigValidator.validate('string'), {
 				name: 'MongoDBConfigError',
@@ -30,7 +30,7 @@ describe('ConfigValidator', () => {
 		});
 
 
-		it('should throw invalid config when the config is an array', () => {
+		it('Should throw invalid config when the config is an array', () => {
 
 			assert.throws(() => ConfigValidator.validate([]), {
 				name: 'MongoDBConfigError',
@@ -39,7 +39,7 @@ describe('ConfigValidator', () => {
 
 		});
 
-		it('should throw required setting when a required setting is missing', () => {
+		it('Should throw required setting when a required setting is missing', () => {
 
 			assert.throws(() => ConfigValidator.validate({}), {
 				name: 'MongoDBConfigError',
@@ -51,7 +51,7 @@ describe('ConfigValidator', () => {
 
 		['string', ['array']].forEach(type => {
 
-			it('should throw invalid setting when a setting has an unexpected type', () => {
+			it('Should throw invalid setting when a setting has an unexpected type', () => {
 
 				assert.throws(() => ConfigValidator.validate({
 					database: 'myDB',
@@ -64,7 +64,7 @@ describe('ConfigValidator', () => {
 
 		});
 
-		it('should not throw when the settings are correct', () => {
+		it('Should not throw when the settings are correct', () => {
 
 			assert.doesNotThrow(() => ConfigValidator.validate({
 				database: 'myDB',

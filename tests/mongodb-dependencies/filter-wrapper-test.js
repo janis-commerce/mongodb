@@ -9,10 +9,10 @@ const { MongoClient, ObjectID } = require('mongodb');
 
 sandbox.stub(MongoClient, 'connect');
 
-const MongoDB = require('./../..//lib/mongodb');
+const MongoDB = require('./../../lib/mongodb');
+const MongoDBError = require('./../../lib/mongodb-error');
 
 const MongoDBFilterWrapper = require('../../lib/mongodb-filter-wrapper');
-
 
 class Model {
 
@@ -35,30 +35,32 @@ class Model {
 
 	static get fields() {
 		return {
-			date_from: {
+			dateFrom: {
 				type: 'greaterOrEqual',
 				field: 'date'
 			},
-			date_from2: {
+			dateFrom2: {
 				type: 'greater',
 				field: 'date'
 			},
-			date_to: {
+			dateTo: {
 				type: 'lesserOrEqual',
 				field: 'date'
 			},
-			date_to2: {
+			dateTo2: {
 				type: 'lesser',
 				field: 'date'
 			},
-			store_dist: {
+			storeDist: {
 				type: 'notEqual',
 				field: 'store'
 			},
 			someId: {
 				isID: true
 			},
-			store_equal: 'AB'
+			fieldWithInvalidFilterType: {
+				type: 'invalid'
+			}
 		};
 	}
 
@@ -85,10 +87,11 @@ class Collection {
 	toArray() {}
 }
 
-describe('MongoDB', () => {
+describe('MongoDBFilterWrapper', () => {
+
 	describe('Using only FilterWrapper', () => {
 
-		it('should returns an empty filter when dont define any filter by param', async () => {
+		it('Should returns an empty filter when dont define any filter by param', async () => {
 			assert.deepStrictEqual(MongoDBFilterWrapper.getParsedFilters({}, model), {});
 		});
 	});
@@ -127,40 +130,54 @@ describe('MongoDB', () => {
 
 	describe('Using FilterWrapper with filters', () => {
 
-		it('should get an equal value if isn\'t defined type', async () => {
+		it('Should throw if an invalid filter type is passed', async () => {
+			await assert.rejects(mongodb.get(model, { filters: { fieldWithInvalidFilterType: 'foo' } }), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.INVALID_FILTER_TYPE
+			});
+		});
+
+		it('Should get an equal/in value if isn\'t defined type for single/multiple values', async () => {
 			collectionStub.toArray.returns([response]);
-			const item = await mongodb.get(model, { filters: { bla: 'foo', gain: 10 } });
+			const item = await mongodb.get(model, { filters: { bla: 'foo', gain: [9, 10] } });
 			assert.deepStrictEqual(item[0], response);
 
 			sandbox.assert.calledWithExactly(collectionStub.find, {
-				bla: 'foo', gain: 10
+				bla: {
+					$eq: 'foo'
+				},
+				gain: {
+					$in: [9, 10]
+				}
 			});
-
 		});
 
-		it('should filter by an ObjectID if field isID', async () => {
+		it('Should filter by an ObjectID if field isID', async () => {
 			collectionStub.toArray.returns([response]);
 			await mongodb.get(model, { filters: { someId: '5de9568c47a18000122caf27' } });
 
 			sandbox.assert.calledWithExactly(collectionStub.find, {
-				someId: ObjectID('5de9568c47a18000122caf27')
+				someId: {
+					$eq: ObjectID('5de9568c47a18000122caf27')
+				}
 			});
 		});
 
-		it('should filter by an ObjectID if field isID with multiple values', async () => {
+		it('Should filter by an ObjectID if field isID with multiple values', async () => {
 			collectionStub.toArray.returns([response]);
 			await mongodb.get(model, { filters: { someId: ['5de9568c47a18000122caf27', '5de9568c47a18000122caf28'] } });
 
 			sandbox.assert.calledWithExactly(collectionStub.find, {
-				someId: [
-					ObjectID('5de9568c47a18000122caf27'),
-					ObjectID('5de9568c47a18000122caf28')
-				]
+				someId: {
+					$in: [
+						ObjectID('5de9568c47a18000122caf27'),
+						ObjectID('5de9568c47a18000122caf28')
+					]
+				}
 			});
 		});
 
-
-		it('should get a value if is not defined a filter', async () => {
+		it('Should get a value if is not defined a filter', async () => {
 			collectionStub.toArray.returns([response]);
 			const item = await mongodb.get(model, { });
 			assert.deepStrictEqual(item[0], response);
@@ -168,7 +185,7 @@ describe('MongoDB', () => {
 			sandbox.assert.calledWithExactly(collectionStub.find, { });
 		});
 
-		it('should get an or filter if defined by an array', async () => {
+		it('Should get an or filter if defined by an array', async () => {
 			// Insert
 			const resultOr = {
 				id: 1,
@@ -197,69 +214,84 @@ describe('MongoDB', () => {
 			});
 			assert.deepStrictEqual(item[0], resultOr);
 
-			sandbox.assert.calledWithExactly(collectionStub.find, { $or: [{ bla: 'afoo', store: { $ne: 'Janis' } }, { gain: 10 }] });
+			sandbox.assert.calledWithExactly(collectionStub.find, {
+				$or: [
+					{
+						bla: {
+							$eq: 'afoo'
+						},
+						store: {
+							$ne: 'Janis'
+						}
+					},
+					{
+						gain: {
+							$eq: 10
+						}
+					}
+				]
+			});
 		});
 
-
-		it('should get an gte date if isnt defined type', async () => {
+		it('Should get an gte date if isnt defined type', async () => {
 			const resultGte = { id: 1, date: '2000-01-03' };
 			collectionStub.toArray.returns([resultGte]);
-			const item = await mongodb.get(model, { filters: { date_from: '2000-01-01' } });
+			const item = await mongodb.get(model, { filters: { dateFrom: '2000-01-01' } });
 			assert.deepStrictEqual(item[0], resultGte);
 			sandbox.assert.calledWithExactly(collectionStub.find, { date: { $gte: '2000-01-01' } });
 		});
 
-		it('should get an gt date if define a field with that filter', async () => {
+		it('Should get an gt date if define a field with that filter', async () => {
 			// Insert
 			const resultGt = [{ id: 1, date: '2000-01-02' }, { id: 2, date: '2000-01-03' }];
 			collectionStub.toArray.returns(resultGt);
-			const item = await mongodb.get(model, { filters: { date_from2: '2000-01-01' } });
+			const item = await mongodb.get(model, { filters: { dateFrom2: '2000-01-01' } });
 			assert.deepStrictEqual(item, resultGt);
 			sandbox.assert.calledWithExactly(collectionStub.find, { date: { $gt: '2000-01-01' } });
 		});
 
-		it('should get an lte filter if is defined that filter', async () => {
+		it('Should get an lte filter if is defined that filter', async () => {
 			const resultLte = { id: 1, date: '2000-01-25' };
 			collectionStub.toArray.returns([resultLte]);
-			const item = await mongodb.get(model, { filters: { date_to: '2000-01-25' } });
+			const item = await mongodb.get(model, { filters: { dateTo: '2000-01-25' } });
 			assert.deepStrictEqual(item[0], resultLte);
 			sandbox.assert.calledWithExactly(collectionStub.find, { date: { $lte: '2000-01-25' } });
 		});
 
-		it('should get an lt date if is defined that filter', async () => {
+		it('Should get an lt date if is defined that filter', async () => {
 			const resultLt = { id: 1, date: '2000-01-25' };
 			collectionStub.toArray.returns([resultLt]);
-			const item = await mongodb.get(model, { filters: { date_to2: '2000-01-25' } });
+			const item = await mongodb.get(model, { filters: { dateTo2: '2000-01-25' } });
 			assert.deepStrictEqual(item[0], resultLt);
 			sandbox.assert.calledWithExactly(collectionStub.find, { date: { $lt: '2000-01-25' } });
 		});
 
-		it('should get a value if filter is distinct', async () => {
+		it('Should get a value if filter is distinct', async () => {
 			const resultDist = { id: 1, store: 'ASTORE' };
 			collectionStub.toArray.returns([resultDist]);
-			const item = await mongodb.get(model, { filters: { store_dist: 'JBA1' } });
+			const item = await mongodb.get(model, { filters: { storeDist: 'JBA1' } });
 			assert.deepStrictEqual(item[0], resultDist);
 			sandbox.assert.calledWithExactly(collectionStub.find, { store: { $ne: 'JBA1' } });
 		});
 
-		it('should get an gte filter if isnt defined type', async () => {
+		it('Should get an gte filter if isnt defined type', async () => {
 			// Insert
 			const resultLte = [{ id: 1, date: '2000-01-02', store: 'AAA' }, { id: 2, date: '2000-01-05', store: 'AAA' }];
 			collectionStub.toArray.returns(resultLte);
 			const item = await mongodb.get(model, { filters: { date: { value: '2000-01-10', type: 'lesser' }, store: 'AAA' } });
 			assert.deepStrictEqual(item, resultLte);
-			sandbox.assert.calledWithExactly(collectionStub.find, { date: { $lt: '2000-01-10' }, store: 'AAA' });
+			sandbox.assert.calledWithExactly(collectionStub.find, { date: { $lt: '2000-01-10' }, store: { $eq: 'AAA' } });
 		});
 
-		it('should get an or filter if define a array', async () => {
+		it('Should get an or filter if define a array', async () => {
 			const resultOrFilter = [{ id: 1, store: 'save_test_data' }, { id: 3, store: 'foo_value' }];
 			collectionStub.toArray.returns(resultOrFilter);
 			const item = await mongodb.get(model, { filters: [{ store: 'save_test_data' }, { store: { value: 'foo_value', type: 'equal' } }] });
 			assert.deepStrictEqual(item, resultOrFilter);
-			sandbox.assert.calledWithExactly(collectionStub.find, { $or: [{ store: 'save_test_data' }, { store: 'foo_value' }] });
+			sandbox.assert.calledWithExactly(collectionStub.find, { $or: [{ store: { $eq: 'save_test_data' } }, { store: { $eq: 'foo_value' } }] });
 		});
 
-		it('should get values with an in filter if define a array to search', async () => {
+		it('Should get values with an in filter if define a array to search', async () => {
 			// Insert
 			const resultIn = [{ id: 1, store: 'save_test_data' }, { id: 3, store: 'foo_value' }];
 			collectionStub.toArray.returns(resultIn);
@@ -268,7 +300,7 @@ describe('MongoDB', () => {
 			sandbox.assert.calledWithExactly(collectionStub.find, { store: { $in: ['save_test_data', 'foo_value'] } });
 		});
 
-		it('should get values with a not in filter if define a array to search', async () => {
+		it('Should get values with a not in filter if define a array to search', async () => {
 			const resultNotIn = { id: 2, store: 'only_for_test' };
 			collectionStub.toArray.returns([resultNotIn]);
 			const item = await mongodb.get(model, { filters: { store: { value: ['save_test_data', 'foo_value'], type: 'notIn' } } });
@@ -276,7 +308,7 @@ describe('MongoDB', () => {
 			sandbox.assert.calledWithExactly(collectionStub.find, { store: { $nin: ['save_test_data', 'foo_value'] } });
 		});
 
-		it('should get all values in a filter if define a array to search', async () => {
+		it('Should get all values in a filter if define a array to search', async () => {
 			const resultAll = { id: 1, store: ['save_test_data', 'blabla'] };
 			collectionStub.toArray.returns([resultAll]);
 			const item = await mongodb.get(model, { filters: { store: { value: ['save_test_data', 'blabla'], type: 'all' } } });
@@ -284,7 +316,7 @@ describe('MongoDB', () => {
 			sandbox.assert.calledWithExactly(collectionStub.find, { store: { $all: ['save_test_data', 'blabla'] } });
 		});
 
-		it('should get all values that accomplish one value of filter if define a array to search', async () => {
+		it('Should get all values that accomplish one value of filter if define a array to search', async () => {
 			const resultIn = [{ id: 1, store: ['save_test_data', 'blabla'] }, { id: 2, store: ['blabla', 'new_foo_value'] }];
 			collectionStub.toArray.returns(resultIn);
 			const item = await mongodb.get(model, { filters: { store: { value: ['blabla'], type: 'in' } } });
@@ -292,21 +324,20 @@ describe('MongoDB', () => {
 			sandbox.assert.calledWithExactly(collectionStub.find, { store: { $in: ['blabla'] } });
 		});
 
-		it('should get between values that accomplish the two filters if define as an and', async () => {
+		it('Should get between values that accomplish the two filters if define as an and', async () => {
 			const resultIn = [{ id: 1, store: 'blabla', date: '2019-07-20' }, { id: 2, date: '2019-08-20', store: 'blabla' }];
 			collectionStub.toArray.returns(resultIn);
-			const item = await mongodb.get(model, { filters: { date_from: '2019-08-10', date_to: '2019-09-09' } });
+			const item = await mongodb.get(model, { filters: { dateFrom: '2019-08-10', dateTo: '2019-09-09' } });
 			assert.deepStrictEqual(item.length, 2);
 			sandbox.assert.calledWithExactly(collectionStub.find, { date: { $lte: '2019-09-09', $gte: '2019-08-10' } });
 		});
 
-		it('Testing the values for date', async () => {
+		it('Should filter by dates in ISO format', async () => {
 			const resultIn = [{ id: 1, store: 'blabla', date: new Date('2019-07-20') }, { id: 2, date: new Date('2019-08-20'), store: 'blabla' }];
 			collectionStub.toArray.returns(resultIn);
-			const item = await mongodb.get(model, { filters: { date_from: new Date('2019-08-10'), date_to: new Date('2019-09-09') } });
+			const item = await mongodb.get(model, { filters: { dateFrom: new Date('2019-08-10'), dateTo: new Date('2019-09-09') } });
 			assert.deepStrictEqual(item.length, 2);
 			sandbox.assert.calledWithExactly(collectionStub.find, { date: { $gte: '2019-08-10T00:00:00.000Z', $lte: '2019-09-09T00:00:00.000Z' } });
 		});
-
 	});
 });
