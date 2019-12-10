@@ -332,12 +332,17 @@ describe('MongoDBFilterWrapper', () => {
 			sandbox.assert.calledWithExactly(collectionStub.find, { date: { $lte: '2019-09-09', $gte: '2019-08-10' } });
 		});
 
-		it('Should filter by dates in ISO format', async () => {
+		it('Should filter by dates', async () => {
 			const resultIn = [{ id: 1, store: 'blabla', date: new Date('2019-07-20') }, { id: 2, date: new Date('2019-08-20'), store: 'blabla' }];
 			collectionStub.toArray.returns(resultIn);
 			const item = await mongodb.get(model, { filters: { dateFrom: new Date('2019-08-10'), dateTo: new Date('2019-09-09') } });
 			assert.deepStrictEqual(item.length, 2);
-			sandbox.assert.calledWithExactly(collectionStub.find, { date: { $gte: '2019-08-10T00:00:00.000Z', $lte: '2019-09-09T00:00:00.000Z' } });
+			sandbox.assert.calledWithExactly(collectionStub.find, {
+				date: {
+					$gte: new Date('2019-08-10T00:00:00.000Z'),
+					$lte: new Date('2019-09-09T00:00:00.000Z')
+				}
+			});
 		});
 	});
 });
