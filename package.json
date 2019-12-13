@@ -23,7 +23,8 @@
   "dependencies": {
     "lllog": "^1.1.2",
     "lodash.pick": "^4.4.0",
-    "mongodb": "^3.3.2"
+    "mongodb": "^3.3.2",
+    "superstruct": "^0.6.2"
   },
   "devDependencies": {
     "eslint": "^5.16.0",
