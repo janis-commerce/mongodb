@@ -796,4 +796,100 @@ describe('MongoDB', () => {
 			});
 		});
 	});
+
+	describe('multiInsert()', () => {
+
+		it('Should throw if no model is passed', async () => {
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.multiInsert(null), {
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
+		it('Should throw if items are not an array', async () => {
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.multiInsert(getModel(), {}), {
+				code: MongoDBError.codes.INVALID_ITEM
+			});
+		});
+
+		it('Should throw if items array is empty', async () => {
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.multiInsert(getModel(), []), {
+				code: MongoDBError.codes.INVALID_ITEM
+			});
+		});
+
+		it('Should throw if connection to DB fails', async () => {
+
+			const item = {
+				id: '5df0151dbc1d570011949d86',
+				name: 'Some name'
+			};
+
+			const collection = stubMongo(false);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.multiInsert(getModel(), [{ ...item }]), {
+				message: 'Error getting DB',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.notCalled(collection);
+		});
+
+		it('Should throw if mongodb update method fails', async () => {
+
+			const item = {
+				id: '5df0151dbc1d570011949d86',
+				name: 'Some name'
+			};
+
+			const insertMany = sinon.stub().rejects(new Error('InsertMany internal error'));
+
+			const collection = stubMongo(true, { insertMany });
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.multiInsert(getModel(), [{ ...item }]), {
+				message: 'InsertMany internal error',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.calledOnce(collection);
+			sinon.assert.calledWithExactly(collection, 'myCollection');
+		});
+
+		it('Should map all ID fields and add dateCreated', async () => {
+
+			const item = {
+				otherId: '5df0151dbc1d570011949d87',
+				name: 'Some name'
+			};
+
+			const insertMany = sinon.stub().resolves({ result: { ok: 1 } });
+
+			const collection = stubMongo(true, { insertMany });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.multiInsert(getModel({
+				otherId: {
+					isID: true
+				}
+			}), [{ ...item }]);
+
+			assert.deepStrictEqual(result, true);
+
+			sinon.assert.calledOnce(collection);
+			sinon.assert.calledWithExactly(collection, 'myCollection');
+
+			const expectedItem = {
+				otherId: ObjectID('5df0151dbc1d570011949d87'),
+				name: 'Some name',
+				dateCreated: sinon.match.date
+			};
+
+			sinon.assert.calledOnce(insertMany);
+			sinon.assert.calledWithExactly(insertMany, [expectedItem]);
+		});
+	});
 });
