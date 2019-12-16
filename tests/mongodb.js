@@ -706,4 +706,94 @@ describe('MongoDB', () => {
 			sinon.assert.calledWithExactly(insertOne, expectedItem);
 		});
 	});
+
+	describe('update()', () => {
+
+		it('Should throw if no model is passed', async () => {
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.update(null), {
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
+		it('Should throw if connection to DB fails', async () => {
+
+			const item = {
+				id: '5df0151dbc1d570011949d86',
+				name: 'Some name'
+			};
+
+			const collection = stubMongo(false);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.update(getModel(), { ...item }), {
+				message: 'Error getting DB',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.notCalled(collection);
+		});
+
+		it('Should throw if mongodb update method fails', async () => {
+
+			const item = {
+				id: '5df0151dbc1d570011949d86',
+				name: 'Some name'
+			};
+
+			const updateMany = sinon.stub().rejects(new Error('UpdateMany internal error'));
+
+			const collection = stubMongo(true, { updateMany });
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.update(getModel(), { ...item }), {
+				message: 'UpdateMany internal error',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.calledOnce(collection);
+			sinon.assert.calledWithExactly(collection, 'myCollection');
+		});
+
+		it('Should map all ID fields and add dateModified', async () => {
+
+			const id = '5df0151dbc1d570011949d86';
+
+			const item = {
+				otherId: '5df0151dbc1d570011949d87',
+				name: 'Some name'
+			};
+
+			const updateMany = sinon.stub().resolves({ modifiedCount: 1 });
+
+			const collection = stubMongo(true, { updateMany });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.update(getModel({
+				otherId: {
+					isID: true
+				}
+			}), { ...item }, { id });
+
+			assert.deepStrictEqual(result, 1);
+
+			sinon.assert.calledOnce(collection);
+			sinon.assert.calledWithExactly(collection, 'myCollection');
+
+			const expectedItem = {
+				otherId: ObjectID('5df0151dbc1d570011949d87'),
+				name: 'Some name',
+				dateModified: sinon.match.date
+			};
+
+			sinon.assert.calledOnce(updateMany);
+			sinon.assert.calledWithExactly(updateMany, {
+				_id: {
+					$eq: ObjectID(id)
+				}
+			}, {
+				$set: expectedItem
+			});
+		});
+	});
 });
