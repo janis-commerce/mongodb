@@ -69,6 +69,15 @@ Updates one or more documents in a collection
 - Resolves `Number`: The number of modified documents
 - Rejects `Error` When something bad occurs
 
+### ***async*** `distinct(model, [parameters])`
+Searches distinct values of a property in a collection
+
+- model: `Model`: A model instance
+- parameters: `Object` (optional): The query parameters. Default: `{}`. It only accepts `key` (the field name to get distinct values from, and `filters` -- described below in `get()` method)
+
+- Resolves `Array<Object>`: An array of documents
+- Rejects `Error` When something bad occurs
+
 ### ***async*** `get(model, [parameters])`
 Searches documents in a collection
 
