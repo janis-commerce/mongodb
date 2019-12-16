@@ -1166,4 +1166,96 @@ describe('MongoDB', () => {
 			sinon.assert.notCalled(deleteOne);
 		});
 	});
+
+	describe('multiRemove()', () => {
+
+		it('Should throw if no model is passed', async () => {
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.multiRemove(null), {
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
+		it('Should throw if connection to DB fails', async () => {
+
+			const item = {
+				id: '5df0151dbc1d570011949d86',
+				name: 'Some name'
+			};
+
+			const collection = stubMongo(false);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.multiRemove(getModel(), { ...item }), {
+				message: 'Error getting DB',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.notCalled(collection);
+		});
+
+		it('Should throw if mongodb deleteMany method fails', async () => {
+
+			const item = {
+				id: '5df0151dbc1d570011949d86',
+				name: 'Some name'
+			};
+
+			const deleteMany = sinon.stub().rejects(new Error('DeleteMany internal error'));
+
+			const collection = stubMongo(true, { deleteMany });
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.multiRemove(getModel(), { ...item }), {
+				message: 'DeleteMany internal error',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.calledOnce(collection);
+			sinon.assert.calledWithExactly(collection, 'myCollection');
+		});
+
+		it('Should delete the item using the filters received', async () => {
+
+			const id1 = '5df0151dbc1d570011949d86';
+			const id2 = '5df0151dbc1d570011949d87';
+
+			const filter = {
+				id: [id1, id2],
+				otherId: '5df0151dbc1d570011949d88',
+				name: 'Some name'
+			};
+
+			const deleteMany = sinon.stub().resolves({ deletedCount: 2 });
+
+			const collection = stubMongo(true, { deleteMany });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.multiRemove(getModel({
+				otherId: {
+					isID: true
+				}
+			}), { ...filter });
+
+			assert.deepStrictEqual(result, 2);
+
+			sinon.assert.calledOnce(collection);
+			sinon.assert.calledWithExactly(collection, 'myCollection');
+
+			const expectedFilter = {
+				_id: {
+					$in: [ObjectID(id1), ObjectID(id2)]
+				},
+				otherId: {
+					$eq: ObjectID('5df0151dbc1d570011949d88')
+				},
+				name: {
+					$eq: 'Some name'
+				}
+			};
+
+			sinon.assert.calledOnce(deleteMany);
+			sinon.assert.calledWithExactly(deleteMany, expectedFilter);
+		});
+	});
 });
