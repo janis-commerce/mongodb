@@ -445,7 +445,6 @@ describe('MongoDB', () => {
 				}
 			}, {}, {
 				$set: {
-					_id: ObjectID(id),
 					otherId: '5df0151dbc1d570011949d87',
 					name: 'Some name'
 				},
@@ -613,7 +612,6 @@ describe('MongoDB', () => {
 				}
 			}, {}, {
 				$set: {
-					_id: ObjectID(id),
 					otherId: ObjectID('5df0151dbc1d570011949d87'),
 					name: 'Some name'
 				},
@@ -890,6 +888,143 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnce(insertMany);
 			sinon.assert.calledWithExactly(insertMany, [expectedItem]);
+		});
+	});
+
+	describe('multiSave()', () => {
+
+		it('Should throw if no model is passed', async () => {
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.multiSave(null), {
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
+		it('Should throw if items are not an array', async () => {
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.multiSave(getModel(), {}), {
+				code: MongoDBError.codes.INVALID_ITEM
+			});
+		});
+
+		it('Should throw if items array is empty', async () => {
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.multiSave(getModel(), []), {
+				code: MongoDBError.codes.INVALID_ITEM
+			});
+		});
+
+		it('Should throw if connection to DB fails', async () => {
+
+			const item = {
+				id: '5df0151dbc1d570011949d86',
+				name: 'Some name'
+			};
+
+			const collection = stubMongo(false);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.multiSave(getModel(), [{ ...item }]), {
+				message: 'Error getting DB',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.notCalled(collection);
+		});
+
+		it('Should throw if mongodb bulkWrite method fails', async () => {
+
+			const item = {
+				id: '5df0151dbc1d570011949d86',
+				name: 'Some name'
+			};
+
+			const bulkWrite = sinon.stub().rejects(new Error('BulkWrite internal error'));
+
+			const collection = stubMongo(true, { bulkWrite });
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.multiSave(getModel(), [{ ...item }]), {
+				message: 'BulkWrite internal error',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.calledOnce(collection);
+			sinon.assert.calledWithExactly(collection, 'myCollection');
+		});
+
+		it('Should map all ID fields and add dateCreated into a bulk write operation', async () => {
+
+			const id = '5df0151dbc1d570011949d86';
+
+			const item1 = {
+				id,
+				otherId: '5df0151dbc1d570011949d87',
+				name: 'Some name'
+			};
+
+			const item2 = {
+				otherId: '5df0151dbc1d570011949d88',
+				name: 'Some name'
+			};
+
+			const bulkWrite = sinon.stub().resolves({ result: { ok: 2 } });
+
+			const collection = stubMongo(true, { bulkWrite });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.multiSave(getModel({
+				otherId: {
+					isID: true
+				}
+			}, ['id', 'otherId']), [{ ...item1 }, { ...item2 }]);
+
+			assert.deepStrictEqual(result, true);
+
+			sinon.assert.calledOnce(collection);
+			sinon.assert.calledWithExactly(collection, 'myCollection');
+
+			const expectedItems = [
+				{
+					updateOne: {
+						filter: {
+							_id: {
+								$eq: ObjectID('5df0151dbc1d570011949d86')
+							}
+						},
+						update: {
+							$set: {
+								otherId: ObjectID('5df0151dbc1d570011949d87'),
+								name: 'Some name'
+							},
+							$currentDate: { dateModified: true },
+							$setOnInsert: { dateCreated: sinon.match.date }
+						},
+						upsert: true
+					}
+				},
+				{
+					updateOne: {
+						filter: {
+							otherId: {
+								$eq: ObjectID('5df0151dbc1d570011949d88')
+							}
+						},
+						update: {
+							$set: {
+								otherId: ObjectID('5df0151dbc1d570011949d88'),
+								name: 'Some name'
+							},
+							$currentDate: { dateModified: true },
+							$setOnInsert: { dateCreated: sinon.match.date }
+						},
+						upsert: true
+					}
+				}
+			];
+
+			sinon.assert.calledOnce(bulkWrite);
+			sinon.assert.calledWithExactly(bulkWrite, expectedItems);
 		});
 	});
 });
