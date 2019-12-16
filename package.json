@@ -21,8 +21,6 @@
   },
   "homepage": "https://github.com/janis-commerce/mongodb#readme",
   "dependencies": {
-    "lllog": "^1.1.2",
-    "lodash.pick": "^4.4.0",
     "mongodb": "^3.3.2",
     "superstruct": "^0.6.2"
   },
