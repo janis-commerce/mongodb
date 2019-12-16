@@ -213,5 +213,46 @@ describe('MongoDBFilters', () => {
 			});
 		});
 
+		it('Should use the filters names of the model fields', () => {
+
+			const parsedFilters = MongoDBFilters.parseFilters({
+				foo: 'bar'
+			}, getModel({
+				foo: {
+					field: 'superfoo'
+				}
+			}));
+
+			assert.deepStrictEqual(parsedFilters, {
+				superfoo: {
+					$eq: 'bar'
+				}
+			});
+		});
+
+		it('Should allow multiple filter criteria for the same field', () => {
+
+			const parsedFilters = MongoDBFilters.parseFilters({
+				dateFrom: new Date('2019-12-11T00:00:00.000Z'),
+				dateTo: new Date('2019-12-11T23:59:59.999Z')
+			}, getModel({
+				dateFrom: {
+					field: 'date',
+					type: 'greaterOrEqual'
+				},
+				dateTo: {
+					field: 'date',
+					type: 'lesserOrEqual'
+				}
+			}));
+
+			assert.deepStrictEqual(parsedFilters, {
+				date: {
+					$gte: new Date('2019-12-11T00:00:00.000Z'),
+					$lte: new Date('2019-12-11T23:59:59.999Z')
+				}
+			});
+		});
+
 	});
 });
