@@ -272,11 +272,16 @@ describe('MongoDB', () => {
 			const stubs = mockChain(true, []);
 
 			const mongodb = new MongoDB(config);
-			await mongodb.get(getModel(), {
+			await mongodb.get(getModel({
+				otherId: {
+					isID: true
+				}
+			}), {
 				filters: {
 					foo: 'bar',
 					baz: 1,
-					id: '5df0151dbc1d570011949d86'
+					id: '5df0151dbc1d570011949d86',
+					otherId: ObjectID('5df0151dbc1d570011949d87')
 				}
 			});
 
@@ -289,6 +294,9 @@ describe('MongoDB', () => {
 				},
 				_id: {
 					$eq: ObjectID('5df0151dbc1d570011949d86')
+				},
+				otherId: {
+					$eq: ObjectID('5df0151dbc1d570011949d87')
 				}
 			}, undefined, 0, 500);
 		});
