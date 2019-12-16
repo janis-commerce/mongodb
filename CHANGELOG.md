@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Added
 - `useUnifiedTopology` mongo option set to true
+- `distinct` method is not documented
+
+### Fixed
+- Full refactor of the service to improve code quality and tests reliability
 
 ## [1.8.3] - 2019-12-10
 ### Fixed
