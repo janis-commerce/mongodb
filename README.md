@@ -9,20 +9,25 @@
 npm install --save @janiscommerce/mongodb
 ```
 
+## Models
+Whenever the `Model` type is mentioned in this document, it refers to an instance of [@janiscommerce/model](https://www.npmjs.com/package/@janiscommerce/model).
+
+This is used to configure which collection should be used, which unique indexes it has, among other stuff.
+
 ## API
 
-### `new MongoDB({config})`
-Constructs the MongoDB driver instance, connected with the `config [Object]`.
+### `new MongoDB(config)`
+Constructs the MongoDB driver instance, connected with the `config` object.
 
-**Config validations:**
+**Config properties:**
 
-- host `[String]` (optional): MongoDB host, default: `localhost`
-- protocol `[String]` (optional): host protocol, default: `mongodb://`
-- port `[Number]` (optional): host port, default: `27017`
-- user `[String]` (optional): host username, default none
-- password `[String]` (optional): host user password, default none
-- database `[String]` **(required)**: MongoDB database
-- limit `[Number]` (optional): Limit for `get`/`getTotals` operations, default: `500`
+- host `String` (optional): MongoDB host, default: `localhost`
+- protocol `String` (optional): host protocol, default: `mongodb://`
+- port `Number` (optional): host port, default: `27017`
+- user `String` (optional): host username, default none
+- password `String` (optional): host user password, default none
+- database `String` **(required)**: MongoDB database
+- limit `Number` (optional): Default limit for `get`/`getTotals` operations, default: `500`
 
 **Config usage:**
 ```js
@@ -37,63 +42,48 @@ Constructs the MongoDB driver instance, connected with the `config [Object]`.
 }
 ```
 
-### ***async*** `createIndexes(model)`
-Creates indexes and unique indexes from the model to the MongoDB database.
-Requires a `model [Model]`
-**Important:** This method must be executed before any operation with new databases. If not, the unique indexes will not have any effect in your database.
+### ***async*** `insert(model, item)`
+Inserts one document in a collection
 
-**Indexes and unique indexes in Model:**
-In order to avoid errors you must to specify your indexes and unique indexes in the Model:
-- indexes `[Array]`: The indexes of your model, also you can add an `[Array]` for combine indexes. See example below.
-- uniqueIndexes `[Array]`: The unique indexes of your model, also you can add an `[Array]` for combine unique indexes. See example below.
+- model: `Model`: A model instance
+- item: `Object`: The item to save in the collection
 
-**Combined indexes are used for getting filters with multiple indexes due they are combined as one**
+- Resolves `String`: The *ID* of the inserted item or rejects on failure.
 
-**Model example**
-```js
-class MyModel extends Model {
+### ***async*** `multiInsert(model, items)`
+Inserts multiple documents in a collection
 
-   static get uniqueIndexes() {
-      return [
-         'myUniqueIndex',
-         ['my', 'combined','unique','indexes']
-      ];
-   }
+- model: `Model`: A model instance
+- item: `Array<Object>`: The items to save in the collection
 
-   static get indexes() {
-      return [
-         'myIndex',
-         ['my', 'combined', 'indexes']
-      ];
-   }
+- Resolves `Boolean`: Indicating if the operation was successful.
+- Rejects `Error` When something bad occurs
 
-}
-```
+### ***async*** `update(model, values, filter)`
+Updates one or more documents in a collection
 
-### ***async*** `insert(model, {item})`
-Insert a item into the database.
-Requires a `model [Model]` and `item [Object]`.
-Returns `String` *ID* of the item inserted or rejects if cannot.
+- model: `Model`: A model instance
+- values: `Object`: The values to set in the documents
+- filter: `Object`: Filter criteria to match documents
 
-### ***async*** `multiInsert(model, [{items}])`
-Inserts multiple items into the database.
-Requires a `model [Model]` and `item [Object array]`.
-Returns `true` if the operation was successfull or `false` if not.
+- Resolves `Number`: The number of modified documents
+- Rejects `Error` When something bad occurs
 
-### ***async*** `update(model, {values}, {filter})`
-Updates one or multiple items from the database.
-Requires a `model [Model]`, `values [Object]` and `filter [Object]` (MongoDB filter).
-Returns the modified/updated elements count.
+### ***async*** `get(model, [parameters])`
+Searches documents in a collection
 
-### ***async*** `get(model, {parameters})`
-Search elements from the database then returns an `[Array]` with the results `[Object]`.
-Requires a `model [Model]`, `parameters [Object]` are optional.
+- model: `Model`: A model instance
+- parameters: `Object` (optional): The query parameters. Default: `{}`
 
-Parameters (all are optional):
-- order `[Object]`: Order params for getted items, Example: `{ myField: 'asc', myOtherField: 'desc' }`
-- limit `[Number]`: Max amount of items per page to get. Default: 500 or setted on config when constructs.
-- page `[Number]`: Items of the specified page
-- filters `[Object]`: MongoDB filters, leave empty for all items.
+- Resolves `Array<Object>`: An array of documents
+- Rejects `Error` When something bad occurs
+
+**Available parameters: (all of them are optional)**
+
+- order `Object`: Sets the sorting criteria of the matched documents, for example: `{ myField: 'asc', myOtherField: 'desc' }`
+- limit `Number`: Sets the page size when fetching documents. Defaults to the limit of the constructor.
+- page `Number`: Sets the current page to retrieve.
+- filters `Object|Array<Object>`: Sets the criteria to match documents. An object means AND operation between multiple filters. An array mean an OR operation. See examples [below](#filters).
 
 Parameters example:
 ```js
@@ -112,32 +102,150 @@ Parameters example:
    }
 }
 ```
+
 #### Filters
 
-The filters has a structure to apply, by default uses `equal`.
-For example:
+The filters have a simpler structure than raw mongo filters, in order to simplify it's usage.
+
+**Filter types**
+
+The filter types can be defined in the model static getter `fields` like this:
 ```js
-{
-   filters: {
-    'aField': 'valueToFilter'
-   }
+class MyModel extends Model {
+	static get fields() {
+		return {
+			myField: {
+				type: 'greaterOrEqual'
+			}
+		}
+	}
 }
 ```
-Transforms to:
+
+It can also be overriden in each query like this:
 ```js
-{
-   <aField>: { $eq: <valueToFilter> }
+mongodb.get(myModel, {
+	filters: {
+		myField: {
+			type: 'lesserOrEqual',
+			value: 10
+		}
+	}
+});
+```
+
+The following table shows all the supported filter types, and it's equivalence:
+
+| Type           | Mongo equivalence |
+| -------------- | ----------------- |
+| equal          | $eq               |
+| notEqual       | $ne               |
+| greater        | $gt               |
+| greaterOrEqual | $gte              |
+| lesser         | $lt               |
+| lesserOrEqual  | $lte              |
+| in             | $in               |
+| notIn          | $nin              |
+| search         | $regex            |
+| all            | $all              |
+| exists         | $exists           |
+
+If the type isn't defined in the model nor in the query, it defaults to `equal` for single valued filters or `in` for multivalued filter.
+
+**Internal field names**
+
+The name of a filter and the field that it will match can differ. To achieve that, you must declare it in the model static getter `fields`:
+
+```js
+class MyModel extends Model {
+	static get fields() {
+		return {
+			externalFieldName: {
+				field: 'internalFieldName'
+			}
+		}
+	}
 }
 ```
-If you want to apply different filters it should be as follows:
+
+**Mongo ObjectIDs**
+
+The fields of type `ObjectId` can be defined in the model this way:
 ```js
+class MyModel extends Model {
+	static get fields() {
+		return {
+			someIdField: {
+				isID: true
+			}
+		}
+	}
+}
+```
+
+The package will handle the `string` to `ObjectID` conversion automatically for you. The `id` field is also automatically mapped to `_id` and converted to an `ObjectID`
+
+It also maps `_id` field to `id` when retrieving documents.
+
+**Example**
+
+Putting it all together, here's a complete example with all possible configurations:
+
+```js
+
+class MyModel extends Model {
+	static get fields() {
+		return {
+			otherIdField: {
+				isID: true
+			},
+			greaterField: {
+				type: 'greaterOrEqual'
+			},
+			overridenField: {
+				type: 'search'
+			},
+			externalFieldName: {
+				field: 'internalFieldName'
+			}
+		}
+	}
+}
+
+mongodb.get(myModel, {
+	filters: {
+		id: '5df0151dbc1d570011949d86',
+		otherIdField: ['5df0151dbc1d570011949d87', '5df0151dbc1d570011949d88'],
+		greaterField: 15,
+		overridenField: {
+			type: 'exists',
+			value: true
+		},
+		externalFieldName: true,
+		someOtherField: ['foo', 'bar']
+	}
+});
+
+// This is converted to the following mongo filter:
 {
-    filters: {
-        'aField': {
-            value: 'valueToFilter', // required(string or array)
-            type: 'aTypeChoosen' //optional
-        }
-   }
+	id: {
+		$eq: ObjectID('5df0151dbc1d570011949d86') // Automatically converted to ObjectID, default $eq type
+	},
+	otherIdField: {
+		$in: [ObjectID('5df0151dbc1d570011949d87'), ObjectID('5df0151dbc1d570011949d88')] // Converted to ObjectID by model, default $in type
+	},
+	greaterField: {
+		$gte: 15 // $gte type defined by model
+	},
+	overridenField: {
+		$exists: true // $exists type overriden by query
+	},
+	internalFieldName: {
+		$eq: true // Field name defined by model, default $eq type
+	},
+	someOtherField: {
+		$in: ['foo', 'bar'] // Default $in type
+	}
 }
 ```
 
@@ -146,163 +254,101 @@ If you want to filter by fields inside objects, you can use nested filters. For 
 ```js
 {
 
-   /* item example
-   {
-      id: 'some-id',
-      aField: {
-         property: 'foobar'
-      }
-   }
-   */
-
-   filters: {
-      'aField.property':{
-         value: 'foobar', // required(string or array)
-         type: 'equal' //optional
-      }
-   }
+/* Sample document to match
+{
+	_id: ObjectID('5df0151dbc1d570011949d86'),
+	someField: {
+		foo: 'bar'
+	}
 }
-```
-
-The possible types to use are:
-
-| Filter        | Mongo filter          |
-|---------------|-----------------------|
-| equal         | $eq                   |
-| notEqual      | $ne                   |
-| greater       | $gt                   |
-| greaterOrEqual| $gte                  |
-| lesser        | $lt                   |
-| lesserOrEqual | $lte                  |
-| in            | $in                   |
-| notIn         | $nin                  |
-| search        | $regex                |
-| all           | $all                  |
-| exists        | $exists               |
-
-
-You can also add filters in the model defining the `fields` function as follow:
-```js
-static get fields() {
-    return {
-        'aFieldWithName': {
-            type: 'aTypeDefined',
-            field: 'fieldInMongoDB'
-        },
-        'anotherFieldName': {
-            type: 'aTypeDefined',
-            field: 'fieldInMongoDB'
-        },
-        {
-            ...
-        }
-    }
-}
-```
-In which we have:
-
-`afieldWithName` and `anotherFieldName` as name default in Model <br/>
-`aTypeDefined` as a possible type to use as filter<br/>
-`fieldInMongoDB` as the field in MongoDB to compare<br/>
-
-For example:
-
-```js
-static get fields() {
-    return {
-        date_from: {
-            type: 'greaterOrEqual',
-            field: 'date'
-        },
-        date_from_g: {
-            type: 'greater',
-            field: 'date'
-        }
-    }
-}
-```
-
-#### ObjectID fields
-
-To filter by a field of type ObjectID, you have to set the property `isID` in the model field.
-
-For example:
-
-```js
-static get fields() {
-    return {
-        someId: {
-            isID: true
-        }
-    }
-}
+*/
+mongodb.get(myModel, {
+	filters: {
+		'someField.foo': 'bar'
+	}
+});
 ```
 
 ### ***async*** `getTotals(model)`
-Get the totals of the items from the latest get operation with pagination.
-Requires a `model [Model]`
-Returns an `[Object]` with the total count, page size, pages and selected page.
+Gets information about the quantity of documents matched by the last call to the `get()` method.
 
-getTotals return example:
+- model: `Model`: A model instance used for the query. **IMPORTANT**: This must be the same instance.
+
+- Resolves `Object`: An object containing the totalizers
+- Rejects `Error` When something bad occurs
+
+Return example:
 ```js
 {
-   total: 1000,
-   pageSize: 1000, // Limit from latest get operation or 500 by default
-   pages: 2,
+   total: 140,
+   pageSize: 60,
+   pages: 3,
    page: 1
 }
 ```
 
-### ***async*** `save(model, {item})`
-Insert/update a item into the database.
-Requires a `model [Model]` and `item [Object]`.
-Returns `String` **ID** of the item inserted or updated.
+If no query was executed before, it will just return the `total` and `pages` properties with a value of zero.
 
-### ***async*** `multiSave(model, [{items}], limit)`
-Insert/update multiple items into the database.
-Requires a `model [Model]` and `items [Object array]`.
-`limit [Number]` (optional, default 1000): Specifies the max amount of items that can be written at same time.
-Returns `true/false` if the result was successfully or not.
+### ***async*** `save(model, item)`
+Inserts or updates a document in a collection.
+- model: `Model`: A model instance used for the query.
+- item: `Object`: The item to upsert in the collection
 
-### ***async*** `remove(model, {item})`
-Removes the specified item from the database.
-Requires a `model [Model]` and `item [Object]`.
-Returns `true/false` if the result was successfully or not.
+- Resolves `Object`: An object containing the totalizers
+- Rejects `Error` When something bad occurs
 
-### ***async*** `multiRemove(model, {filter})`
-Removes multiple items from the database.
-Requires a `model [Model]` and `filter [Object]` (MongoDB filter).
-Returns `deletedCount [Number]`.
+This operation uses unique indexes in order to update existing documents. If `id` is provided in the item, it will be used. Otherwise, it will try to match a unique index defined in the model. If no unique index can be matched by the item, it will reject an error.
+
+### ***async*** `multiSave(model, items)`
+Inserts or updates a document in a collection.
+- model: `Model`: A model instance used for the query.
+- items: `Array<Object>`: The items to upsert in the collection
+
+- Resolves `Boolean`: `true` if items can be upserted
+- Rejects `Error` When something bad occurs
+
+### ***async*** `remove(model, item)`
+Inserts or updates a document in a collection.
+- model: `Model`: A model instance used for the query.
+- item: `Object`: The items to be removed
+
+- Resolves `Boolean`: `true` if one document was removed. `false` otherwise.
+- Rejects `Error` When something bad occurs
+
+This operation uses unique indexes in order to remove an existing document. If `id` is provided in the item, it will be used. Otherwise, it will try to match a unique index defined in the model. If no unique index can be matched by the item, it will reject an error.
+
+### ***async*** `multiRemove(model, filter)`
+Removes one or more documents in a collection
+
+- model: `Model`: A model instance
+- filter: `Object`: Filter criteria to match documents
+
+- Resolves `Number`: The number of removed documents
+- Rejects `Error` When something bad occurs
 
 ## Errors
 
 The errors are informed with a `MongoDBError`.
-This object has a code that can be useful for a correct error handling.
+This object has a code that can be useful for a debugging or error handling.
 The codes are the following:
 
-| Code | Description                    |
-|------|--------------------------------|
-| 1    | Model with empty unique indexes|
-| 2    | Empty unique indexes           |
-| 3    | Invalid or empty model         |
-| 4    | Internal mongodb error         |
-| 5    | Invalid item                   |
-
-The config validation errors are informed with a `MongoDBConfigError`
-This object has a code that can be useful for a correct error handling.
-The codes are the following:
-
-| Code | Description                    |
-|------|--------------------------------|
-| 1    | Invalid config                 |
-| 2    | Invalid setting                |
-| 3    | Required setting               |
+| Code | Description                        |
+|------|----------------------------------- |
+| 1    | Model with empty unique indexes    |
+| 2    | No unique indexes could be matched |
+| 3    | Invalid or empty model             |
+| 4    | Internal mongodb error             |
+| 5    | Invalid connection config          |
+| 6    | Invalid item format received       |
+| 7    | Invalid distinct key received      |
+| 8    | Filter type not recognized         |
 
 ## Usage
 
 ```js
 const MongoDB = require('@janiscommerce/mongodb');
-const Model = require('myModel');
+
+const Model = require('./myModel');
 
 const mongo = new MongoDB({
    protocol: 'mongodb://',
@@ -310,79 +356,83 @@ const mongo = new MongoDB({
    port: 27017
    user: 'fizzmod',
    password: 'sarasa',
-   database: 'myDB'
+   database: 'myDatabase'
 });
 
 const model = new Model();
 
-mongo.createIndexes(model);
-
-(async function() {
+(async () => {
 
    let result;
 
    // Insert
-   result = await mongo.insert(model, {
+   await mongo.insert(model, {
       id: 1,
-      value: 'sarasa'
-   }); // expected return: '000000054361564751d8516f'
+      name: 'test'
+   });
+   // > '000000054361564751d8516f'
 
    // multiInsert
    result = await mongo.multiInsert(model, [
-      { id: 1, value: 'sarasa 1' },
-      { id: 2, value: 'sarasa 2' },
-      { id: 3, value: 'sarasa 3' }
-   ]); // expected return: true
+      { id: 2, name: 'test 1' },
+      { id: 3, name: 'test 2' },
+      { id: 4, name: 'test 3' }
+   ]);
+   // > true
 
    // update
    result = await mongo.update(model,
-      { value: 'foobar' },
+      { name: 'foobar' },
       { id: 1 }
-   ); // expected return: 1 (row with id == 1 will change his "value" from "sarasa" to "foobar")
+   );
+   // > 1
 
    // get
-   result = await mongo.get(model, {}) // expected return: all entries
-   result = await mongo.get(model, { filters: { id: 1 } }) // expected return: row with id == 1
-   result = await mongo.get(model, { limit: 10, page: 2 filters: { value: 'foo' } }) // expected return: page 2 of elements with value "foo" with a page size of 10 elements.
+   result = await mongo.get(model, {})
+   // > [ ... ] // Every document in the collection, up to 500 documents.
+
+   result = await mongo.get(model, { filters: { id: 1 } })
+   // > [{ id: 1, name: 'foobar' }]
+
+   result = await mongo.get(model, { limit: 10, page: 2 filters: { name: 'foo' } }) // expected return: page 2 of elements with value "foo" with a page size of 10 elements.
+   // > [ ... ] // The second page of 10 documents matching name equals to 'foo'.
+
    result = await mongo.get(model, { order: { id: 'desc' } }); // expected return: all entries ordered descendently by id
+   // > [ ... ] // Every document in the collection, ordered by descending id, up to 500 documents.
 
    // getTotals
    result = await mongo.getTotals(model);
-
-   /* Example return
-      {
-         page: 2,
-         limit: 10,
-         pages: 5,
-         total: 50
-      }
-   */
+   // > { page: 1, limit: 500, pages: 1, total: 4 }
 
   // save insert
    result = await mongo.save(model, {
       unique: 1,
-      value: 'sarasa'
-   }); // expected return: '00000058faf66849077316ba'
+      name: 'test'
+   });
+   // > '000000054361564751d8516f'
 
    // save update
    result = await mongo.save(model, {
       id: '00000058faf66849077316ba',
       unique: 1,
-      value: 'sarasa'
-   }); // expected return: '00000058faf66849077316ba'
+      name: 'test'
+   });
+   // > '00000058faf66849077316ba'
 
    // multiSave
    result = await mongo.multiSave(model, [
-      { id: 1, value: 'sarasa 1' },
-      { id: 2, value: 'sarasa 2' },
-      { id: 3, value: 'sarasa 3' }
-   ]); // expected return: true
+      { id: 1, name: 'test 1' },
+      { id: 2, name: 'test 2' },
+      { id: 3, name: 'test 3' }
+   ]);
+   // > true
 
    // remove
-   result = await mongo.remove(model, { id: '0000000055f2255a1a8e0c54' }); // expected return: true
+   result = await mongo.remove(model, { id: '0000000055f2255a1a8e0c54' });
+   // > true
 
    // multiRemove
-   result = await mongo.multiRemove(model, { value: /sarasa/ });
-   // expected return: 3 (should delete all items that contains "sarasa" on "value" field).
+   result = await mongo.multiRemove(model, { name: { type: 'search', value: 'test' } });
+   // > 3
 });
 ```
