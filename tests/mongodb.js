@@ -34,20 +34,20 @@ describe('MongoDB', () => {
 
 	const stubMongo = (getDbIsSuccessful, collectionReturnValue) => {
 
-		sinon.stub(MongoWrapper, 'getDb');
+		sinon.stub(MongoWrapper.prototype, 'getDb');
 
 		const collection = sinon.stub().returns(collectionReturnValue);
 
 		if(getDbIsSuccessful)
-			MongoWrapper.getDb.resolves({ collection });
+			MongoWrapper.prototype.getDb.resolves({ collection });
 		else
-			MongoWrapper.getDb.rejects(new Error('Error getting DB'));
+			MongoWrapper.prototype.getDb.rejects(new Error('Error getting DB'));
 
 		return collection;
 	};
 
 	beforeEach(() => {
-		sinon.stub(MongoWrapper, 'connect');
+		sinon.stub(MongoWrapper.prototype, 'connect');
 	});
 
 	afterEach(() => {
