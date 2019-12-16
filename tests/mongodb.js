@@ -1027,4 +1027,143 @@ describe('MongoDB', () => {
 			sinon.assert.calledWithExactly(bulkWrite, expectedItems);
 		});
 	});
+
+	describe('remove()', () => {
+
+		it('Should throw if no model is passed', async () => {
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.remove(null), {
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
+		it('Should throw if connection to DB fails', async () => {
+
+			const item = {
+				id: '5df0151dbc1d570011949d86',
+				name: 'Some name'
+			};
+
+			const collection = stubMongo(false);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.remove(getModel(), { ...item }), {
+				message: 'Error getting DB',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.notCalled(collection);
+		});
+
+		it('Should throw if mongodb deleteOne method fails', async () => {
+
+			const item = {
+				id: '5df0151dbc1d570011949d86',
+				name: 'Some name'
+			};
+
+			const deleteOne = sinon.stub().rejects(new Error('DeleteOne internal error'));
+
+			const collection = stubMongo(true, { deleteOne });
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.remove(getModel(), { ...item }), {
+				message: 'DeleteOne internal error',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.calledOnce(collection);
+			sinon.assert.calledWithExactly(collection, 'myCollection');
+		});
+
+		it('Should delete the item using ID if it\'s defined', async () => {
+
+			const id = '5df0151dbc1d570011949d86';
+
+			const item = {
+				id,
+				otherId: '5df0151dbc1d570011949d87',
+				name: 'Some name'
+			};
+
+			const deleteOne = sinon.stub().resolves({ deletedCount: 1 });
+
+			const collection = stubMongo(true, { deleteOne });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.remove(getModel({
+				otherId: {
+					isID: true
+				}
+			}, ['id', 'otherId']), { ...item });
+
+			assert.deepStrictEqual(result, true);
+
+			sinon.assert.calledOnce(collection);
+			sinon.assert.calledWithExactly(collection, 'myCollection');
+
+			const expectedItem = {
+				_id: {
+					$eq: ObjectID(id)
+				}
+			};
+
+			sinon.assert.calledOnce(deleteOne);
+			sinon.assert.calledWithExactly(deleteOne, expectedItem);
+		});
+
+		it('Should delete the item using a unique index if ID is not defined', async () => {
+
+			const item = {
+				otherId: '5df0151dbc1d570011949d87',
+				name: 'Some name'
+			};
+
+			const deleteOne = sinon.stub().resolves({ deletedCount: 1 });
+
+			const collection = stubMongo(true, { deleteOne });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.remove(getModel({
+				otherId: {
+					isID: true
+				}
+			}, ['id', 'otherId']), { ...item });
+
+			assert.deepStrictEqual(result, true);
+
+			sinon.assert.calledOnce(collection);
+			sinon.assert.calledWithExactly(collection, 'myCollection');
+
+			const expectedItem = {
+				otherId: {
+					$eq: ObjectID('5df0151dbc1d570011949d87')
+				}
+			};
+
+			sinon.assert.calledOnce(deleteOne);
+			sinon.assert.calledWithExactly(deleteOne, expectedItem);
+		});
+
+		it('Should throw if no unique indexes can be matched', async () => {
+
+			const item = {
+				name: 'Some name'
+			};
+
+			const deleteOne = sinon.stub().resolves({ deletedCount: 0 });
+
+			const collection = stubMongo(true, { deleteOne });
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.remove(getModel({
+				otherId: {
+					isID: true
+				}
+			}, ['id', 'otherId']), { ...item }));
+
+			sinon.assert.notCalled(collection);
+			sinon.assert.notCalled(deleteOne);
+		});
+	});
 });
