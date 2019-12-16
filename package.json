@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/janis-commerce/mongodb#readme",
   "dependencies": {
-    "mongodb": "^3.3.2",
+    "mongodb": "^3.4.0",
     "superstruct": "^0.6.2"
   },
   "devDependencies": {

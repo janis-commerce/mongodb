@@ -288,7 +288,7 @@ describe('MongoDB', () => {
 					$eq: 1
 				},
 				_id: {
-					$eq: '5df0151dbc1d570011949d86'
+					$eq: ObjectID('5df0151dbc1d570011949d86')
 				}
 			}, undefined, 0, 500);
 		});
