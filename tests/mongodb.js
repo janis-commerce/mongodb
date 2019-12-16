@@ -46,6 +46,47 @@ describe('MongoDB', () => {
 		return collection;
 	};
 
+	const mockChain = (getDbIsSuccessful, response, collectionExtraData) => {
+
+		const toArray = response instanceof Error ? sinon.stub().rejects(response) : sinon.stub().resolves(response);
+		const limit = sinon.stub().returns({ toArray });
+		const skip = sinon.stub().returns({ limit });
+		const sort = sinon.stub().returns({ skip });
+		const find = sinon.stub().returns({ sort });
+
+		const collection = stubMongo(getDbIsSuccessful, { find, ...(collectionExtraData || {}) });
+
+		return {
+			toArray,
+			limit,
+			skip,
+			sort,
+			find,
+			collection
+		};
+	};
+
+	const assertChain = (stubs, collectionName, filters, order, skip, limit) => {
+
+		sinon.assert.calledOnce(stubs.collection);
+		sinon.assert.calledWithExactly(stubs.collection, collectionName);
+
+		sinon.assert.calledOnce(stubs.find);
+		sinon.assert.calledWithExactly(stubs.find, filters);
+
+		sinon.assert.calledOnce(stubs.sort);
+		sinon.assert.calledWithExactly(stubs.sort, order);
+
+		sinon.assert.calledOnce(stubs.skip);
+		sinon.assert.calledWithExactly(stubs.skip, skip);
+
+		sinon.assert.calledOnce(stubs.limit);
+		sinon.assert.calledWithExactly(stubs.limit, limit);
+
+		sinon.assert.calledOnce(stubs.toArray);
+		sinon.assert.calledWithExactly(stubs.toArray);
+	};
+
 	beforeEach(() => {
 		sinon.stub(MongoWrapper.prototype, 'connect');
 	});
@@ -150,47 +191,6 @@ describe('MongoDB', () => {
 
 	describe('get()', () => {
 
-		const mockChain = (getDbIsSuccessful, response) => {
-
-			const toArray = response instanceof Error ? sinon.stub().rejects(response) : sinon.stub().resolves(response);
-			const limit = sinon.stub().returns({ toArray });
-			const skip = sinon.stub().returns({ limit });
-			const sort = sinon.stub().returns({ skip });
-			const find = sinon.stub().returns({ sort });
-
-			const collection = stubMongo(getDbIsSuccessful, { find });
-
-			return {
-				toArray,
-				limit,
-				skip,
-				sort,
-				find,
-				collection
-			};
-		};
-
-		const assertChain = (stubs, collectionName, filters, order, skip, limit) => {
-
-			sinon.assert.calledOnce(stubs.collection);
-			sinon.assert.calledWithExactly(stubs.collection, collectionName);
-
-			sinon.assert.calledOnce(stubs.find);
-			sinon.assert.calledWithExactly(stubs.find, filters);
-
-			sinon.assert.calledOnce(stubs.sort);
-			sinon.assert.calledWithExactly(stubs.sort, order);
-
-			sinon.assert.calledOnce(stubs.skip);
-			sinon.assert.calledWithExactly(stubs.skip, skip);
-
-			sinon.assert.calledOnce(stubs.limit);
-			sinon.assert.calledWithExactly(stubs.limit, limit);
-
-			sinon.assert.calledOnce(stubs.toArray);
-			sinon.assert.calledWithExactly(stubs.toArray);
-		};
-
 		it('Should throw if no model is passed', async () => {
 			const mongodb = new MongoDB(config);
 			await assert.rejects(() => mongodb.get(null), {
@@ -227,14 +227,34 @@ describe('MongoDB', () => {
 			sinon.assert.calledWithExactly(collection, 'myCollection');
 		});
 
-		it('Should resolve what the mongodb find-method-chain resolves', async () => {
+		it('Should resolve what the mongodb find-method-chain resolves if no _id field exists', async () => {
 
-			mockChain(true, []);
+			mockChain(true, [{
+				foo: 'bar'
+			}]);
 
 			const mongodb = new MongoDB(config);
 			const result = await mongodb.get(getModel(), {});
 
-			assert.deepStrictEqual(result, []);
+			assert.deepStrictEqual(result, [{
+				foo: 'bar'
+			}]);
+		});
+
+		it('Should resolve what the mongodb find-method-chain resolves mapping _id field to id', async () => {
+
+			mockChain(true, [{
+				_id: ObjectID('5df0151dbc1d570011949d86'),
+				foo: 'bar'
+			}]);
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.get(getModel(), {});
+
+			assert.deepStrictEqual(result, [{
+				id: '5df0151dbc1d570011949d86',
+				foo: 'bar'
+			}]);
 		});
 
 		it('Should pass the default values to the find-method-chain', async () => {
@@ -1256,6 +1276,149 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnce(deleteMany);
 			sinon.assert.calledWithExactly(deleteMany, expectedFilter);
+		});
+	});
+
+	describe('getTotals()', () => {
+
+		it('Should throw if no model is passed', async () => {
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.getTotals(null), {
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
+		it('Should return without calling mongo if get is not called first', async () => {
+
+			const mongodb = new MongoDB(config);
+
+			const countDocuments = sinon.stub();
+
+			const collection = stubMongo(true, { countDocuments });
+
+			const result = await mongodb.getTotals(getModel());
+
+			assert.deepStrictEqual(result, {
+				total: 0,
+				pages: 0
+			});
+
+			sinon.assert.notCalled(collection);
+			sinon.assert.notCalled(countDocuments);
+		});
+
+		it('Should return without calling mongo if last query was empty', async () => {
+
+			const mongodb = new MongoDB(config);
+
+			const countDocuments = sinon.stub();
+
+			const { collection } = mockChain(true, [], { countDocuments });
+
+			const model = getModel();
+
+			// Get to populate internal properties
+			await mongodb.get(model, {});
+
+			const result = await mongodb.getTotals(model);
+
+			assert.deepStrictEqual(result, {
+				total: 0,
+				pages: 0
+			});
+
+			// Collection se llama una vez para el get
+			sinon.assert.calledOnce(collection);
+			sinon.assert.notCalled(countDocuments);
+		});
+
+		it('Should throw if no mongo countDocuments method fails', async () => {
+
+			const mongodb = new MongoDB(config);
+
+			const countDocuments = sinon.stub().rejects(new Error('CountDocuments internal error'));
+
+			const { collection } = mockChain(true, [{}], { countDocuments });
+
+			const model = getModel();
+
+			// Get to populate internal properties
+			await mongodb.get(model, {});
+
+			await assert.rejects(() => mongodb.getTotals(model), {
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			// Collection se llama una vez para el get
+			sinon.assert.calledTwice(collection);
+			sinon.assert.calledOnce(countDocuments);
+			sinon.assert.calledWithExactly(countDocuments, {});
+		});
+
+		it('Should return the totals object for one item', async () => {
+
+			const mongodb = new MongoDB(config);
+
+			const countDocuments = sinon.stub().resolves(1);
+
+			const { collection } = mockChain(true, [{}], { countDocuments });
+
+			const model = getModel();
+
+			// Get to populate internal properties
+			await mongodb.get(model, {});
+
+			const result = await mongodb.getTotals(model);
+
+			assert.deepStrictEqual(result, {
+				total: 1,
+				pageSize: 500,
+				pages: 1,
+				page: 1
+			});
+
+			// Collection se llama una vez para el get
+			sinon.assert.calledTwice(collection);
+			sinon.assert.calledOnce(countDocuments);
+			sinon.assert.calledWithExactly(countDocuments, {});
+		});
+
+		it('Should return the totals object for queries with filters, specific page and custom limit', async () => {
+
+			const mongodb = new MongoDB(config);
+
+			const countDocuments = sinon.stub().resolves(140);
+
+			const { collection } = mockChain(true, [{}], { countDocuments });
+
+			const model = getModel();
+
+			// Get to populate internal properties
+			await mongodb.get(model, {
+				filters: {
+					status: 'active'
+				},
+				page: 2,
+				limit: 60
+			});
+
+			const result = await mongodb.getTotals(model);
+
+			assert.deepStrictEqual(result, {
+				total: 140,
+				pageSize: 60,
+				pages: 3,
+				page: 2
+			});
+
+			// Collection se llama una vez para el get
+			sinon.assert.calledTwice(collection);
+			sinon.assert.calledOnce(countDocuments);
+			sinon.assert.calledWithExactly(countDocuments, {
+				status: {
+					$eq: 'active'
+				}
+			});
 		});
 	});
 });
