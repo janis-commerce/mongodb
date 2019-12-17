@@ -6,9 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.8.4] - 2019-12-17
 ### Added
 - `useUnifiedTopology` mongo option set to true
-- `distinct` method is not documented
+- `distinct` method is now documented
+
+### Changed
+- `search` filter type is now case insensitive
 
 ### Fixed
 - Full refactor of the service to improve code quality and tests reliability
