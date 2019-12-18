@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [1.8.5] - 2019-12-18
+### Fixed
+- Fix in filters with `null` value
+
 ## [1.8.4] - 2019-12-17
 ### Added
 - `useUnifiedTopology` mongo option set to true
