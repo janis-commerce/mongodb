@@ -55,6 +55,8 @@ describe('MongoDBFilters', () => {
 				foo: ['bar'],
 				baz: 1,
 				date,
+				nullable: null,
+				nullable2: { type: 'notEqual', value: null },
 				id
 			}, getModel({
 				foo: true
@@ -69,6 +71,12 @@ describe('MongoDBFilters', () => {
 				},
 				date: {
 					$eq: date
+				},
+				nullable: {
+					$eq: null
+				},
+				nullable2: {
+					$ne: null
 				},
 				id: {
 					$eq: id
