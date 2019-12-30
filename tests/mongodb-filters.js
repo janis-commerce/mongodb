@@ -187,7 +187,7 @@ describe('MongoDBFilters', () => {
 			});
 		});
 
-		it('Should return the filters OR filters if they are passed as an array', () => {
+		it('Should return the OR filters if they are passed as an array', () => {
 
 			const parsedFilters = MongoDBFilters.parseFilters([
 				{

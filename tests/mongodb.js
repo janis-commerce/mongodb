@@ -301,6 +301,59 @@ describe('MongoDB', () => {
 			}, undefined, 0, 500);
 		});
 
+		it('Should pass the parsed filters (as OR filters) to the find-method-chain', async () => {
+
+			const stubs = mockChain(true, []);
+
+			const date = new Date();
+
+			const mongodb = new MongoDB(config);
+			await mongodb.get(getModel({
+				otherId: {
+					isID: true
+				}
+			}), {
+				filters: [
+					{
+						foo: 'bar',
+						id: '5df0151dbc1d570011949d86',
+						otherId: [ObjectID('5df0151dbc1d570011949d87'), '5df0151dbc1d570011949d88']
+					},
+					{
+						baz: {
+							type: 'equal',
+							value: [1, 2]
+						},
+						date
+					}
+				]
+			});
+
+			assertChain(stubs, 'myCollection', {
+				$or: [
+					{
+						foo: {
+							$eq: 'bar'
+						},
+						_id: {
+							$eq: ObjectID('5df0151dbc1d570011949d86')
+						},
+						otherId: {
+							$in: [ObjectID('5df0151dbc1d570011949d87'), ObjectID('5df0151dbc1d570011949d88')]
+						}
+					},
+					{
+						baz: {
+							$eq: [1, 2]
+						},
+						date: {
+							$eq: date
+						}
+					}
+				]
+			}, undefined, 0, 500);
+		});
+
 		it('Should not pass the parsed sort params to the find-method-chain if they are invalid', async () => {
 
 			const stubs = mockChain(true, []);
