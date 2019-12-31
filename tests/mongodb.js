@@ -660,6 +660,45 @@ describe('MongoDB', () => {
 			sinon.assert.notCalled(findAndModify);
 		});
 
+		it('Should remove conflictive fields from data', async () => {
+
+			const id = '5df0151dbc1d570011949d86';
+
+			const item = {
+				id,
+				otherId: '5df0151dbc1d570011949d87',
+				name: 'Some name',
+				dateCreated: new Date(),
+				dateModified: new Date()
+			};
+
+			const findAndModify = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
+
+			const collection = stubMongo(true, { findAndModify });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.save(getModel(), { ...item });
+
+			assert.deepStrictEqual(result, id);
+
+			sinon.assert.calledOnce(collection);
+			sinon.assert.calledWithExactly(collection, 'myCollection');
+
+			sinon.assert.calledOnce(findAndModify);
+			sinon.assert.calledWithExactly(findAndModify, {
+				_id: {
+					$eq: ObjectID(id)
+				}
+			}, {}, {
+				$set: {
+					otherId: '5df0151dbc1d570011949d87',
+					name: 'Some name'
+				},
+				$currentDate: { dateModified: true },
+				$setOnInsert: { dateCreated: sinon.match.date }
+			}, { upsert: true, new: true });
+		});
+
 		it('Should map the model defined ID fields to ObjectIDs', async () => {
 
 			const id = '5df0151dbc1d570011949d86';
@@ -1041,12 +1080,15 @@ describe('MongoDB', () => {
 			const item1 = {
 				id,
 				otherId: '5df0151dbc1d570011949d87',
-				name: 'Some name'
+				name: 'Some name',
+				dateCreated: new Date()
 			};
 
 			const item2 = {
 				otherId: '5df0151dbc1d570011949d88',
-				name: 'Some name'
+				name: 'Some name',
+				dateCreated: new Date(),
+				dateModified: new Date()
 			};
 
 			const bulkWrite = sinon.stub().resolves({ result: { ok: 2 } });
