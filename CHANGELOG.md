@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- `getIndexes` method for getting the collection indexes
+- `createIndex` method for creating an index into the collection
+- `createIndexes` method for creating multiple indexes into the collection
+- `dropIndex` method for dropping an index from the collection
+- `dropIndexes` method for dropping all the indexes from the collection
 
 ## [1.8.7] - 2019-12-31
 ### Fixed

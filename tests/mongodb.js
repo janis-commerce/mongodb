@@ -1524,4 +1524,541 @@ describe('MongoDB', () => {
 			});
 		});
 	});
+
+	describe('getIndexes()', () => {
+
+		it('Should throw if no model is passed', async () => {
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.getIndexes(null), {
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
+		it('Should throw if connection to DB fails', async () => {
+
+			const collectionStub = stubMongo(false);
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(() => mongodb.getIndexes(getModel()), {
+				message: 'Error getting DB',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.notCalled(collectionStub);
+		});
+
+		it('Should throw if mongodb indexes method fails', async () => {
+
+			const indexesStub = sinon.stub().rejects(new Error('Indexes internal error'));
+			const collectionStub = stubMongo(true, { indexes: indexesStub });
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(() => mongodb.getIndexes(getModel()), {
+				message: 'Indexes internal error',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.calledOnce(collectionStub);
+			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
+		});
+
+		it('Should return the indexes from the model collection', async () => {
+
+			const indexesStub = sinon.stub().resolves([
+				{
+					v: 2,
+					key: { field: 1 },
+					name: 'some-index',
+					ns: 'myDatabase.myCollection'
+				},
+				{
+					v: 2,
+					key: { uniqueField: 1 },
+					name: 'unique-index',
+					ns: 'myDatabase.myCollection',
+					unique: true
+				}
+			]);
+
+			const collectionStub = stubMongo(true, { indexes: indexesStub });
+
+			const mongodb = new MongoDB(config);
+			const model = getModel();
+
+			const result = await mongodb.getIndexes(model);
+
+			assert.deepStrictEqual(result, [
+				{
+					name: 'some-index',
+					key: { field: 1 },
+					unique: false
+				},
+				{
+					name: 'unique-index',
+					key: { uniqueField: 1 },
+					unique: true
+				}
+			]);
+
+			sinon.assert.calledOnce(collectionStub);
+			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
+
+			sinon.assert.calledOnce(indexesStub);
+			sinon.assert.calledWithExactly(indexesStub);
+		});
+	});
+
+	describe('createIndexes()', () => {
+
+		const indexes = [
+			{
+				name: 'some-index',
+				key: {
+					field: 1
+				}
+			},
+			{
+				name: 'unique-index',
+				key: {
+					uniqueField: 1
+				},
+				unique: true
+			}
+		];
+
+		it('Should throw if no model is passed', async () => {
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.createIndexes(null), {
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
+		it('Should throw if connection to DB fails', async () => {
+
+			const collectionStub = stubMongo(false);
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(() => mongodb.createIndexes(getModel(), indexes), {
+				message: 'Error getting DB',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.notCalled(collectionStub);
+		});
+
+		it('Should throw if mongodb createIndexes method fails', async () => {
+
+			const createIndexesStub = sinon.stub().rejects(new Error('createIndexes internal error'));
+			const collectionStub = stubMongo(true, { createIndexes: createIndexesStub });
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(() => mongodb.createIndexes(getModel(), indexes), {
+				message: 'createIndexes internal error',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.calledOnce(collectionStub);
+			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
+		});
+
+		[
+
+			null,
+			undefined,
+			'not an object',
+			['array'],
+			{},
+			{
+				key: 'not an object'
+			},
+			{
+				name: { not: 'a string' },
+				key: { field: 1 }
+			},
+			{
+				name: 'some-index',
+				key: { field: 1 },
+				unique: 'not a boolean'
+			}
+
+		].forEach(index => {
+
+			it('Should throw if received indexes are invalid', async () => {
+
+				const mongodb = new MongoDB(config);
+				const model = getModel();
+
+				await assert.rejects(() => mongodb.createIndexes(model, [index]), {
+					name: 'MongoDBError',
+					code: MongoDBError.codes.INVALID_INDEX
+				});
+			});
+		});
+
+		it('Should throw if received indexes are invalid', async () => {
+
+			const mongodb = new MongoDB(config);
+			const model = getModel();
+
+			await assert.rejects(() => mongodb.createIndexes(model, { invalid: 'index' }));
+
+		});
+
+		it('Should return true if can create the indexes into the model collection successfully', async () => {
+
+			const createIndexesStub = sinon.stub().resolves({ ok: true });
+			const collectionStub = stubMongo(true, { createIndexes: createIndexesStub });
+
+			const mongodb = new MongoDB(config);
+			const model = getModel();
+
+			const result = await mongodb.createIndexes(model, indexes);
+
+			assert.deepStrictEqual(result, true);
+
+			sinon.assert.calledOnce(collectionStub);
+			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
+
+			sinon.assert.calledOnce(createIndexesStub);
+			sinon.assert.calledWithExactly(createIndexesStub, indexes);
+		});
+
+		it('Should return false if can\'t create the indexes into the model collection', async () => {
+
+			const createIndexesStub = sinon.stub().resolves({ ok: false });
+			const collectionStub = stubMongo(true, { createIndexes: createIndexesStub });
+
+			const mongodb = new MongoDB(config);
+			const model = getModel();
+
+			const result = await mongodb.createIndexes(model, indexes);
+
+			assert.deepStrictEqual(result, false);
+
+			sinon.assert.calledOnce(collectionStub);
+			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
+
+			sinon.assert.calledOnce(createIndexesStub);
+			sinon.assert.calledWithExactly(createIndexesStub, indexes);
+		});
+	});
+
+	describe('createIndex()', () => {
+
+		const index = {
+			name: 'some-index',
+			key: {
+				field: 1
+			}
+		};
+
+		it('Should throw if no model is passed', async () => {
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.createIndex(null), {
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
+		it('Should throw if connection to DB fails', async () => {
+
+			const collectionStub = stubMongo(false);
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(() => mongodb.createIndex(getModel(), index), {
+				message: 'Error getting DB',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.notCalled(collectionStub);
+		});
+
+		it('Should throw if mongodb createIndexes method fails', async () => {
+
+			const createIndexesStub = sinon.stub().rejects(new Error('createIndexes internal error'));
+			const collectionStub = stubMongo(true, { createIndexes: createIndexesStub });
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(() => mongodb.createIndex(getModel(), index), {
+				message: 'createIndexes internal error',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.calledOnce(collectionStub);
+			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
+		});
+
+		[
+
+			null,
+			undefined,
+			'not an object',
+			['array'],
+			{},
+			{
+				key: 'not an object'
+			},
+			{
+				name: { not: 'a string' },
+				key: { field: 1 }
+			},
+			{
+				name: 'some-index',
+				key: { field: 1 },
+				unique: 'not a boolean'
+			}
+
+		].forEach(invalidIndex => {
+
+			it('Should throw if received index is invalid', async () => {
+
+				sinon.spy(MongoDB.prototype, 'createIndexes');
+
+				const mongodb = new MongoDB(config);
+				const model = getModel();
+
+				await assert.rejects(() => mongodb.createIndex(model, invalidIndex), {
+					name: 'MongoDBError',
+					code: MongoDBError.codes.INVALID_INDEX
+				});
+
+				sinon.assert.calledOnce(MongoDB.prototype.createIndexes);
+				sinon.assert.calledWithExactly(MongoDB.prototype.createIndexes, model, [invalidIndex]);
+			});
+		});
+
+		it('Should return true if can create the index into the model collection successfully', async () => {
+
+			sinon.stub(MongoDB.prototype, 'createIndexes')
+				.resolves(true);
+
+			const mongodb = new MongoDB(config);
+			const model = getModel();
+
+			const result = await mongodb.createIndex(model, index);
+
+			assert.deepStrictEqual(result, true);
+
+			sinon.assert.calledOnce(MongoDB.prototype.createIndexes);
+			sinon.assert.calledWithExactly(MongoDB.prototype.createIndexes, model, [index]);
+		});
+
+		it('Should return false if can\'t create the indexes into the model collection', async () => {
+
+			sinon.stub(MongoDB.prototype, 'createIndexes')
+				.resolves(false);
+
+			const mongodb = new MongoDB(config);
+			const model = getModel();
+
+			const result = await mongodb.createIndex(model, index);
+
+			assert.deepStrictEqual(result, false);
+
+			sinon.assert.calledOnce(MongoDB.prototype.createIndexes);
+			sinon.assert.calledWithExactly(MongoDB.prototype.createIndexes, model, [index]);
+		});
+	});
+
+	describe('dropIndexes()', () => {
+
+		it('Should throw if no model is passed', async () => {
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.dropIndexes(null), {
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
+		it('Should throw if connection to DB fails', async () => {
+
+			const collectionStub = stubMongo(false);
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(() => mongodb.dropIndexes(getModel()), {
+				message: 'Error getting DB',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.notCalled(collectionStub);
+		});
+
+		it('Should throw if mongodb dropIndexes method fails', async () => {
+
+			const dropIndexesStub = sinon.stub().rejects(new Error('dropIndexes internal error'));
+			const collectionStub = stubMongo(true, { dropIndexes: dropIndexesStub });
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(() => mongodb.dropIndexes(getModel()), {
+				message: 'dropIndexes internal error',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.calledOnce(collectionStub);
+			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
+		});
+
+		it('Should return true if can drop the indexes from the model collection successfully', async () => {
+
+			const dropIndexesStub = sinon.stub().resolves(true);
+			const collectionStub = stubMongo(true, { dropIndexes: dropIndexesStub });
+
+			const mongodb = new MongoDB(config);
+			const model = getModel();
+
+			const result = await mongodb.dropIndexes(model);
+
+			assert.deepStrictEqual(result, true);
+
+			sinon.assert.calledOnce(collectionStub);
+			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
+
+			sinon.assert.calledOnce(dropIndexesStub);
+		});
+
+		it('Should return false if can\'t drop the indexes from the model collection', async () => {
+
+			const dropIndexesStub = sinon.stub().resolves(false);
+			const collectionStub = stubMongo(true, { dropIndexes: dropIndexesStub });
+
+			const mongodb = new MongoDB(config);
+			const model = getModel();
+
+			const result = await mongodb.dropIndexes(model);
+
+			assert.deepStrictEqual(result, false);
+
+			sinon.assert.calledOnce(collectionStub);
+			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
+
+			sinon.assert.calledOnce(dropIndexesStub);
+		});
+	});
+
+	describe('dropIndex()', () => {
+
+		const index = {
+			name: 'some-index',
+			key: {
+				field: 1
+			}
+		};
+
+		it('Should throw if no model is passed', async () => {
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.dropIndex(null), {
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
+		it('Should throw if connection to DB fails', async () => {
+
+			const collectionStub = stubMongo(false);
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(() => mongodb.dropIndex(getModel(), index), {
+				message: 'Error getting DB',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.notCalled(collectionStub);
+		});
+
+		it('Should throw if mongodb dropIndex method fails', async () => {
+
+			const dropIndexStub = sinon.stub().rejects(new Error('dropIndex internal error'));
+			const collectionStub = stubMongo(true, { dropIndex: dropIndexStub });
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(() => mongodb.dropIndex(getModel(), index), {
+				message: 'dropIndex internal error',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.calledOnce(collectionStub);
+			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
+		});
+
+		[
+
+			null,
+			undefined,
+			'not an object',
+			['array'],
+			{},
+			{
+				key: 'not an object'
+			},
+			{
+				name: { not: 'a string' },
+				key: { field: 1 }
+			},
+			{
+				name: 'some-index',
+				key: { field: 1 },
+				unique: 'not a boolean'
+			}
+
+		].forEach(invalidIndex => {
+
+			it('Should throw if received index is invalid', async () => {
+
+				sinon.spy(MongoDB.prototype, 'createIndexes');
+
+				const mongodb = new MongoDB(config);
+				const model = getModel();
+
+				await assert.rejects(() => mongodb.dropIndex(model, invalidIndex), {
+					name: 'MongoDBError',
+					code: MongoDBError.codes.INVALID_INDEX
+				});
+			});
+		});
+
+		it('Should return true if can drop the index from the model collection successfully', async () => {
+
+			const dropIndexStub = sinon.stub().resolves({ ok: true });
+			const collectionStub = stubMongo(true, { dropIndex: dropIndexStub });
+
+			const mongodb = new MongoDB(config);
+			const model = getModel();
+
+			const result = await mongodb.dropIndex(model, index);
+
+			assert.deepStrictEqual(result, true);
+
+			sinon.assert.calledOnce(collectionStub);
+			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
+
+			sinon.assert.calledOnce(dropIndexStub);
+			sinon.assert.calledWithExactly(dropIndexStub, index.name);
+		});
+
+		it('Should return false if can\'t drop the index from the model collection', async () => {
+
+			const dropIndexStub = sinon.stub().resolves({ ok: false });
+			const collectionStub = stubMongo(true, { dropIndex: dropIndexStub });
+
+			const mongodb = new MongoDB(config);
+			const model = getModel();
+
+			const result = await mongodb.dropIndex(model, index);
+
+			assert.deepStrictEqual(result, false);
+
+			sinon.assert.calledOnce(collectionStub);
+			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
+
+			sinon.assert.calledOnce(dropIndexStub);
+			sinon.assert.calledWithExactly(dropIndexStub, index.name);
+		});
+	});
 });
