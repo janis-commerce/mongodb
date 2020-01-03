@@ -375,14 +375,6 @@ Drops an index from the collection
 - Resolves `Boolean`: `true` if the index was dropped successfully
 - Rejects `Error`: When something bad occurs
 
-### ***async*** `dropIndexes(model)`
-Drops all the indexes from the collection
-
-- model `Model`: A model instance
-
-- Resolves `Boolean`: `true` if the indexes was dropped successfully
-- Rejects `Error`: When something bad occurs
-
 ## Errors
 
 The errors are informed with a `MongoDBError`.
@@ -525,10 +517,6 @@ const model = new Model();
       key: { field: 1 },
       unique: true
    });
-   // > true
-
-   // dropIndexes
-   result = await mongo.dropIndexes(model);
    // > true
 });
 ```

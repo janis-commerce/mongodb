@@ -11,7 +11,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `createIndex` method for creating an index into the collection
 - `createIndexes` method for creating multiple indexes into the collection
 - `dropIndex` method for dropping an index from the collection
-- `dropIndexes` method for dropping all the indexes from the collection
 
 ## [1.8.7] - 2019-12-31
 ### Fixed
