@@ -1524,4 +1524,211 @@ describe('MongoDB', () => {
 			});
 		});
 	});
+
+	describe('increment()', () => {
+
+		const filters = {
+			name: 'Fake'
+		};
+
+		const incrementData = {
+			quantity: 1,
+			total: 100
+		};
+
+		const setData = {
+			userCreated: 'some-user-id'
+		};
+
+		const id = '5df0151dbc1d570011949d86';
+
+		const response = {
+			value: {
+				_id: ObjectID(id),
+				name: 'Fake',
+				quantity: 10,
+				total: 100,
+				userCreated: 'some-user-id'
+			}
+		};
+
+		it('Should throw if no model is passed', async () => {
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.increment(null), {
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
+		it('Should throw if connection to DB fails', async () => {
+
+			const collection = stubMongo(false);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.increment(getModel(null, ['name']), filters, incrementData, setData), {
+				message: 'Error getting DB',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.notCalled(collection);
+		});
+
+		it('Should throw if mongodb increment method fails', async () => {
+
+			const findAndModify = sinon.stub().rejects(new Error('FindAndModify internal error'));
+
+			const collection = stubMongo(true, { findAndModify });
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.increment(getModel(null, ['name']), filters, incrementData, setData), {
+				message: 'FindAndModify internal error',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.calledOnce(collection);
+			sinon.assert.calledWithExactly(collection, 'myCollection');
+		});
+
+		it('Should use id as filter if it\'s passed', async () => {
+
+			const findAndModify = sinon.stub().resolves(response);
+
+			const collection = stubMongo(true, { findAndModify });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.increment(getModel(null, ['name']), { id }, incrementData, setData);
+
+			assert.deepStrictEqual(result, response.value);
+
+			sinon.assert.calledOnce(collection);
+			sinon.assert.calledWithExactly(collection, 'myCollection');
+
+			sinon.assert.calledOnce(findAndModify);
+			sinon.assert.calledWithExactly(findAndModify, {
+				_id: {
+					$eq: ObjectID(id)
+				}
+			}, {}, {
+				$set: setData,
+				$inc: incrementData,
+				$currentDate: { dateModified: true }
+			}, { upsert: false, new: true });
+		});
+
+		it('Should use a unique index as filter if id is not passed', async () => {
+
+			const findAndModify = sinon.stub().resolves(response);
+
+			const collection = stubMongo(true, { findAndModify });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.increment(getModel(null, ['name']), filters, incrementData, setData);
+
+			assert.deepStrictEqual(result, response.value);
+
+			sinon.assert.calledOnce(collection);
+			sinon.assert.calledWithExactly(collection, 'myCollection');
+
+			sinon.assert.calledOnce(findAndModify);
+			sinon.assert.calledWithExactly(findAndModify, {
+				name: {
+					$eq: 'Fake'
+				}
+			}, {}, {
+				$set: setData,
+				$inc: incrementData,
+				$currentDate: { dateModified: true }
+			}, { upsert: false, new: true });
+		});
+
+		it('Should use a multifield unique index as filter if id is not passed', async () => {
+
+			const findAndModify = sinon.stub().resolves({ value: { ...response.value, code: 'fake-code' } });
+
+			const collection = stubMongo(true, { findAndModify });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.increment(getModel({}, [
+				['name', 'code']
+			]), { ...filters, code: 'fake-code' }, incrementData, setData);
+
+			assert.deepStrictEqual(result, { ...response.value, code: 'fake-code' });
+
+			sinon.assert.calledOnce(collection);
+			sinon.assert.calledWithExactly(collection, 'myCollection');
+
+			sinon.assert.calledOnce(findAndModify);
+			sinon.assert.calledWithExactly(findAndModify, {
+				code: {
+					$eq: 'fake-code'
+				},
+				name: {
+					$eq: 'Fake'
+				}
+			}, {}, {
+				$set: setData,
+				$inc: incrementData,
+				$currentDate: { dateModified: true }
+			}, { upsert: false, new: true });
+		});
+
+		it('Should throw if no unique indexes are defined', async () => {
+
+			const findAndModify = sinon.stub().resolves(response);
+
+			const collection = stubMongo(true, { findAndModify });
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.increment(getModel({}, []), filters, incrementData, setData), {
+				code: MongoDBError.codes.MODEL_EMPTY_UNIQUE_INDEXES
+			});
+
+			sinon.assert.notCalled(collection);
+			sinon.assert.notCalled(findAndModify);
+		});
+
+		it('Should throw if no unique indexes can be matched', async () => {
+
+			const findAndModify = sinon.stub().resolves(response);
+
+			const collection = stubMongo(true, { findAndModify });
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.increment(getModel({}, ['name']), { code: 'fake-code' }, incrementData, setData), {
+				code: MongoDBError.codes.EMPTY_UNIQUE_INDEXES
+			});
+
+			sinon.assert.notCalled(collection);
+			sinon.assert.notCalled(findAndModify);
+		});
+
+		it('Should throw if no increment data is passed', async () => {
+
+			const findAndModify = sinon.stub();
+
+			const collection = stubMongo(true, { findAndModify });
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.increment(getModel({}, ['name']), filters, {}, setData), {
+				code: MongoDBError.codes.INVALID_INCREMENT_DATA
+			});
+
+			sinon.assert.notCalled(collection);
+			sinon.assert.notCalled(findAndModify);
+		});
+
+		it('Should throw if wrong increment data is passed', async () => {
+
+			const findAndModify = sinon.stub();
+
+			const collection = stubMongo(true, { findAndModify });
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.increment(getModel({}, ['name']), filters, { quantity: '100' }, setData), {
+				code: MongoDBError.codes.INVALID_INCREMENT_DATA
+			});
+
+			sinon.assert.notCalled(collection);
+			sinon.assert.notCalled(findAndModify);
+		});
+	});
 });
