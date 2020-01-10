@@ -335,6 +335,16 @@ Removes one or more documents in a collection
 - Resolves `Number`: The number of removed documents
 - Rejects `Error` When something bad occurs
 
+### ***async*** `increment(model, filters, incrementData, setData)`
+Increment or decrement values in a registry.
+- model: `Model`: A model instance used for the query.
+- filters: `Object`: Unique Filter criteria to match documents
+- incrementData: `Object`: The fields with the values to increment or decrement to updated in the collection (values must be *number* type).
+- setData: `Object`: extra data to be updated in the registry
+
+- Resolves `Object`: An object containing the updated registry
+- Rejects `Error` When something bad occurs
+
 ## Errors
 
 The errors are informed with a `MongoDBError`.
@@ -351,6 +361,7 @@ The codes are the following:
 | 6    | Invalid item format received       |
 | 7    | Invalid distinct key received      |
 | 8    | Filter type not recognized         |
+| 9    | Invalid Increment Data             |
 
 ## Usage
 
