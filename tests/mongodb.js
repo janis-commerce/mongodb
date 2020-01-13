@@ -1608,9 +1608,11 @@ describe('MongoDB', () => {
 					$eq: ObjectID(id)
 				}
 			}, {}, {
-				$set: setData,
-				$inc: incrementData,
-				$currentDate: { dateModified: true }
+				$set: {
+					...setData,
+					dateModified: sinon.match.date
+				},
+				$inc: incrementData
 			}, { upsert: false, new: true });
 		});
 
@@ -1634,9 +1636,11 @@ describe('MongoDB', () => {
 					$eq: 'Fake'
 				}
 			}, {}, {
-				$set: setData,
-				$inc: incrementData,
-				$currentDate: { dateModified: true }
+				$set: {
+					...setData,
+					dateModified: sinon.match.date
+				},
+				$inc: incrementData
 			}, { upsert: false, new: true });
 		});
 
@@ -1665,9 +1669,38 @@ describe('MongoDB', () => {
 					$eq: 'Fake'
 				}
 			}, {}, {
-				$set: setData,
-				$inc: incrementData,
-				$currentDate: { dateModified: true }
+				$set: {
+					...setData,
+					dateModified: sinon.match.date
+				},
+				$inc: incrementData
+			}, { upsert: false, new: true });
+		});
+
+		it('Should update only with increments and dateModified if no Set Data is passed', async () => {
+
+			const findAndModify = sinon.stub().resolves(response);
+
+			const collection = stubMongo(true, { findAndModify });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.increment(getModel(null, ['name']), { id }, incrementData);
+
+			assert.deepStrictEqual(result, response.value);
+
+			sinon.assert.calledOnce(collection);
+			sinon.assert.calledWithExactly(collection, 'myCollection');
+
+			sinon.assert.calledOnce(findAndModify);
+			sinon.assert.calledWithExactly(findAndModify, {
+				_id: {
+					$eq: ObjectID(id)
+				}
+			}, {}, {
+				$set: {
+					dateModified: sinon.match.date
+				},
+				$inc: incrementData
 			}, { upsert: false, new: true });
 		});
 
