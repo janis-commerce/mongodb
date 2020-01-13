@@ -136,49 +136,4 @@ describe('ConfigValidator', () => {
 
 	});
 
-	describe('validate Increment Data', () => {
-
-		it('Should return the increment data object', () => {
-			const incrementData = {
-				quantity: 100,
-				total: 100.1,
-				remainingPlaces: -100
-			};
-
-			const increments = ConfigValidator.validateIncrementData(incrementData);
-
-			assert.deepStrictEqual(increments, incrementData);
-		});
-
-		it('Should throw when increment data is not number type', () => {
-
-			assert.throws(() => ConfigValidator.validateIncrementData({
-				quantity: '100',
-				total: 100.1,
-				remainingPlaces: -100
-			}));
-
-			assert.throws(() => ConfigValidator.validateIncrementData({
-				quantity: '100',
-				total: [100.1],
-				remainingPlaces: -100
-			}));
-
-			assert.throws(() => ConfigValidator.validateIncrementData({
-				quantity: '100',
-				total: 100.1,
-				remainingPlaces: { value: -100 }
-			}));
-		});
-
-		it('Should throws if increment data is an empy object', () => {
-			assert.throws(() => ConfigValidator.validateIncrementData({}));
-		});
-
-		it('Should throws if increment data is not an object', () => {
-			assert.throws(() => ConfigValidator.validateIncrementData([100, -1]));
-
-			assert.throws(() => ConfigValidator.validateIncrementData(100));
-		});
-	});
 });
