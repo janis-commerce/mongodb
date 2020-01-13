@@ -345,6 +345,55 @@ Increment or decrement values in a registry.
 - Resolves `Object`: An object containing the updated registry
 - Rejects `Error` When something bad occurs
 
+### ***async*** `getIndexes(model)`
+Get the indexes from the collection
+
+- model `Model`: A model instance
+
+- Resolves `Array<object>`: An array with the collection indexes
+- Rejects `Error`: When something bad occurs
+
+This method also format the received indexes from MongoDB by getting only the fields `name`, `key` and `unique`.
+
+### ***async*** `createIndex(model, index)`
+Creates an index into the collection
+
+- model `Model`: A model instance
+- index `Object`: An object with the following properties:
+   - name `String` (Required): The index name
+   - key `Object` (Required): The index key with the fields to index
+   - unique `Boolean` (Optional): Indicates if the index must be unique or not
+
+- Resolves `Boolean`: `true` if the index was created successfully
+- Rejects `Error`: When something bad occurs
+
+### ***async*** `createIndexes(model, indexes)`
+Creates multiple indexes into the collection
+
+- model `Model`: A model instance
+- indexes `Array<object>`: An array with the indexes to create (index object structure defined in `createIndex` method)
+
+- Resolves `Boolean`: `true` if the indexes was created successfully
+- Rejects `Error`: When something bad occurs
+
+### ***async*** `dropIndex(model, indexName)`
+Drops an index from the collection
+
+- model `Model`: A model instance
+- indexName: `String`: The name of the index to drop
+
+- Resolves `Boolean`: `true` if the index was dropped successfully
+- Rejects `Error`: When something bad occurs
+
+### ***async*** `dropIndexes(model, indexNames)`
+Drops multiple indexes from the collection
+
+- model `Model`: A model instance
+- indexNames: `Array<string>`: The names of the indexs to drop
+
+- Resolves `Boolean`: `true` if the index was dropped successfully
+- Rejects `Error`: When something bad occurs
+
 ## Errors
 
 The errors are informed with a `MongoDBError`.
@@ -361,7 +410,11 @@ The codes are the following:
 | 6    | Invalid item format received       |
 | 7    | Invalid distinct key received      |
 | 8    | Filter type not recognized         |
+<<<<<<< HEAD
 | 9    | Invalid Increment Data             |
+=======
+| 9    | Invalid index structure            |
+>>>>>>> JCN-metodos-indices
 
 ## Usage
 
@@ -454,5 +507,39 @@ const model = new Model();
    // multiRemove
    result = await mongo.multiRemove(model, { name: { type: 'search', value: 'test' } });
    // > 3
+
+   // getIndexes
+   result = await mongo.getIndexes(model);
+   // > [{name: 'some-index', key: { field: 1 }, unique: false}]
+
+   // createIndex
+   result = await mongo.createIndex(model, {
+      name: 'some-index',
+      key: { field: 1 },
+      unique: true
+   });
+   // > true
+
+   // createIndexes
+   result = await mongo.createIndexes(model, [
+      {
+         name: 'some-index',
+         key: { field: 1 },
+         unique: true
+      },
+      {
+         name: 'other-index',
+         key: { otherField: 1 }
+      }
+   ]);
+   // > true
+
+   // dropIndex
+   result = await mongo.dropIndex(model, 'some-index');
+   // > true
+
+   // dropIndexes
+   result = await mongo.dropIndexes(model, ['some-index', 'other-index'])
+   // > true
 });
 ```
