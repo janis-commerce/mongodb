@@ -375,6 +375,15 @@ Drops an index from the collection
 - Resolves `Boolean`: `true` if the index was dropped successfully
 - Rejects `Error`: When something bad occurs
 
+### ***async*** `dropIndexes(model, indexNames)`
+Drops multiple indexes from the collection
+
+- model `Model`: A model instance
+- indexNames: `Array<string>`: The names of the indexs to drop
+
+- Resolves `Boolean`: `true` if the index was dropped successfully
+- Rejects `Error`: When something bad occurs
+
 ## Errors
 
 The errors are informed with a `MongoDBError`.
@@ -513,6 +522,10 @@ const model = new Model();
 
    // dropIndex
    result = await mongo.dropIndex(model, 'some-index');
+   // > true
+
+   // dropIndexes
+   result = await mongo.dropIndexes(model, ['some-index', 'other-index'])
    // > true
 });
 ```

@@ -1980,4 +1980,112 @@ describe('MongoDB', () => {
 			sinon.assert.calledWithExactly(dropIndexStub, index);
 		});
 	});
+
+	describe('dropIndexes()', () => {
+
+		const indexes = ['some-index', 'other-index'];
+
+		it('Should throw if no model is passed', async () => {
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.dropIndexes(null), {
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
+		it('Should call dropIndex for each received indexName and return true when all the received indexes was dropped', async () => {
+
+			const dropIndexStub = sinon.stub().resolves({ ok: true });
+			const collectionStub = stubMongo(true, { dropIndex: dropIndexStub });
+
+			const mongodb = new MongoDB(config);
+			const model = getModel();
+
+			const result = await mongodb.dropIndexes(model, indexes);
+
+			assert.deepStrictEqual(result, true);
+
+			sinon.assert.calledTwice(collectionStub);
+			sinon.assert.calledWithExactly(collectionStub.getCall(1), 'myCollection');
+			sinon.assert.calledWithExactly(collectionStub.getCall(0), 'myCollection');
+
+			sinon.assert.calledTwice(dropIndexStub);
+
+			indexes.forEach((index, i) => {
+				sinon.assert.calledWithExactly(dropIndexStub.getCall(i), index);
+			});
+		});
+
+		it('Should return false when some of the indexes drop operation returns false', async () => {
+
+			const dropIndexStub = sinon.stub();
+
+			dropIndexStub.onFirstCall()
+				.resolves({ ok: false });
+
+			dropIndexStub.onSecondCall()
+				.resolves({ ok: true });
+
+			const collectionStub = stubMongo(true, { dropIndex: dropIndexStub });
+
+			const mongodb = new MongoDB(config);
+			const model = getModel();
+
+			const result = await mongodb.dropIndexes(model, indexes);
+
+			assert.deepStrictEqual(result, false);
+
+			sinon.assert.calledTwice(collectionStub);
+			sinon.assert.calledWithExactly(collectionStub.getCall(1), 'myCollection');
+			sinon.assert.calledWithExactly(collectionStub.getCall(0), 'myCollection');
+
+			sinon.assert.calledTwice(dropIndexStub);
+
+			indexes.forEach((index, i) => {
+				sinon.assert.calledWithExactly(dropIndexStub.getCall(i), index);
+			});
+		});
+
+		it('Should throw when the dropIndex method rejects', async () => {
+
+			const dropIndexStub = sinon.stub().rejects();
+			const collectionStub = stubMongo(true, { dropIndex: dropIndexStub });
+
+			const mongodb = new MongoDB(config);
+			const model = getModel();
+
+			await assert.rejects(() => mongodb.dropIndexes(model, indexes));
+
+			sinon.assert.calledTwice(collectionStub);
+			sinon.assert.calledWithExactly(collectionStub.getCall(1), 'myCollection');
+			sinon.assert.calledWithExactly(collectionStub.getCall(0), 'myCollection');
+
+			sinon.assert.calledTwice(dropIndexStub);
+
+			indexes.forEach((index, i) => {
+				sinon.assert.calledWithExactly(dropIndexStub.getCall(i), index);
+			});
+		});
+
+		[
+
+			null,
+			undefined,
+			1,
+			'not an array',
+			{}
+
+		].forEach(invalidIndexes => {
+
+			it('Should throw if received index is invalid', async () => {
+
+				const mongodb = new MongoDB(config);
+				const model = getModel();
+
+				await assert.rejects(() => mongodb.dropIndexes(model, invalidIndexes), {
+					name: 'MongoDBError',
+					code: MongoDBError.codes.INVALID_INDEX
+				});
+			});
+		});
+	});
 });
