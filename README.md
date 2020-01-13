@@ -366,11 +366,11 @@ Creates multiple indexes into the collection
 - Resolves `Boolean`: `true` if the indexes was created successfully
 - Rejects `Error`: When something bad occurs
 
-### ***async*** `dropIndex(model, index)`
+### ***async*** `dropIndex(model, indexName)`
 Drops an index from the collection
 
 - model `Model`: A model instance
-- index: `Object`: An index object to drop (index object structure defined in `createIndex` method)
+- indexName: `String`: The name of the index to drop
 
 - Resolves `Boolean`: `true` if the index was dropped successfully
 - Rejects `Error`: When something bad occurs
@@ -512,11 +512,7 @@ const model = new Model();
    // > true
 
    // dropIndex
-   result = await mongo.dropIndex(model, {
-      name: 'some-index',
-      key: { field: 1 },
-      unique: true
-   });
+   result = await mongo.dropIndex(model, 'some-index');
    // > true
 });
 ```

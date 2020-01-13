@@ -1867,12 +1867,7 @@ describe('MongoDB', () => {
 
 	describe('dropIndex()', () => {
 
-		const index = {
-			name: 'some-index',
-			key: {
-				field: 1
-			}
-		};
+		const index = 'some-index';
 
 		it('Should throw if no model is passed', async () => {
 			const mongodb = new MongoDB(config);
@@ -1915,7 +1910,7 @@ describe('MongoDB', () => {
 
 			null,
 			undefined,
-			'not an object',
+			1,
 			['array'],
 			{},
 			{
@@ -1963,7 +1958,7 @@ describe('MongoDB', () => {
 			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
 
 			sinon.assert.calledOnce(dropIndexStub);
-			sinon.assert.calledWithExactly(dropIndexStub, index.name);
+			sinon.assert.calledWithExactly(dropIndexStub, index);
 		});
 
 		it('Should return false if can\'t drop the index from the model collection', async () => {
@@ -1982,7 +1977,7 @@ describe('MongoDB', () => {
 			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
 
 			sinon.assert.calledOnce(dropIndexStub);
-			sinon.assert.calledWithExactly(dropIndexStub, index.name);
+			sinon.assert.calledWithExactly(dropIndexStub, index);
 		});
 	});
 });
