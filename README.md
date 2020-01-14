@@ -412,7 +412,8 @@ The codes are the following:
 | 6    | Invalid item format received       |
 | 7    | Invalid distinct key received      |
 | 8    | Filter type not recognized         |
-| 9    | Invalid index structure            |
+| 9    | Invalid Increment Data             |
+| 10   | Invalid index structure            |
 
 ## Usage
 
