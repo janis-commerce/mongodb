@@ -616,6 +616,47 @@ describe('MongoDB', () => {
 			}, { upsert: true, new: true });
 		});
 
+		it('Should use extra default insert values', async () => {
+
+			const id = '5df0151dbc1d570011949d86';
+
+			const item = {
+				id,
+				otherId: '5df0151dbc1d570011949d87',
+				name: 'Some name'
+			};
+
+			const setOnInsert = {
+				status: 'active'
+			};
+
+			const findAndModify = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
+
+			const collection = stubMongo(true, { findAndModify });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.save(getModel(), { ...item }, setOnInsert);
+
+			assert.deepStrictEqual(result, id);
+
+			sinon.assert.calledOnce(collection);
+			sinon.assert.calledWithExactly(collection, 'myCollection');
+
+			sinon.assert.calledOnce(findAndModify);
+			sinon.assert.calledWithExactly(findAndModify, {
+				_id: {
+					$eq: ObjectID(id)
+				}
+			}, {}, {
+				$set: {
+					otherId: '5df0151dbc1d570011949d87',
+					name: 'Some name'
+				},
+				$currentDate: { dateModified: true },
+				$setOnInsert: { dateCreated: sinon.match.date, ...setOnInsert }
+			}, { upsert: true, new: true });
+		});
+
 		it('Should throw if no unique indexes are defined and id is not passed', async () => {
 
 			const id = '5df0151dbc1d570011949d86';
@@ -696,6 +737,52 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
+			}, { upsert: true, new: true });
+		});
+
+		it('Should remove conflictive fields from default insert values', async () => {
+
+			const id = '5df0151dbc1d570011949d86';
+
+			const item = {
+				id,
+				otherId: '5df0151dbc1d570011949d87',
+				name: 'Some name',
+				dateCreated: new Date(),
+				dateModified: new Date(),
+				status: 'active'
+			};
+
+			const setOnInsert = {
+				status: 'inactive',
+				quantity: 100
+			};
+
+			const findAndModify = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
+
+			const collection = stubMongo(true, { findAndModify });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.save(getModel(), { ...item }, setOnInsert);
+
+			assert.deepStrictEqual(result, id);
+
+			sinon.assert.calledOnce(collection);
+			sinon.assert.calledWithExactly(collection, 'myCollection');
+
+			sinon.assert.calledOnce(findAndModify);
+			sinon.assert.calledWithExactly(findAndModify, {
+				_id: {
+					$eq: ObjectID(id)
+				}
+			}, {}, {
+				$set: {
+					otherId: '5df0151dbc1d570011949d87',
+					name: 'Some name',
+					status: 'active'
+				},
+				$currentDate: { dateModified: true },
+				$setOnInsert: { dateCreated: sinon.match.date, quantity: 100 }
 			}, { upsert: true, new: true });
 		});
 
@@ -1073,7 +1160,7 @@ describe('MongoDB', () => {
 			sinon.assert.calledWithExactly(collection, 'myCollection');
 		});
 
-		it('Should map all ID fields and add dateCreated into a bulk write operation', async () => {
+		it('Should map all using Default Insert Values', async () => {
 
 			const id = '5df0151dbc1d570011949d86';
 
@@ -1081,7 +1168,9 @@ describe('MongoDB', () => {
 				id,
 				otherId: '5df0151dbc1d570011949d87',
 				name: 'Some name',
-				dateCreated: new Date()
+				dateCreated: new Date(),
+				status: 'active',
+				quantity: 100
 			};
 
 			const item2 = {
@@ -1089,6 +1178,11 @@ describe('MongoDB', () => {
 				name: 'Some name',
 				dateCreated: new Date(),
 				dateModified: new Date()
+			};
+
+			const setOnInsert = {
+				status: 'inactive',
+				quantity: 100
 			};
 
 			const bulkWrite = sinon.stub().resolves({ result: { ok: 2 } });
@@ -1100,7 +1194,7 @@ describe('MongoDB', () => {
 				otherId: {
 					isID: true
 				}
-			}, ['id', 'otherId']), [{ ...item1 }, { ...item2 }]);
+			}, ['id', 'otherId']), [{ ...item1 }, { ...item2 }], setOnInsert);
 
 			assert.deepStrictEqual(result, true);
 
@@ -1118,7 +1212,9 @@ describe('MongoDB', () => {
 						update: {
 							$set: {
 								otherId: ObjectID('5df0151dbc1d570011949d87'),
-								name: 'Some name'
+								name: 'Some name',
+								status: 'active',
+								quantity: 100
 							},
 							$currentDate: { dateModified: true },
 							$setOnInsert: { dateCreated: sinon.match.date }
@@ -1139,7 +1235,7 @@ describe('MongoDB', () => {
 								name: 'Some name'
 							},
 							$currentDate: { dateModified: true },
-							$setOnInsert: { dateCreated: sinon.match.date }
+							$setOnInsert: { dateCreated: sinon.match.date, ...setOnInsert }
 						},
 						upsert: true
 					}
