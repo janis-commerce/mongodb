@@ -298,20 +298,22 @@ Return example:
 
 If no query was executed before, it will just return the `total` and `pages` properties with a value of zero.
 
-### ***async*** `save(model, item)`
+### ***async*** `save(model, item, setOnInsert)`
 Inserts or updates a document in a collection.
 - model: `Model`: A model instance used for the query.
 - item: `Object`: The item to upsert in the collection
+- setOnInsert: `Object`: Default values to insert on Items.
 
 - Resolves `Object`: An object containing the totalizers
 - Rejects `Error` When something bad occurs
 
 This operation uses unique indexes in order to update existing documents. If `id` is provided in the item, it will be used. Otherwise, it will try to match a unique index defined in the model. If no unique index can be matched by the item, it will reject an error.
 
-### ***async*** `multiSave(model, items)`
+### ***async*** `multiSave(model, items, setOnInsert)`
 Inserts or updates a document in a collection.
 - model: `Model`: A model instance used for the query.
 - items: `Array<Object>`: The items to upsert in the collection
+- setOnInsert: `Object`: Default values to insert on Items.
 
 - Resolves `Boolean`: `true` if items can be upserted
 - Rejects `Error` When something bad occurs
@@ -410,11 +412,7 @@ The codes are the following:
 | 6    | Invalid item format received       |
 | 7    | Invalid distinct key received      |
 | 8    | Filter type not recognized         |
-<<<<<<< HEAD
-| 9    | Invalid Increment Data             |
-=======
 | 9    | Invalid index structure            |
->>>>>>> JCN-metodos-indices
 
 ## Usage
 
@@ -491,6 +489,23 @@ const model = new Model();
       name: 'test'
    });
    // > '00000058faf66849077316ba'
+
+   // save update
+   result = await mongo.save(model, {
+      unique: 2,
+      name: 'test-2'
+   }, { status: 'active' });
+   // > '00000058faf66849077316bb'
+   // In DB : { _id: '00000058faf66849077316bb', unique: 2, name: 'test-2', dateCreated: ISODate("2020-01-14T14:01:29.170Z"), status: 'active' }
+
+   // save update
+   result = await mongo.save(model, {
+      unique: 2,
+      name: 'test-2',
+      status: 'inactive'
+   }, { status: 'active' });
+   // > '00000058faf66849077316bb'
+   // In DB : { _id: '00000058faf66849077316bb', unique: 2, name: 'test-2', dateCreated: ISODate("2020-01-14T14:01:29.170Z"), status: 'inactive' }
 
    // multiSave
    result = await mongo.multiSave(model, [
