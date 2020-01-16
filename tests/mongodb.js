@@ -1071,7 +1071,19 @@ describe('MongoDB', () => {
 				name: 'Some name'
 			};
 
-			const insertMany = sinon.stub().resolves({ result: { ok: 1 } });
+			const expectedItem = {
+				otherId: ObjectID('5df0151dbc1d570011949d87'),
+				name: 'Some name',
+				dateCreated: sinon.match.date
+			};
+
+			const insertMany = sinon.stub().resolves({
+				result: { ok: 1 },
+				ops: [{
+					...expectedItem,
+					_id: ObjectID('5df0151dbc1d570011949d86')
+				}]
+			});
 
 			const collection = stubMongo(true, { insertMany });
 
@@ -1082,16 +1094,13 @@ describe('MongoDB', () => {
 				}
 			}), [{ ...item }]);
 
-			assert.deepStrictEqual(result, true);
+			assert.deepStrictEqual(result, [{
+				...expectedItem,
+				id: '5df0151dbc1d570011949d86'
+			}]);
 
 			sinon.assert.calledOnce(collection);
 			sinon.assert.calledWithExactly(collection, 'myCollection');
-
-			const expectedItem = {
-				otherId: ObjectID('5df0151dbc1d570011949d87'),
-				name: 'Some name',
-				dateCreated: sinon.match.date
-			};
 
 			sinon.assert.calledOnce(insertMany);
 			sinon.assert.calledWithExactly(insertMany, [expectedItem]);
