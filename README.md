@@ -56,7 +56,7 @@ Inserts multiple documents in a collection
 - model: `Model`: A model instance
 - item: `Array<Object>`: The items to save in the collection
 
-- Resolves `Boolean`: Indicating if the operation was successful.
+- Resolves `Array<Object>`: Items inserted
 - Rejects `Error` When something bad occurs
 
 ### ***async*** `update(model, values, filter)`
