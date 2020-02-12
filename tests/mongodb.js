@@ -6,6 +6,7 @@ const sinon = require('sinon');
 const { MongoWrapper, ObjectID } = require('../lib/mongodb-wrapper');
 const MongoDBError = require('../lib/mongodb-error');
 const MongoDB = require('../lib/mongodb');
+const MongoDBAggregate = require('../lib/mongodb-aggregate');
 
 describe('MongoDB', () => {
 
@@ -198,12 +199,110 @@ describe('MongoDB', () => {
 			});
 		});
 
+		it('Should return grouped data when "group" field exists in query', async () => {
+			const get = sinon.spy(MongoDB.prototype, '_get');
+			const grouped = sinon.stub(MongoDB.prototype, '_group').resolves([]);
+			const mongodb = new MongoDB(config);
+			// eslint-disable-next-line no-underscore-dangle
+			const result = await mongodb.get(getModel(), { group: {} });
+			assert.deepEqual(result, []);
+			sinon.assert.calledOnce(grouped);
+			sinon.assert.notCalled(get);
+		});
+
+		it('Should return simple data when "group" field not exists in query', async () => {
+			const grouped = sinon.spy(MongoDB.prototype, '_group');
+			const get = sinon.stub(MongoDB.prototype, '_get').resolves([]);
+			const mongodb = new MongoDB(config);
+			// eslint-disable-next-line no-underscore-dangle
+			const result = await mongodb.get(getModel(), {});
+			assert.deepEqual(result, []);
+			sinon.assert.calledOnce(get);
+			sinon.assert.notCalled(grouped);
+		});
+
+	});
+
+
+	describe('_group()', () => {
+
 		it('Should throw if connection to DB fails', async () => {
 
 			const collection = stubMongo(false);
 
 			const mongodb = new MongoDB(config);
 			await assert.rejects(() => mongodb.get(getModel(), {}), {
+				message: 'Error getting DB',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.notCalled(collection);
+		});
+
+		it('Should throw if "group" field is not present in params', async () => {
+			const mongodb = new MongoDB(config);
+			// eslint-disable-next-line no-underscore-dangle
+			await assert.rejects(() => mongodb._group(getModel()), {
+				message: '"group" field is required for get grouped data',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+		});
+
+		it('Should throw if aggregation lib fails generating the query', async () => {
+			const mongodb = new MongoDB(config);
+			sinon.stub(MongoDBAggregate.prototype, 'group').throws(new Error('Internal error'));
+			// eslint-disable-next-line no-underscore-dangle
+			assert.rejects(() => mongodb._group(getModel(), { group: {} }), {
+				message: 'Internal error',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+		});
+
+		it('Should throw if mongo aggregate fails', async () => {
+			const error = new Error('Aggregate internal error');
+			const toArray = sinon.stub().rejects(error);
+			const aggregate = sinon.stub().returns({ toArray });
+			const collection = stubMongo(true, { aggregate });
+
+			const mongodb = new MongoDB(config);
+			// eslint-disable-next-line no-underscore-dangle
+			await assert.rejects(() => mongodb._group(getModel(), { group: {} }), {
+				message: 'Aggregate internal error',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.calledOnce(collection);
+		});
+
+		it('Should get grouped data', async () => {
+			const toArray = sinon.stub().resolves([]);
+			const aggregate = sinon.stub().returns({ toArray });
+			const collection = stubMongo(true, { aggregate });
+
+			const query = {
+				group: {},
+				limit: 0,
+				filters: {}
+			};
+			const mongodb = new MongoDB(config);
+			// eslint-disable-next-line no-underscore-dangle
+			const result = await mongodb._group(getModel(), query);
+			assert.deepEqual(result, []);
+			sinon.assert.calledOnce(collection);
+		});
+
+	});
+
+	describe('_get()', () => {
+
+		it('Should throw if connection to DB fails', async () => {
+
+			const collection = stubMongo(false);
+
+			const mongodb = new MongoDB(config);
+			// eslint-disable-next-line no-underscore-dangle
+			await assert.rejects(() => mongodb._get(getModel(), {}), {
 				message: 'Error getting DB',
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
@@ -218,7 +317,8 @@ describe('MongoDB', () => {
 			const { collection } = stubs;
 
 			const mongodb = new MongoDB(config);
-			await assert.rejects(() => mongodb.get(getModel(), {}), {
+			// eslint-disable-next-line no-underscore-dangle
+			await assert.rejects(() => mongodb._get(getModel(), {}), {
 				message: 'Get internal error',
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
@@ -234,7 +334,8 @@ describe('MongoDB', () => {
 			}]);
 
 			const mongodb = new MongoDB(config);
-			const result = await mongodb.get(getModel(), {});
+			// eslint-disable-next-line no-underscore-dangle
+			const result = await mongodb._get(getModel(), {});
 
 			assert.deepStrictEqual(result, [{
 				foo: 'bar'
@@ -249,7 +350,8 @@ describe('MongoDB', () => {
 			}]);
 
 			const mongodb = new MongoDB(config);
-			const result = await mongodb.get(getModel(), {});
+			// eslint-disable-next-line no-underscore-dangle
+			const result = await mongodb._get(getModel(), {});
 
 			assert.deepStrictEqual(result, [{
 				id: '5df0151dbc1d570011949d86',
@@ -262,7 +364,8 @@ describe('MongoDB', () => {
 			const stubs = mockChain(true, []);
 
 			const mongodb = new MongoDB(config);
-			await mongodb.get(getModel(), {});
+			// eslint-disable-next-line no-underscore-dangle
+			await mongodb._get(getModel());
 
 			assertChain(stubs, 'myCollection', {}, undefined, 0, 500);
 		});
@@ -272,7 +375,8 @@ describe('MongoDB', () => {
 			const stubs = mockChain(true, []);
 
 			const mongodb = new MongoDB(config);
-			await mongodb.get(getModel({
+			// eslint-disable-next-line no-underscore-dangle
+			await mongodb._get(getModel({
 				otherId: {
 					isID: true
 				}
@@ -308,7 +412,8 @@ describe('MongoDB', () => {
 			const date = new Date();
 
 			const mongodb = new MongoDB(config);
-			await mongodb.get(getModel({
+			// eslint-disable-next-line no-underscore-dangle
+			await mongodb._get(getModel({
 				otherId: {
 					isID: true
 				}
@@ -359,7 +464,8 @@ describe('MongoDB', () => {
 			const stubs = mockChain(true, []);
 
 			const mongodb = new MongoDB(config);
-			await mongodb.get(getModel(), {
+			// eslint-disable-next-line no-underscore-dangle
+			await mongodb._get(getModel(), {
 				order: ['invalid']
 			});
 
@@ -371,7 +477,8 @@ describe('MongoDB', () => {
 			const stubs = mockChain(true, []);
 
 			const mongodb = new MongoDB(config);
-			await mongodb.get(getModel(), {
+			// eslint-disable-next-line no-underscore-dangle
+			await mongodb._get(getModel(), {
 				order: {}
 			});
 
@@ -383,7 +490,8 @@ describe('MongoDB', () => {
 			const stubs = mockChain(true, []);
 
 			const mongodb = new MongoDB(config);
-			await mongodb.get(getModel(), {
+			// eslint-disable-next-line no-underscore-dangle
+			await mongodb._get(getModel(), {
 				order: {
 					foo: 'invalid',
 					bar: ['notAString']
@@ -398,7 +506,8 @@ describe('MongoDB', () => {
 			const stubs = mockChain(true, []);
 
 			const mongodb = new MongoDB(config);
-			await mongodb.get(getModel(), {
+			// eslint-disable-next-line no-underscore-dangle
+			await mongodb._get(getModel(), {
 				order: {
 					foo: 'asc',
 					bar: 'desc'
@@ -416,7 +525,8 @@ describe('MongoDB', () => {
 			const stubs = mockChain(true, []);
 
 			const mongodb = new MongoDB(config);
-			await mongodb.get(getModel(), {
+			// eslint-disable-next-line no-underscore-dangle
+			await mongodb._get(getModel(), {
 				limit: 100
 			});
 
@@ -428,7 +538,8 @@ describe('MongoDB', () => {
 			const stubs = mockChain(true, []);
 
 			const mongodb = new MongoDB(config);
-			await mongodb.get(getModel(), {
+			// eslint-disable-next-line no-underscore-dangle
+			await mongodb._get(getModel(), {
 				page: 2
 			});
 
@@ -440,7 +551,8 @@ describe('MongoDB', () => {
 			const stubs = mockChain(true, []);
 
 			const mongodb = new MongoDB(config);
-			await mongodb.get(getModel(), {
+			// eslint-disable-next-line no-underscore-dangle
+			await mongodb._get(getModel(), {
 				page: 3,
 				limit: 30
 			});
