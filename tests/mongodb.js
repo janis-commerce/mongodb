@@ -966,7 +966,19 @@ describe('MongoDB', () => {
 
 			const item = {
 				otherId: '5df0151dbc1d570011949d87',
-				name: 'Some name'
+				name: 'Some name',
+				$set: {
+					description: 'The description'
+				},
+				$inc: {
+					quantity: -5
+				},
+				$push: {
+					children: {
+						id: '5df0151dbc1d570011949d88',
+						name: 'Children name'
+					}
+				}
 			};
 
 			const updateMany = sinon.stub().resolves({ modifiedCount: 1 });
@@ -986,9 +998,21 @@ describe('MongoDB', () => {
 			sinon.assert.calledWithExactly(collection, 'myCollection');
 
 			const expectedItem = {
-				otherId: ObjectID('5df0151dbc1d570011949d87'),
-				name: 'Some name',
-				dateModified: sinon.match.date
+				$set: {
+					dateModified: sinon.match.date,
+					otherId: ObjectID('5df0151dbc1d570011949d87'),
+					name: 'Some name',
+					description: 'The description'
+				},
+				$inc: {
+					quantity: -5
+				},
+				$push: {
+					children: {
+						id: '5df0151dbc1d570011949d88',
+						name: 'Children name'
+					}
+				}
 			};
 
 			sinon.assert.calledOnce(updateMany);
@@ -996,9 +1020,7 @@ describe('MongoDB', () => {
 				_id: {
 					$eq: ObjectID(id)
 				}
-			}, {
-				$set: expectedItem
-			});
+			}, expectedItem);
 		});
 	});
 
