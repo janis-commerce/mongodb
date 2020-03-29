@@ -92,7 +92,9 @@ Searches documents in a collection
 - order `Object`: Sets the sorting criteria of the matched documents, for example: `{ myField: 'asc', myOtherField: 'desc' }`
 - limit `Number`: Sets the page size when fetching documents. Defaults to the limit of the constructor.
 - page `Number`: Sets the current page to retrieve.
-- filters `Object|Array<Object>`: Sets the criteria to match documents. An object means AND operation between multiple filters. An array mean an OR operation. See examples [below](#filters).
+- filters `Object|Array<Object>`: Sets the criteria to match documents. An object means AND operation between multiple filters. An array mean an OR operation. See examples [below](#filters). When is used with `group` works like sql standard "having"
+
+- group `Object`: Set the criteria to group documents.
 
 Parameters example:
 ```js
@@ -111,6 +113,49 @@ Parameters example:
    }
 }
 ```
+#### Group
+The group have a simpler structure than raw mongo $group, in order to simplify it's usage.
+
+**Available parameters: (all of them are optional)**
+- fields `Object`: Sets the fields to select when grouping occurs.
+- by `Array<string|object>`: Sets the fields to group by. When the item of the array it's a string, it will match by field name on database. When the item of the array it's an object, it means that field needs to be applied a mongodb raw function to group it. That object must follow this structure:
+
+    ```js
+    {
+       fieldNameMapping: {
+          type: '{{mongo_aggregation_function}}',
+          value: '{{field_name_on_db}}'
+          ...params
+       }
+    }
+    ```
+  - fieldNameMapping: Sets the name of the field to match in collection. If "values" exists inside of the object, this fields sets the mapping name on the response.
+  - type: Sets the mongodb raw function to apply.
+  - params: Sets the mongodb raw function parameters. (See on mongodb documentation)
+
+    The available aggregation functions are
+
+    | Type           | Mongo equivalence | Mongo docs                                                                     |
+    | -------------- | ----------------- | -----------------------------------------------------------------------------  |
+    | dateToString   | $dateToString     | https://docs.mongodb.com/manual/reference/operator/aggregation/dateToString/   |
+    | dateFromString | $dateFromString   | https://docs.mongodb.com/manual/reference/operator/aggregation/dateFromString/ |
+
+    An example of implementation would be like this:
+
+    ```js
+    {
+       dateCreated: { type: 'dateToString', format: '%Y-%m-%d' }
+    }
+    ```
+    This results in a grouping by `dateCreated` taking only the year, month and day of the date.
+    Another example with "value" inside of the object would be like this:
+
+    ```js
+    {
+       myDateMapName: { type: 'dateToString', format: '%Y-%m-%d', value:'dateCreated' }
+    }
+    ```
+    This results in a grouping by `dateCreated` taking only the year, month and day of the date and showing in the response like `myDateMapName`.
 
 #### Filters
 
@@ -158,6 +203,20 @@ The following table shows all the supported filter types, and it's equivalence:
 | search         | $regex            |
 | all            | $all              |
 | exists         | $exists           |
+
+------- Only when group is used -------
+
+| Type           | Mongo equivalence |
+| -------------- | ----------------- |
+| maximun        | $max              |
+| minimun        | $min              |
+| average        | $avg              |
+| first          | $first            |
+| last           | $last             |
+| multiply       | $multiply         |
+| sum            | $sum              |
+| addToSet       | $addToSet         |
+
 
 If the type isn't defined in the model nor in the query, it defaults to `equal` for single valued filters or `in` for multivalued filter.
 
