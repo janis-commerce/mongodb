@@ -504,7 +504,12 @@ describe('MongoDB', () => {
 			const item = {
 				id,
 				otherId: '5df0151dbc1d570011949d87',
-				name: 'Some name'
+				$set: {
+					name: 'Some name'
+				},
+				$inc: {
+					quantity: 2
+				}
 			};
 
 			const findAndModify = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
@@ -528,6 +533,9 @@ describe('MongoDB', () => {
 				$set: {
 					otherId: '5df0151dbc1d570011949d87',
 					name: 'Some name'
+				},
+				$inc: {
+					quantity: 2
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
