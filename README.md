@@ -157,6 +157,29 @@ The group have a simpler structure than raw mongo $group, in order to simplify i
     ```
     This results in a grouping by `dateCreated` taking only the year, month and day of the date and showing in the response like `myDateMapName`.
 
+   Full example
+
+    ```js
+    {
+       group:{
+          fields:{},
+          by:[
+            '{{fieldName}}'
+            {
+               myDateMapName: {
+                  type: 'dateToString', format: '%Y-%m-%d', value:'dateCreated' }
+            }
+         ]
+       }
+       fieldNameMapping: {
+          type: '{{mongo_aggregation_function}}',
+          value: '{{field_name_on_db}}'
+          ...params
+       }
+    }
+    ```
+
+
 #### Filters
 
 The filters have a simpler structure than raw mongo filters, in order to simplify it's usage.
