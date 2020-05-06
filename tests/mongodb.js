@@ -616,7 +616,12 @@ describe('MongoDB', () => {
 			const item = {
 				id,
 				otherId: '5df0151dbc1d570011949d87',
-				name: 'Some name'
+				$set: {
+					name: 'Some name'
+				},
+				$inc: {
+					quantity: 2
+				}
 			};
 
 			const findAndModify = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
@@ -640,6 +645,9 @@ describe('MongoDB', () => {
 				$set: {
 					otherId: '5df0151dbc1d570011949d87',
 					name: 'Some name'
+				},
+				$inc: {
+					quantity: 2
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
@@ -1078,7 +1086,19 @@ describe('MongoDB', () => {
 
 			const item = {
 				otherId: '5df0151dbc1d570011949d87',
-				name: 'Some name'
+				name: 'Some name',
+				$set: {
+					description: 'The description'
+				},
+				$inc: {
+					quantity: -5
+				},
+				$push: {
+					children: {
+						id: '5df0151dbc1d570011949d88',
+						name: 'Children name'
+					}
+				}
 			};
 
 			const updateMany = sinon.stub().resolves({ modifiedCount: 1 });
@@ -1098,9 +1118,21 @@ describe('MongoDB', () => {
 			sinon.assert.calledWithExactly(collection, 'myCollection');
 
 			const expectedItem = {
-				otherId: ObjectID('5df0151dbc1d570011949d87'),
-				name: 'Some name',
-				dateModified: sinon.match.date
+				$set: {
+					dateModified: sinon.match.date,
+					otherId: ObjectID('5df0151dbc1d570011949d87'),
+					name: 'Some name',
+					description: 'The description'
+				},
+				$inc: {
+					quantity: -5
+				},
+				$push: {
+					children: {
+						id: '5df0151dbc1d570011949d88',
+						name: 'Children name'
+					}
+				}
 			};
 
 			sinon.assert.calledOnce(updateMany);
@@ -1108,9 +1140,7 @@ describe('MongoDB', () => {
 				_id: {
 					$eq: ObjectID(id)
 				}
-			}, {
-				$set: expectedItem
-			});
+			}, expectedItem);
 		});
 	});
 
