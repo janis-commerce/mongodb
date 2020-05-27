@@ -128,6 +128,7 @@ describe('MongoDBFilters', () => {
 					type: 'notEqual',
 					value: 1
 				},
+				search: 'Some text',
 				date,
 				id
 			}, getModel({
@@ -136,6 +137,9 @@ describe('MongoDBFilters', () => {
 				},
 				foo: {
 					type: 'search'
+				},
+				search: {
+					type: 'text'
 				}
 			}));
 
@@ -145,6 +149,13 @@ describe('MongoDBFilters', () => {
 				},
 				baz: {
 					$ne: 1
+				},
+				search: {
+					$text: {
+						$search: 'Some text',
+						$caseSensitive: false,
+						$diacriticSensitive: false
+					}
 				},
 				date: {
 					$eq: date
