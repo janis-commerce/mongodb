@@ -150,12 +150,10 @@ describe('MongoDBFilters', () => {
 				baz: {
 					$ne: 1
 				},
-				search: {
-					$text: {
-						$search: 'Some text',
-						$caseSensitive: false,
-						$diacriticSensitive: false
-					}
+				$text: {
+					$search: 'Some text',
+					$caseSensitive: false,
+					$diacriticSensitive: false
 				},
 				date: {
 					$eq: date
