@@ -1,7 +1,8 @@
 # MongoDB
 
-[![Build Status](https://travis-ci.org/janis-commerce/mongodb.svg?branch=master)](https://travis-ci.org/janis-commerce/mongodb)
+![Build Status](https://github.com/janis-commerce/mongodb/workflows/Build%20Status/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/janis-commerce/mongodb/badge.svg?branch=master)](https://coveralls.io/github/janis-commerce/mongodb?branch=master)
+[![npm version](https://badge.fury.io/js/%40janiscommerce%2Fmongodb.svg)](https://www.npmjs.com/package/@janiscommerce/mongodb)
 
 ## Installation
 

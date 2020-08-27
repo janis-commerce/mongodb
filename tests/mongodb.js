@@ -9,7 +9,23 @@ const MongoDB = require('../lib/mongodb');
 
 describe('MongoDB', () => {
 
-	const getModel = (fields, uniqueIndexes) => {
+	const createUniqueIndex = index => {
+		if(Array.isArray(index)) {
+			return {
+				name: index.join('_'),
+				key: index.reduce((keys, field) => ({ ...keys, [field]: 1 }), {}),
+				unique: true
+			};
+		}
+
+		return {
+			name: index,
+			key: { [index]: 1 },
+			unique: true
+		};
+	};
+
+	const getModel = (fields, indexes, indexesGetter = 'uniqueIndexes') => {
 		class Model {
 
 			static get table() {
@@ -20,8 +36,12 @@ describe('MongoDB', () => {
 				return fields;
 			}
 
-			static get uniqueIndexes() {
-				return uniqueIndexes;
+			static get [indexesGetter]() {
+
+				if(indexesGetter === 'indexes')
+					return indexes.map(index => createUniqueIndex(index));
+
+				return indexes;
 			}
 		}
 
@@ -68,23 +88,17 @@ describe('MongoDB', () => {
 
 	const assertChain = (stubs, collectionName, filters, order, skip, limit) => {
 
-		sinon.assert.calledOnce(stubs.collection);
-		sinon.assert.calledWithExactly(stubs.collection, collectionName);
+		sinon.assert.calledOnceWithExactly(stubs.collection, collectionName);
 
-		sinon.assert.calledOnce(stubs.find);
-		sinon.assert.calledWithExactly(stubs.find, filters);
+		sinon.assert.calledOnceWithExactly(stubs.find, filters);
 
-		sinon.assert.calledOnce(stubs.sort);
-		sinon.assert.calledWithExactly(stubs.sort, order);
+		sinon.assert.calledOnceWithExactly(stubs.sort, order);
 
-		sinon.assert.calledOnce(stubs.skip);
-		sinon.assert.calledWithExactly(stubs.skip, skip);
+		sinon.assert.calledOnceWithExactly(stubs.skip, skip);
 
-		sinon.assert.calledOnce(stubs.limit);
-		sinon.assert.calledWithExactly(stubs.limit, limit);
+		sinon.assert.calledOnceWithExactly(stubs.limit, limit);
 
-		sinon.assert.calledOnce(stubs.toArray);
-		sinon.assert.calledWithExactly(stubs.toArray);
+		sinon.assert.calledOnceWithExactly(stubs.toArray);
 	};
 
 	beforeEach(() => {
@@ -143,8 +157,7 @@ describe('MongoDB', () => {
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
 
-			sinon.assert.calledOnce(collectionStub);
-			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collectionStub, 'myCollection');
 		});
 
 		it('Should resolve what the mongodb distinct method resolves if no errors ocur', async () => {
@@ -158,11 +171,9 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(distinctValues, ['bar', 'baz']);
 
-			sinon.assert.calledOnce(collectionStub);
-			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collectionStub, 'myCollection');
 
-			sinon.assert.calledOnce(mongoDistinctStub);
-			sinon.assert.calledWithExactly(mongoDistinctStub, 'foo', {});
+			sinon.assert.calledOnceWithExactly(mongoDistinctStub, 'foo', {});
 		});
 
 		it('Should pass the parsed filters to the mongodb distinct method', async () => {
@@ -181,11 +192,9 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(distinctValues, ['bar', 'baz']);
 
-			sinon.assert.calledOnce(collectionStub);
-			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collectionStub, 'myCollection');
 
-			sinon.assert.calledOnce(mongoDistinctStub);
-			sinon.assert.calledWithExactly(mongoDistinctStub, 'foo', { field1: { $eq: 'value1' } });
+			sinon.assert.calledOnceWithExactly(mongoDistinctStub, 'foo', { field1: { $eq: 'value1' } });
 		});
 	});
 
@@ -223,8 +232,7 @@ describe('MongoDB', () => {
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 		});
 
 		it('Should resolve what the mongodb find-method-chain resolves if no _id field exists', async () => {
@@ -493,8 +501,7 @@ describe('MongoDB', () => {
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 		});
 
 		it('Should use id as filter if it\'s passed', async () => {
@@ -521,11 +528,9 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, id);
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-			sinon.assert.calledOnce(findAndModify);
-			sinon.assert.calledWithExactly(findAndModify, {
+			sinon.assert.calledOnceWithExactly(findAndModify, {
 				_id: {
 					$eq: ObjectID(id)
 				}
@@ -564,11 +569,9 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, id);
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-			sinon.assert.calledOnce(findAndModify);
-			sinon.assert.calledWithExactly(findAndModify, {
+			sinon.assert.calledOnceWithExactly(findAndModify, {
 				otherId: {
 					$eq: ObjectID('5df0151dbc1d570011949d87')
 				}
@@ -582,46 +585,48 @@ describe('MongoDB', () => {
 			}, { upsert: true, new: true });
 		});
 
-		it('Should use a multifield unique index as filter if id is not passed', async () => {
+		['indexes', 'uniqueIndexes'].forEach(indexesGetter => {
+			context(`When model has ${indexesGetter} getter`, () => {
+				it('Should use a multifield unique index as filter if id is not passed', async () => {
 
-			const id = '5df0151dbc1d570011949d86';
+					const id = '5df0151dbc1d570011949d86';
 
-			const item = {
-				otherId: '5df0151dbc1d570011949d87',
-				name: 'Some name'
-			};
+					const item = {
+						otherId: '5df0151dbc1d570011949d87',
+						name: 'Some name'
+					};
 
-			const findAndModify = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
+					const findAndModify = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
 
-			const collection = stubMongo(true, { findAndModify });
+					const collection = stubMongo(true, { findAndModify });
 
-			const mongodb = new MongoDB(config);
-			const result = await mongodb.save(getModel({}, [
-				'notPassedField',
-				['otherId', 'name']
-			]), { ...item });
+					const mongodb = new MongoDB(config);
+					const result = await mongodb.save(getModel({}, [
+						'notPassedField',
+						['otherId', 'name']
+					], indexesGetter), { ...item });
 
-			assert.deepStrictEqual(result, id);
+					assert.deepStrictEqual(result, id);
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+					sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-			sinon.assert.calledOnce(findAndModify);
-			sinon.assert.calledWithExactly(findAndModify, {
-				otherId: {
-					$eq: '5df0151dbc1d570011949d87'
-				},
-				name: {
-					$eq: 'Some name'
-				}
-			}, {}, {
-				$set: {
-					otherId: '5df0151dbc1d570011949d87',
-					name: 'Some name'
-				},
-				$currentDate: { dateModified: true },
-				$setOnInsert: { dateCreated: sinon.match.date }
-			}, { upsert: true, new: true });
+					sinon.assert.calledOnceWithExactly(findAndModify, {
+						otherId: {
+							$eq: '5df0151dbc1d570011949d87'
+						},
+						name: {
+							$eq: 'Some name'
+						}
+					}, {}, {
+						$set: {
+							otherId: '5df0151dbc1d570011949d87',
+							name: 'Some name'
+						},
+						$currentDate: { dateModified: true },
+						$setOnInsert: { dateCreated: sinon.match.date }
+					}, { upsert: true, new: true });
+				});
+			});
 		});
 
 		it('Should use extra default insert values', async () => {
@@ -647,11 +652,9 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, id);
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-			sinon.assert.calledOnce(findAndModify);
-			sinon.assert.calledWithExactly(findAndModify, {
+			sinon.assert.calledOnceWithExactly(findAndModify, {
 				_id: {
 					$eq: ObjectID(id)
 				}
@@ -730,11 +733,9 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, id);
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-			sinon.assert.calledOnce(findAndModify);
-			sinon.assert.calledWithExactly(findAndModify, {
+			sinon.assert.calledOnceWithExactly(findAndModify, {
 				_id: {
 					$eq: ObjectID(id)
 				}
@@ -775,11 +776,9 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, id);
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-			sinon.assert.calledOnce(findAndModify);
-			sinon.assert.calledWithExactly(findAndModify, {
+			sinon.assert.calledOnceWithExactly(findAndModify, {
 				_id: {
 					$eq: ObjectID(id)
 				}
@@ -817,11 +816,9 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, id);
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-			sinon.assert.calledOnce(findAndModify);
-			sinon.assert.calledWithExactly(findAndModify, {
+			sinon.assert.calledOnceWithExactly(findAndModify, {
 				_id: {
 					$eq: ObjectID(id)
 				}
@@ -880,8 +877,7 @@ describe('MongoDB', () => {
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 		});
 
 		it('Should map all ID fields and add dateCreated', async () => {
@@ -906,8 +902,7 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, id);
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
 			const expectedItem = {
 				otherId: ObjectID('5df0151dbc1d570011949d87'),
@@ -915,8 +910,7 @@ describe('MongoDB', () => {
 				dateCreated: sinon.match.date
 			};
 
-			sinon.assert.calledOnce(insertOne);
-			sinon.assert.calledWithExactly(insertOne, expectedItem);
+			sinon.assert.calledOnceWithExactly(insertOne, expectedItem);
 		});
 	});
 
@@ -964,8 +958,7 @@ describe('MongoDB', () => {
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 		});
 
 		it('Should map all ID fields and add dateModified', async () => {
@@ -1002,8 +995,7 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, 1);
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
 			const expectedItem = {
 				$set: {
@@ -1023,8 +1015,7 @@ describe('MongoDB', () => {
 				}
 			};
 
-			sinon.assert.calledOnce(updateMany);
-			sinon.assert.calledWithExactly(updateMany, {
+			sinon.assert.calledOnceWithExactly(updateMany, {
 				_id: {
 					$eq: ObjectID(id)
 				}
@@ -1090,8 +1081,7 @@ describe('MongoDB', () => {
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 		});
 
 		it('Should map all ID fields and add dateCreated', async () => {
@@ -1129,11 +1119,9 @@ describe('MongoDB', () => {
 				id: '5df0151dbc1d570011949d86'
 			}]);
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-			sinon.assert.calledOnce(insertMany);
-			sinon.assert.calledWithExactly(insertMany, [expectedItem]);
+			sinon.assert.calledOnceWithExactly(insertMany, [expectedItem]);
 		});
 	});
 
@@ -1195,8 +1183,7 @@ describe('MongoDB', () => {
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 		});
 
 		it('Should map all using Default Insert Values', async () => {
@@ -1237,8 +1224,7 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, true);
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
 			const expectedItems = [
 				{
@@ -1281,8 +1267,7 @@ describe('MongoDB', () => {
 				}
 			];
 
-			sinon.assert.calledOnce(bulkWrite);
-			sinon.assert.calledWithExactly(bulkWrite, expectedItems);
+			sinon.assert.calledOnceWithExactly(bulkWrite, expectedItems);
 		});
 	});
 
@@ -1330,8 +1315,7 @@ describe('MongoDB', () => {
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 		});
 
 		it('Should delete the item using ID if it\'s defined', async () => {
@@ -1357,8 +1341,7 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, true);
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
 			const expectedItem = {
 				_id: {
@@ -1366,8 +1349,7 @@ describe('MongoDB', () => {
 				}
 			};
 
-			sinon.assert.calledOnce(deleteOne);
-			sinon.assert.calledWithExactly(deleteOne, expectedItem);
+			sinon.assert.calledOnceWithExactly(deleteOne, expectedItem);
 		});
 
 		it('Should delete the item using a unique index if ID is not defined', async () => {
@@ -1390,8 +1372,7 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, true);
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
 			const expectedItem = {
 				otherId: {
@@ -1399,8 +1380,7 @@ describe('MongoDB', () => {
 				}
 			};
 
-			sinon.assert.calledOnce(deleteOne);
-			sinon.assert.calledWithExactly(deleteOne, expectedItem);
+			sinon.assert.calledOnceWithExactly(deleteOne, expectedItem);
 		});
 
 		it('Should throw if no unique indexes can be matched', async () => {
@@ -1469,8 +1449,7 @@ describe('MongoDB', () => {
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 		});
 
 		it('Should delete the item using the filters received', async () => {
@@ -1497,8 +1476,7 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, 2);
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
 			const expectedFilter = {
 				_id: {
@@ -1512,8 +1490,7 @@ describe('MongoDB', () => {
 				}
 			};
 
-			sinon.assert.calledOnce(deleteMany);
-			sinon.assert.calledWithExactly(deleteMany, expectedFilter);
+			sinon.assert.calledOnceWithExactly(deleteMany, expectedFilter);
 		});
 	});
 
@@ -1589,8 +1566,7 @@ describe('MongoDB', () => {
 
 			// Collection se llama una vez para el get
 			sinon.assert.calledTwice(collection);
-			sinon.assert.calledOnce(countDocuments);
-			sinon.assert.calledWithExactly(countDocuments, {});
+			sinon.assert.calledOnceWithExactly(countDocuments, {});
 		});
 
 		it('Should return the totals object for one item', async () => {
@@ -1617,8 +1593,7 @@ describe('MongoDB', () => {
 
 			// Collection se llama una vez para el get
 			sinon.assert.calledTwice(collection);
-			sinon.assert.calledOnce(countDocuments);
-			sinon.assert.calledWithExactly(countDocuments, {});
+			sinon.assert.calledOnceWithExactly(countDocuments, {});
 		});
 
 		it('Should return the totals object for queries with filters, specific page and custom limit', async () => {
@@ -1651,8 +1626,7 @@ describe('MongoDB', () => {
 
 			// Collection se llama una vez para el get
 			sinon.assert.calledTwice(collection);
-			sinon.assert.calledOnce(countDocuments);
-			sinon.assert.calledWithExactly(countDocuments, {
+			sinon.assert.calledOnceWithExactly(countDocuments, {
 				status: {
 					$eq: 'active'
 				}
@@ -1718,184 +1692,182 @@ describe('MongoDB', () => {
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 		});
 
-		it('Should use id as filter if it\'s passed', async () => {
+		['indexes', 'uniqueIndexes'].forEach(indexesGetter => {
 
-			const findAndModify = sinon.stub().resolves(response);
+			context(`When model has ${indexesGetter} getter`, () => {
 
-			const collection = stubMongo(true, { findAndModify });
+				it('Should use id as filter if it\'s passed', async () => {
 
-			const mongodb = new MongoDB(config);
-			const result = await mongodb.increment(getModel(null, ['name']), { id }, incrementData, setData);
+					const findAndModify = sinon.stub().resolves(response);
 
-			assert.deepStrictEqual(result, response.value);
+					const collection = stubMongo(true, { findAndModify });
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+					const mongodb = new MongoDB(config);
+					const result = await mongodb.increment(getModel(null, ['name'], indexesGetter), { id }, incrementData, setData);
 
-			sinon.assert.calledOnce(findAndModify);
-			sinon.assert.calledWithExactly(findAndModify, {
-				_id: {
-					$eq: ObjectID(id)
-				}
-			}, {}, {
-				$set: {
-					...setData,
-					dateModified: sinon.match.date
-				},
-				$inc: incrementData
-			}, { upsert: false, new: true });
-		});
+					assert.deepStrictEqual(result, response.value);
 
-		it('Should use a unique index as filter if id is not passed', async () => {
+					sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-			const findAndModify = sinon.stub().resolves(response);
+					sinon.assert.calledOnceWithExactly(findAndModify, {
+						_id: {
+							$eq: ObjectID(id)
+						}
+					}, {}, {
+						$set: {
+							...setData,
+							dateModified: sinon.match.date
+						},
+						$inc: incrementData
+					}, { upsert: false, new: true });
+				});
 
-			const collection = stubMongo(true, { findAndModify });
+				it('Should use a unique index as filter if id is not passed', async () => {
 
-			const mongodb = new MongoDB(config);
-			const result = await mongodb.increment(getModel(null, ['name']), filters, incrementData, setData);
+					const findAndModify = sinon.stub().resolves(response);
 
-			assert.deepStrictEqual(result, response.value);
+					const collection = stubMongo(true, { findAndModify });
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+					const mongodb = new MongoDB(config);
+					const result = await mongodb.increment(getModel(null, ['name'], indexesGetter), filters, incrementData, setData);
 
-			sinon.assert.calledOnce(findAndModify);
-			sinon.assert.calledWithExactly(findAndModify, {
-				name: {
-					$eq: 'Fake'
-				}
-			}, {}, {
-				$set: {
-					...setData,
-					dateModified: sinon.match.date
-				},
-				$inc: incrementData
-			}, { upsert: false, new: true });
-		});
+					assert.deepStrictEqual(result, response.value);
 
-		it('Should use a multifield unique index as filter if id is not passed', async () => {
+					sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-			const findAndModify = sinon.stub().resolves({ value: { ...response.value, code: 'fake-code' } });
+					sinon.assert.calledOnceWithExactly(findAndModify, {
+						name: {
+							$eq: 'Fake'
+						}
+					}, {}, {
+						$set: {
+							...setData,
+							dateModified: sinon.match.date
+						},
+						$inc: incrementData
+					}, { upsert: false, new: true });
+				});
 
-			const collection = stubMongo(true, { findAndModify });
+				it('Should use a multifield unique index as filter if id is not passed', async () => {
 
-			const mongodb = new MongoDB(config);
-			const result = await mongodb.increment(getModel({}, [
-				['name', 'code']
-			]), { ...filters, code: 'fake-code' }, incrementData, setData);
+					const findAndModify = sinon.stub().resolves({ value: { ...response.value, code: 'fake-code' } });
 
-			assert.deepStrictEqual(result, { ...response.value, code: 'fake-code' });
+					const collection = stubMongo(true, { findAndModify });
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+					const mongodb = new MongoDB(config);
+					const result = await mongodb.increment(getModel({}, [
+						['name', 'code']
+					]), { ...filters, code: 'fake-code' }, incrementData, setData);
 
-			sinon.assert.calledOnce(findAndModify);
-			sinon.assert.calledWithExactly(findAndModify, {
-				code: {
-					$eq: 'fake-code'
-				},
-				name: {
-					$eq: 'Fake'
-				}
-			}, {}, {
-				$set: {
-					...setData,
-					dateModified: sinon.match.date
-				},
-				$inc: incrementData
-			}, { upsert: false, new: true });
-		});
+					assert.deepStrictEqual(result, { ...response.value, code: 'fake-code' });
 
-		it('Should update only with increments and dateModified if no Set Data is passed', async () => {
+					sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-			const findAndModify = sinon.stub().resolves(response);
+					sinon.assert.calledOnceWithExactly(findAndModify, {
+						code: {
+							$eq: 'fake-code'
+						},
+						name: {
+							$eq: 'Fake'
+						}
+					}, {}, {
+						$set: {
+							...setData,
+							dateModified: sinon.match.date
+						},
+						$inc: incrementData
+					}, { upsert: false, new: true });
+				});
 
-			const collection = stubMongo(true, { findAndModify });
+				it('Should update only with increments and dateModified if no Set Data is passed', async () => {
 
-			const mongodb = new MongoDB(config);
-			const result = await mongodb.increment(getModel(null, ['name']), { id }, incrementData);
+					const findAndModify = sinon.stub().resolves(response);
 
-			assert.deepStrictEqual(result, response.value);
+					const collection = stubMongo(true, { findAndModify });
 
-			sinon.assert.calledOnce(collection);
-			sinon.assert.calledWithExactly(collection, 'myCollection');
+					const mongodb = new MongoDB(config);
+					const result = await mongodb.increment(getModel(null, ['name']), { id }, incrementData);
 
-			sinon.assert.calledOnce(findAndModify);
-			sinon.assert.calledWithExactly(findAndModify, {
-				_id: {
-					$eq: ObjectID(id)
-				}
-			}, {}, {
-				$set: {
-					dateModified: sinon.match.date
-				},
-				$inc: incrementData
-			}, { upsert: false, new: true });
-		});
+					assert.deepStrictEqual(result, response.value);
 
-		it('Should throw if no unique indexes are defined', async () => {
+					sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-			const findAndModify = sinon.stub().resolves(response);
+					sinon.assert.calledOnceWithExactly(findAndModify, {
+						_id: {
+							$eq: ObjectID(id)
+						}
+					}, {}, {
+						$set: {
+							dateModified: sinon.match.date
+						},
+						$inc: incrementData
+					}, { upsert: false, new: true });
+				});
 
-			const collection = stubMongo(true, { findAndModify });
+				it('Should throw if no unique indexes are defined', async () => {
 
-			const mongodb = new MongoDB(config);
-			await assert.rejects(() => mongodb.increment(getModel({}, []), filters, incrementData, setData), {
-				code: MongoDBError.codes.MODEL_EMPTY_UNIQUE_INDEXES
+					const findAndModify = sinon.stub().resolves(response);
+
+					const collection = stubMongo(true, { findAndModify });
+
+					const mongodb = new MongoDB(config);
+					await assert.rejects(() => mongodb.increment(getModel({}, []), filters, incrementData, setData), {
+						code: MongoDBError.codes.MODEL_EMPTY_UNIQUE_INDEXES
+					});
+
+					sinon.assert.notCalled(collection);
+					sinon.assert.notCalled(findAndModify);
+				});
+
+				it('Should throw if no unique indexes can be matched', async () => {
+
+					const findAndModify = sinon.stub().resolves(response);
+
+					const collection = stubMongo(true, { findAndModify });
+
+					const mongodb = new MongoDB(config);
+					await assert.rejects(() => mongodb.increment(getModel({}, ['name']), { code: 'fake-code' }, incrementData, setData), {
+						code: MongoDBError.codes.EMPTY_UNIQUE_INDEXES
+					});
+
+					sinon.assert.notCalled(collection);
+					sinon.assert.notCalled(findAndModify);
+				});
+
+				it('Should throw if no increment data is passed', async () => {
+
+					const findAndModify = sinon.stub();
+
+					const collection = stubMongo(true, { findAndModify });
+
+					const mongodb = new MongoDB(config);
+					await assert.rejects(() => mongodb.increment(getModel({}, ['name']), filters, {}, setData), {
+						code: MongoDBError.codes.INVALID_INCREMENT_DATA
+					});
+
+					sinon.assert.notCalled(collection);
+					sinon.assert.notCalled(findAndModify);
+				});
+
+				it('Should throw if wrong increment data is passed', async () => {
+
+					const findAndModify = sinon.stub();
+
+					const collection = stubMongo(true, { findAndModify });
+
+					const mongodb = new MongoDB(config);
+					await assert.rejects(() => mongodb.increment(getModel({}, ['name']), filters, { quantity: '100' }, setData), {
+						code: MongoDBError.codes.INVALID_INCREMENT_DATA
+					});
+
+					sinon.assert.notCalled(collection);
+					sinon.assert.notCalled(findAndModify);
+				});
+
 			});
-
-			sinon.assert.notCalled(collection);
-			sinon.assert.notCalled(findAndModify);
-		});
-
-		it('Should throw if no unique indexes can be matched', async () => {
-
-			const findAndModify = sinon.stub().resolves(response);
-
-			const collection = stubMongo(true, { findAndModify });
-
-			const mongodb = new MongoDB(config);
-			await assert.rejects(() => mongodb.increment(getModel({}, ['name']), { code: 'fake-code' }, incrementData, setData), {
-				code: MongoDBError.codes.EMPTY_UNIQUE_INDEXES
-			});
-
-			sinon.assert.notCalled(collection);
-			sinon.assert.notCalled(findAndModify);
-		});
-
-		it('Should throw if no increment data is passed', async () => {
-
-			const findAndModify = sinon.stub();
-
-			const collection = stubMongo(true, { findAndModify });
-
-			const mongodb = new MongoDB(config);
-			await assert.rejects(() => mongodb.increment(getModel({}, ['name']), filters, {}, setData), {
-				code: MongoDBError.codes.INVALID_INCREMENT_DATA
-			});
-
-			sinon.assert.notCalled(collection);
-			sinon.assert.notCalled(findAndModify);
-		});
-
-		it('Should throw if wrong increment data is passed', async () => {
-
-			const findAndModify = sinon.stub();
-
-			const collection = stubMongo(true, { findAndModify });
-
-			const mongodb = new MongoDB(config);
-			await assert.rejects(() => mongodb.increment(getModel({}, ['name']), filters, { quantity: '100' }, setData), {
-				code: MongoDBError.codes.INVALID_INCREMENT_DATA
-			});
-
-			sinon.assert.notCalled(collection);
-			sinon.assert.notCalled(findAndModify);
 		});
 	});
 
@@ -1934,8 +1906,7 @@ describe('MongoDB', () => {
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
 
-			sinon.assert.calledOnce(collectionStub);
-			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collectionStub, 'myCollection');
 		});
 
 		it('Should return the indexes from the model collection', async () => {
@@ -1976,11 +1947,9 @@ describe('MongoDB', () => {
 				}
 			]);
 
-			sinon.assert.calledOnce(collectionStub);
-			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collectionStub, 'myCollection');
 
-			sinon.assert.calledOnce(indexesStub);
-			sinon.assert.calledWithExactly(indexesStub);
+			sinon.assert.calledOnceWithExactly(indexesStub);
 		});
 	});
 
@@ -2034,8 +2003,7 @@ describe('MongoDB', () => {
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
 
-			sinon.assert.calledOnce(collectionStub);
-			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collectionStub, 'myCollection');
 		});
 
 		[
@@ -2093,11 +2061,9 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, true);
 
-			sinon.assert.calledOnce(collectionStub);
-			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collectionStub, 'myCollection');
 
-			sinon.assert.calledOnce(createIndexesStub);
-			sinon.assert.calledWithExactly(createIndexesStub, indexes);
+			sinon.assert.calledOnceWithExactly(createIndexesStub, indexes);
 		});
 
 		it('Should return false if can\'t create the indexes into the model collection', async () => {
@@ -2112,11 +2078,9 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, false);
 
-			sinon.assert.calledOnce(collectionStub);
-			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collectionStub, 'myCollection');
 
-			sinon.assert.calledOnce(createIndexesStub);
-			sinon.assert.calledWithExactly(createIndexesStub, indexes);
+			sinon.assert.calledOnceWithExactly(createIndexesStub, indexes);
 		});
 	});
 
@@ -2162,8 +2126,7 @@ describe('MongoDB', () => {
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
 
-			sinon.assert.calledOnce(collectionStub);
-			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collectionStub, 'myCollection');
 		});
 
 		[
@@ -2200,8 +2163,7 @@ describe('MongoDB', () => {
 					code: MongoDBError.codes.INVALID_INDEX
 				});
 
-				sinon.assert.calledOnce(MongoDB.prototype.createIndexes);
-				sinon.assert.calledWithExactly(MongoDB.prototype.createIndexes, model, [invalidIndex]);
+				sinon.assert.calledOnceWithExactly(MongoDB.prototype.createIndexes, model, [invalidIndex]);
 			});
 		});
 
@@ -2217,8 +2179,7 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, true);
 
-			sinon.assert.calledOnce(MongoDB.prototype.createIndexes);
-			sinon.assert.calledWithExactly(MongoDB.prototype.createIndexes, model, [index]);
+			sinon.assert.calledOnceWithExactly(MongoDB.prototype.createIndexes, model, [index]);
 		});
 
 		it('Should return false if can\'t create the indexes into the model collection', async () => {
@@ -2233,8 +2194,7 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, false);
 
-			sinon.assert.calledOnce(MongoDB.prototype.createIndexes);
-			sinon.assert.calledWithExactly(MongoDB.prototype.createIndexes, model, [index]);
+			sinon.assert.calledOnceWithExactly(MongoDB.prototype.createIndexes, model, [index]);
 		});
 	});
 
@@ -2275,8 +2235,7 @@ describe('MongoDB', () => {
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
 
-			sinon.assert.calledOnce(collectionStub);
-			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collectionStub, 'myCollection');
 		});
 
 		[
@@ -2327,11 +2286,9 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, true);
 
-			sinon.assert.calledOnce(collectionStub);
-			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collectionStub, 'myCollection');
 
-			sinon.assert.calledOnce(dropIndexStub);
-			sinon.assert.calledWithExactly(dropIndexStub, index);
+			sinon.assert.calledOnceWithExactly(dropIndexStub, index);
 		});
 
 		it('Should return false if can\'t drop the index from the model collection', async () => {
@@ -2346,11 +2303,9 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, false);
 
-			sinon.assert.calledOnce(collectionStub);
-			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
+			sinon.assert.calledOnceWithExactly(collectionStub, 'myCollection');
 
-			sinon.assert.calledOnce(dropIndexStub);
-			sinon.assert.calledWithExactly(dropIndexStub, index);
+			sinon.assert.calledOnceWithExactly(dropIndexStub, index);
 		});
 	});
 
