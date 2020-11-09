@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.16.0] - 2020-11-09
+### Added
+- `dropDatabase` method
+
+### Changed
+- better `README.md` organization
+
 ## [1.15.0] - 2020-08-27
 ### Added
 - GitHub actions for build, coverage and publish
@@ -31,7 +38,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [1.11.0] - 2020-01-17
 ### Changed
-- `MultiInsert` returns Array with Items inserted
+- `multiInsert` returns Array with Items inserted
 
 ## [1.10.0] - 2020-01-14
 ### Added

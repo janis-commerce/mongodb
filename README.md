@@ -18,9 +18,12 @@ This is used to configure which collection should be used, which unique indexes 
 ## API
 
 ### `new MongoDB(config)`
-Constructs the MongoDB driver instance, connected with the `config` object.
 
-**Config properties:**
+<details>
+
+<summary>Constructs the MongoDB driver instance, connected with the `config` object.</summary>
+
+**Properties:**
 
 - host `String` (optional): MongoDB host, default: `localhost`
 - protocol `String` (optional): host protocol, default: `mongodb://`
@@ -30,29 +33,53 @@ Constructs the MongoDB driver instance, connected with the `config` object.
 - database `String` **(required)**: MongoDB database
 - limit `Number` (optional): Default limit for `get`/`getTotals` operations, default: `500`
 
-**Config usage:**
+**Usage:**
 ```js
-{
+const MongoDB = require('@janiscommerce/mongodb');
+
+const Model = require('./myModel');
+
+const mongo = new MongoDB({
    protocol: 'mongodb://',
    host: 'localhost',
-   port: 27017,
-   limit: 500,
-   user: 'fizzmod',
-   password: 'sarasa',
-   database: 'myDB'
-}
+   port: 27017
+   user: 'some-user',
+   password: 'super-secure-password',
+   database: 'great-database'
+});
+
+const model = new Model();
+
+// await mongo.[methodName](model);
 ```
 
+</details>
+
 ### ***async*** `insert(model, item)`
-Inserts one document in a collection
+
+<details>
+<summary>Inserts one document in a collection</summary>
 
 - model: `Model`: A model instance
 - item: `Object`: The item to save in the collection
 
 - Resolves `String`: The *ID* of the inserted item or rejects on failure.
 
+**Usage:**
+```js
+await mongo.insert(model, {
+   id: 1,
+   name: 'test'
+});
+// > '000000054361564751d8516f'
+```
+
+</details>
+
 ### ***async*** `multiInsert(model, items)`
-Inserts multiple documents in a collection
+
+<details>
+<summary>Inserts multiple documents in a collection</summary>
 
 - model: `Model`: A model instance
 - item: `Array<Object>`: The items to save in the collection
@@ -60,8 +87,22 @@ Inserts multiple documents in a collection
 - Resolves `Array<Object>`: Items inserted
 - Rejects `Error` When something bad occurs
 
+**Usage:**
+```js
+await mongo.multiInsert(model, [
+   { id: 2, name: 'test 1' },
+   { id: 3, name: 'test 2' },
+   { id: 4, name: 'test 3' }
+]);
+// > true
+```
+
+</details>
+
 ### ***async*** `update(model, values, filter)`
-Updates one or more documents in a collection
+
+<details>
+<summary>Updates one or more documents in a collection</summary>
 
 - model: `Model`: A model instance
 - values: `Object`: The values to set in the documents
@@ -70,8 +111,30 @@ Updates one or more documents in a collection
 - Resolves `Number`: The number of modified documents
 - Rejects `Error` When something bad occurs
 
+**Usage:**
+```js
+// Updating an item
+await mongo.update(
+   model,
+   { name: 'foobar', color: 'red' }, // the values to update
+   { id: 1 } // the filter
+);
+// > 1
+
+// Updating the enire collection...
+await mongo.update(
+   model,
+   { status: 'active' }, // the values to update
+);
+// > Number
+```
+
+</details>
+
 ### ***async*** `distinct(model, [parameters])`
-Searches distinct values of a property in a collection
+
+<details>
+<summary>Searches distinct values of a property in a collection</summary>
 
 - model: `Model`: A model instance
 - parameters: `Object` (optional): The query parameters. Default: `{}`. It only accepts `key` (the field name to get distinct values from, and `filters` -- described below in `get()` method)
@@ -79,8 +142,19 @@ Searches distinct values of a property in a collection
 - Resolves `Array<Object>`: An array of documents
 - Rejects `Error` When something bad occurs
 
+**Usage:**
+```js
+await mongo.distinct(model, { key: 'color', filters: { status: 'active' } });
+// > ['Red', 'Blue']
+
+```
+
+</details>
+
 ### ***async*** `get(model, [parameters])`
-Searches documents in a collection
+
+<details>
+<summary>Searches documents in a collection</summary>
 
 - model: `Model`: A model instance
 - parameters: `Object` (optional): The query parameters. Default: `{}`
@@ -279,8 +353,30 @@ mongodb.get(myModel, {
 });
 ```
 
+**Usage:**
+```js
+await mongo.get(model, {})
+// > [ ... ] // Every document in the collection, up to 500 documents.
+
+// finding documents with a specific filter
+await mongo.get(model, { filters: { id: 1 } })
+// > [{ id: 1, name: 'foobar' }]
+
+// finding the page 2 of elements with value "foo" with a page size of 10 elements.
+await mongo.get(model, { limit: 10, page: 2 filters: { name: 'foo' } })
+// > [ ... ] // The second page of 10 documents matching name equals to 'foo'.
+
+// finding all entries ordered descendently by id
+await mongo.get(model, { order: { id: 'desc' } });
+// > [ ... ] // Every document in the collection, ordered by descending id, up to 500 documents.
+```
+
+</details>
+
 ### ***async*** `getTotals(model)`
-Gets information about the quantity of documents matched by the last call to the `get()` method.
+
+<details>
+<summary>Gets information about the quantity of documents matched by the last call to the `get()` method.</summary>
 
 - model: `Model`: A model instance used for the query. **IMPORTANT**: This must be the same instance.
 
@@ -299,8 +395,20 @@ Return example:
 
 If no query was executed before, it will just return the `total` and `pages` properties with a value of zero.
 
+**Usage:**
+```js
+// getTotals
+result = await mongo.getTotals(model);
+// > { page: 1, limit: 500, pages: 1, total: 4 }
+```
+
+</details>
+
 ### ***async*** `save(model, item, setOnInsert)`
-Inserts or updates a document in a collection.
+
+<details>
+<summary>Inserts or updates a document in a collection.</summary>
+
 - model: `Model`: A model instance used for the query.
 - item: `Object`: The item to upsert in the collection
 - setOnInsert: `Object`: Default values to insert on Items.
@@ -310,8 +418,63 @@ Inserts or updates a document in a collection.
 
 This operation uses unique indexes in order to update existing documents. If `id` is provided in the item, it will be used. Otherwise, it will try to match a unique index defined in the model. If no unique index can be matched by the item, it will reject an error.
 
+**Usage:**
+```js
+// save insert
+await mongo.save(model, {
+   unique: 1,
+   name: 'test'
+});
+// > '000000054361564751d8516f'
+
+// save update
+await mongo.save(model, {
+   id: '00000058faf66849077316ba',
+   unique: 1,
+   name: 'test'
+});
+// > '00000058faf66849077316ba'
+
+// save update
+await mongo.save(model, {
+   unique: 2,
+   name: 'test-2'
+}, { status: 'active' });
+// > '00000058faf66849077316bb'
+/* In DB:
+{
+   _id: '00000058faf66849077316bb',
+   unique: 2,
+   name: 'test-2',
+   dateCreated: ISODate("2020-01-14T14:01:29.170Z"),
+   status: 'active'
+}
+*/
+
+// save update
+await mongo.save(model, {
+   unique: 2,
+   name: 'test-2',
+   status: 'inactive'
+}, { status: 'active' });
+// > '00000058faf66849077316bb'
+/* In DB:
+{
+   _id: '00000058faf66849077316bb',
+   unique: 2,
+   name: 'test-2',
+   dateCreated: ISODate("2020-01-14T14:01:29.170Z"),
+   status: 'inactive'
+}
+*/
+```
+</details>
+
 ### ***async*** `multiSave(model, items, setOnInsert)`
-Inserts or updates a document in a collection.
+
+<details>
+<summary>Inserts or updates a document in a collection.</summary>
+
 - model: `Model`: A model instance used for the query.
 - items: `Array<Object>`: The items to upsert in the collection
 - setOnInsert: `Object`: Default values to insert on Items.
@@ -319,8 +482,23 @@ Inserts or updates a document in a collection.
 - Resolves `Boolean`: `true` if items can be upserted
 - Rejects `Error` When something bad occurs
 
+**Usage:**
+```js
+await mongo.multiSave(model, [
+   { id: 1, name: 'test 1' },
+   { id: 2, name: 'test 2' },
+   { id: 3, name: 'test 3' }
+]);
+// > true
+```
+
+</details>
+
 ### ***async*** `remove(model, item)`
-Inserts or updates a document in a collection.
+
+<details>
+<summary>Inserts or updates a document in a collection.</summary>
+
 - model: `Model`: A model instance used for the query.
 - item: `Object`: The items to be removed
 
@@ -329,17 +507,38 @@ Inserts or updates a document in a collection.
 
 This operation uses unique indexes in order to remove an existing document. If `id` is provided in the item, it will be used. Otherwise, it will try to match a unique index defined in the model. If no unique index can be matched by the item, it will reject an error.
 
+**Usage:**
+```js
+await mongo.remove(model, { id: '0000000055f2255a1a8e0c54' });
+// > true|false
+```
+
+</details>
+
 ### ***async*** `multiRemove(model, filter)`
-Removes one or more documents in a collection
+
+<details>
+<summary>Removes one or more documents in a collection.</summary>
 
 - model: `Model`: A model instance
 - filter: `Object`: Filter criteria to match documents
 
-- Resolves `Number`: The number of removed documents
+- Resolves `Number`: Number that repesents the amount of removed documents.
 - Rejects `Error` When something bad occurs
 
+**Usage:**
+```js
+await mongo.multiRemove(model, { name: { type: 'search', value: 'test' } });
+// > 5
+```
+
+</details>
+
 ### ***async*** `increment(model, filters, incrementData, setData)`
-Increment or decrement values in a registry.
+
+<details>
+<summary>Increment or decrement values in a registry.</summary>
+
 - model: `Model`: A model instance used for the query.
 - filters: `Object`: Unique Filter criteria to match documents
 - incrementData: `Object`: The fields with the values to increment or decrement to updated in the collection (values must be *number* type).
@@ -348,8 +547,25 @@ Increment or decrement values in a registry.
 - Resolves `Object`: An object containing the updated registry
 - Rejects `Error` When something bad occurs
 
+**Usage:**
+```js
+await mongo.increment(model, { status: 'pending' }, { pendingDaysQuantity: 1 }, { updatedDate: new Date() });
+/* Output:
+{
+   _id: ObjectID('5df0151dbc1d570011949d86'),
+   status: 'pending',
+   pendingDaysQuantity: 4
+   updatedDate:ISODate("2020-11-09T14:01:29.170Z")
+}
+*/
+```
+
+</details>
+
 ### ***async*** `getIndexes(model)`
-Get the indexes from the collection
+
+<details>
+<summary>Get the indexes from the collection.</summary>
 
 - model `Model`: A model instance
 
@@ -358,8 +574,18 @@ Get the indexes from the collection
 
 This method also format the received indexes from MongoDB by getting only the fields `name`, `key` and `unique`.
 
+**Usage:**
+```js
+await mongo.getIndexes(model);
+// > [{name: 'some-index', key: { field: 1 }, unique: false}]
+```
+
+</details>
+
 ### ***async*** `createIndex(model, index)`
-Creates an index into the collection
+
+<details>
+<summary>Creates an index into the collection.</summary>
 
 - model `Model`: A model instance
 - index `Object`: An object with the following properties:
@@ -367,35 +593,103 @@ Creates an index into the collection
    - key `Object` (Required): The index key with the fields to index
    - unique `Boolean` (Optional): Indicates if the index must be unique or not
 
-- Resolves `Boolean`: `true` if the index was created successfully
+- Resolves `Boolean`: `true` if the index was successfully created
 - Rejects `Error`: When something bad occurs
 
+**Usage:**
+```js
+await mongo.createIndex(model, {
+   name: 'some-index',
+   key: { field: 1 },
+   unique: true
+});
+// > true
+```
+
+</details>
+
 ### ***async*** `createIndexes(model, indexes)`
-Creates multiple indexes into the collection
+
+<details>
+<summary>Creates multiple indexes into the collection.</summary>
 
 - model `Model`: A model instance
 - indexes `Array<object>`: An array with the indexes to create (index object structure defined in `createIndex` method)
 
-- Resolves `Boolean`: `true` if the indexes was created successfully
+- Resolves `Boolean`: `true` if the indexes was successfully created
 - Rejects `Error`: When something bad occurs
 
+**Usage:**
+```js
+await mongo.createIndexes(model, [
+   {
+      name: 'some-index',
+      key: { field: 1 },
+      unique: true
+   },
+   {
+      name: 'other-index',
+      key: { otherField: 1 }
+   }
+]);
+// > true
+```
+
+</details>
+
 ### ***async*** `dropIndex(model, indexName)`
-Drops an index from the collection
+
+<details>
+<summary>Drops an index from the collection.</summary>
 
 - model `Model`: A model instance
 - indexName: `String`: The name of the index to drop
 
-- Resolves `Boolean`: `true` if the index was dropped successfully
+- Resolves `Boolean`: `true` if the index was successfully dropped
 - Rejects `Error`: When something bad occurs
 
+**Usage:**
+```js
+await mongo.dropIndex(model, 'some-index');
+// > true
+```
+
+</details>
+
 ### ***async*** `dropIndexes(model, indexNames)`
-Drops multiple indexes from the collection
+
+<details>
+<summary>Drops multiple indexes from the collection.</summary>
 
 - model `Model`: A model instance
 - indexNames: `Array<string>`: The names of the indexs to drop
 
-- Resolves `Boolean`: `true` if the index was dropped successfully
+- Resolves `Boolean`: `true` if the index was successfully dropped
 - Rejects `Error`: When something bad occurs
+
+**Usage:**
+```js
+await mongo.dropIndexes(model, ['some-index', 'other-index'])
+// > true
+```
+
+</details>
+
+### ***async*** `dropDatabase()`
+
+<details>
+<summary>Drops the database for the current config.</summary>
+
+- Resolves `Boolean`: `true` if the database was successfully dropped, false otherwise.
+- Rejects `Error`: When something bad occurs
+
+**Usage:**
+```js
+await mongo.dropDatabase();
+// > true|false
+```
+
+</details>
 
 ## Errors
 
@@ -415,148 +709,3 @@ The codes are the following:
 | 8    | Filter type not recognized         |
 | 9    | Invalid Increment Data             |
 | 10   | Invalid index structure            |
-
-## Usage
-
-```js
-const MongoDB = require('@janiscommerce/mongodb');
-
-const Model = require('./myModel');
-
-const mongo = new MongoDB({
-   protocol: 'mongodb://',
-   host: 'localhost',
-   port: 27017
-   user: 'fizzmod',
-   password: 'sarasa',
-   database: 'myDatabase'
-});
-
-const model = new Model();
-
-(async () => {
-
-   let result;
-
-   // Insert
-   await mongo.insert(model, {
-      id: 1,
-      name: 'test'
-   });
-   // > '000000054361564751d8516f'
-
-   // multiInsert
-   result = await mongo.multiInsert(model, [
-      { id: 2, name: 'test 1' },
-      { id: 3, name: 'test 2' },
-      { id: 4, name: 'test 3' }
-   ]);
-   // > true
-
-   // update
-   result = await mongo.update(model,
-      { name: 'foobar' },
-      { id: 1 }
-   );
-   // > 1
-
-   // get
-   result = await mongo.get(model, {})
-   // > [ ... ] // Every document in the collection, up to 500 documents.
-
-   result = await mongo.get(model, { filters: { id: 1 } })
-   // > [{ id: 1, name: 'foobar' }]
-
-   result = await mongo.get(model, { limit: 10, page: 2 filters: { name: 'foo' } }) // expected return: page 2 of elements with value "foo" with a page size of 10 elements.
-   // > [ ... ] // The second page of 10 documents matching name equals to 'foo'.
-
-   result = await mongo.get(model, { order: { id: 'desc' } }); // expected return: all entries ordered descendently by id
-   // > [ ... ] // Every document in the collection, ordered by descending id, up to 500 documents.
-
-   // getTotals
-   result = await mongo.getTotals(model);
-   // > { page: 1, limit: 500, pages: 1, total: 4 }
-
-  // save insert
-   result = await mongo.save(model, {
-      unique: 1,
-      name: 'test'
-   });
-   // > '000000054361564751d8516f'
-
-   // save update
-   result = await mongo.save(model, {
-      id: '00000058faf66849077316ba',
-      unique: 1,
-      name: 'test'
-   });
-   // > '00000058faf66849077316ba'
-
-   // save update
-   result = await mongo.save(model, {
-      unique: 2,
-      name: 'test-2'
-   }, { status: 'active' });
-   // > '00000058faf66849077316bb'
-   // In DB : { _id: '00000058faf66849077316bb', unique: 2, name: 'test-2', dateCreated: ISODate("2020-01-14T14:01:29.170Z"), status: 'active' }
-
-   // save update
-   result = await mongo.save(model, {
-      unique: 2,
-      name: 'test-2',
-      status: 'inactive'
-   }, { status: 'active' });
-   // > '00000058faf66849077316bb'
-   // In DB : { _id: '00000058faf66849077316bb', unique: 2, name: 'test-2', dateCreated: ISODate("2020-01-14T14:01:29.170Z"), status: 'inactive' }
-
-   // multiSave
-   result = await mongo.multiSave(model, [
-      { id: 1, name: 'test 1' },
-      { id: 2, name: 'test 2' },
-      { id: 3, name: 'test 3' }
-   ]);
-   // > true
-
-   // remove
-   result = await mongo.remove(model, { id: '0000000055f2255a1a8e0c54' });
-   // > true
-
-   // multiRemove
-   result = await mongo.multiRemove(model, { name: { type: 'search', value: 'test' } });
-   // > 3
-
-   // getIndexes
-   result = await mongo.getIndexes(model);
-   // > [{name: 'some-index', key: { field: 1 }, unique: false}]
-
-   // createIndex
-   result = await mongo.createIndex(model, {
-      name: 'some-index',
-      key: { field: 1 },
-      unique: true
-   });
-   // > true
-
-   // createIndexes
-   result = await mongo.createIndexes(model, [
-      {
-         name: 'some-index',
-         key: { field: 1 },
-         unique: true
-      },
-      {
-         name: 'other-index',
-         key: { otherField: 1 }
-      }
-   ]);
-   // > true
-
-   // dropIndex
-   result = await mongo.dropIndex(model, 'some-index');
-   // > true
-
-   // dropIndexes
-   result = await mongo.dropIndexes(model, ['some-index', 'other-index'])
-   // > true
-});
-```

@@ -2416,4 +2416,69 @@ describe('MongoDB', () => {
 			});
 		});
 	});
+
+	describe('dropDatabase()', () => {
+
+		it('Should throw if connection to DB fails', async () => {
+
+			stubMongo(false);
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(() => mongodb.dropDatabase(), {
+				message: 'Error getting DB',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+		});
+
+		it('Should throw if mongodb dropDatabase method fails', async () => {
+
+			const mongodb = new MongoDB(config);
+
+			const dropDatabaseStub = sinon.stub().rejects(new Error('dropDatabase internal error'));
+
+			sinon.stub(MongoWrapper.prototype, 'getDb')
+				.resolves({ dropDatabase: dropDatabaseStub });
+
+			await assert.rejects(() => mongodb.dropDatabase(), {
+				message: 'dropDatabase internal error',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.calledOnceWithExactly(dropDatabaseStub);
+		});
+
+		it('Should return true if can drop the database when dropDatabase is called', async () => {
+
+			const mongodb = new MongoDB(config);
+
+			const dropDatabaseStub = sinon.stub().resolves({ ok: true });
+
+			sinon.stub(MongoWrapper.prototype, 'getDb')
+				.resolves({ dropDatabase: dropDatabaseStub });
+
+			const result = await mongodb.dropDatabase();
+
+			assert.deepStrictEqual(result, true);
+
+			sinon.assert.calledOnceWithExactly(dropDatabaseStub);
+		});
+
+		it('Should return false if can\'t drop the database when dropDatabase is called', async () => {
+
+			const mongodb = new MongoDB(config);
+
+			const dropDatabaseStub = sinon.stub().resolves({ ok: false });
+
+			sinon.stub(MongoWrapper.prototype, 'getDb')
+				.resolves({ dropDatabase: dropDatabaseStub });
+
+			const result = await mongodb.dropDatabase();
+
+			assert.deepStrictEqual(result, false);
+
+			sinon.assert.calledOnceWithExactly(dropDatabaseStub);
+		});
+	});
+
 });
