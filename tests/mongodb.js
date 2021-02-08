@@ -1913,16 +1913,12 @@ describe('MongoDB', () => {
 
 			const indexesStub = sinon.stub().resolves([
 				{
-					v: 2,
 					key: { field: 1 },
-					name: 'some-index',
-					ns: 'myDatabase.myCollection'
+					name: 'some-index'
 				},
 				{
-					v: 2,
 					key: { uniqueField: 1 },
 					name: 'unique-index',
-					ns: 'myDatabase.myCollection',
 					unique: true
 				}
 			]);
@@ -1936,13 +1932,12 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, [
 				{
-					name: 'some-index',
 					key: { field: 1 },
-					unique: false
+					name: 'some-index'
 				},
 				{
-					name: 'unique-index',
 					key: { uniqueField: 1 },
+					name: 'unique-index',
 					unique: true
 				}
 			]);
