@@ -982,6 +982,8 @@ describe('MongoDB', () => {
 				}
 			};
 
+			const options = { upsert: true };
+
 			const updateMany = sinon.stub().resolves({ modifiedCount: 1 });
 
 			const collection = stubMongo(true, { updateMany });
@@ -991,7 +993,7 @@ describe('MongoDB', () => {
 				otherId: {
 					isID: true
 				}
-			}), { ...item }, { id });
+			}), { ...item }, { id }, options);
 
 			assert.deepStrictEqual(result, 1);
 
@@ -1019,7 +1021,7 @@ describe('MongoDB', () => {
 				_id: {
 					$eq: ObjectID(id)
 				}
-			}, expectedItem);
+			}, expectedItem, options);
 		});
 	});
 
