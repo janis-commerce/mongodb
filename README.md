@@ -1,3 +1,4 @@
+
 # MongoDB
 
 ![Build Status](https://github.com/janis-commerce/mongodb/workflows/Build%20Status/badge.svg)
@@ -99,7 +100,7 @@ await mongo.multiInsert(model, [
 
 </details>
 
-### ***async*** `update(model, values, filter)`
+### ***async*** `update(model, values, filter, options)`
 
 <details>
 <summary>Updates one or more documents in a collection</summary>
@@ -107,6 +108,7 @@ await mongo.multiInsert(model, [
 - model: `Model`: A model instance
 - values: `Object`: The values to set in the documents
 - filter: `Object`: Filter criteria to match documents
+- options: `Object`: Optional parameters of the query [See more](https://docs.mongodb.com/v3.6/reference/method/db.collection.updateMany/#definition)
 
 - Resolves `Number`: The number of modified documents
 - Rejects `Error` When something bad occurs
@@ -127,6 +129,27 @@ await mongo.update(
    { status: 'active' }, // the values to update
 );
 // > Number
+
+// Updating certain elements of an array
+/* Sample document to match
+{
+	_id: ObjectID('5df0151dbc1d570011949d86'),
+	items: [{ name: 'foo', price: 90 },{ name: 'bar', price: 45 }]
+}
+*/
+await mongo.update(
+   model,
+   { $set: { "items.$[elem].price" : 100 } }, // the values to update
+   {}
+   { arrayFilters: [ { "elem.price": { $gte: 85 } } ] }
+)
+// > Number
+/* Output
+{
+	_id: ObjectID('5df0151dbc1d570011949d86'),
+	items: [{ name: 'foo', price: 90 },{ name: 'bar', price: 100 }]
+}
+*/
 ```
 
 </details>
