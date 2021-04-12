@@ -108,7 +108,7 @@ await mongo.multiInsert(model, [
 - model: `Model`: A model instance
 - values: `Object`: The values to set in the documents
 - filter: `Object`: Filter criteria to match documents
-- options: `Object`: Optional parameters of the query [See more](https://docs.mongodb.com/v3.6/reference/method/db.collection.updateMany/#definition)
+- options: `Object`: Optional parameters (such as [arrayFilters](https://docs.mongodb.com/v3.6/release-notes/3.6/#arrayfilters)) of the query [See more](https://docs.mongodb.com/v3.6/reference/method/db.collection.updateMany/#definition)
 
 - Resolves `Number`: The number of modified documents
 - Rejects `Error` When something bad occurs
@@ -147,7 +147,7 @@ await mongo.update(
 /* Output
 {
 	_id: ObjectID('5df0151dbc1d570011949d86'),
-	items: [{ name: 'foo', price: 90 },{ name: 'bar', price: 100 }]
+	items: [{ name: 'foo', price: 100 },{ name: 'bar', price: 45 }]
 }
 */
 ```
