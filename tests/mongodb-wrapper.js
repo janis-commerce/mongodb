@@ -28,7 +28,6 @@ describe('MongoWrapper', () => {
 	beforeEach(() => {
 		sinon.stub(RealMongoClient, 'connect');
 		config.host = `${Date.now()}.localhost`;
-		// config.database = `myDatabase-${Date.now()}`;
 	});
 
 	afterEach(() => {
@@ -78,7 +77,7 @@ describe('MongoWrapper', () => {
 				{
 					useNewUrlParser: true,
 					useUnifiedTopology: true,
-					w: 1
+					writeConcern: { w: 1 }
 				}
 			);
 		});
@@ -107,7 +106,7 @@ describe('MongoWrapper', () => {
 				{
 					useNewUrlParser: true,
 					useUnifiedTopology: true,
-					w: 1
+					writeConcern: { w: 1 }
 				}
 			);
 		});
