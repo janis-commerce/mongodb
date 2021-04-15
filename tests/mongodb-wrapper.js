@@ -25,6 +25,12 @@ describe('MongoWrapper', () => {
 		limit: 500
 	};
 
+	const connectionParams = {
+		useNewUrlParser: true,
+		useUnifiedTopology: true,
+		writeConcern: { w: 1 }
+	};
+
 	beforeEach(() => {
 		sinon.stub(RealMongoClient, 'connect');
 		config.host = `${Date.now()}.localhost`;
@@ -74,11 +80,7 @@ describe('MongoWrapper', () => {
 			sinon.assert.calledOnce(RealMongoClient.connect);
 			sinon.assert.calledWithExactly(RealMongoClient.connect,
 				`mongodb://${config.host}:27017/${config.database}`,
-				{
-					useNewUrlParser: true,
-					useUnifiedTopology: true,
-					writeConcern: { w: 1 }
-				}
+				connectionParams
 			);
 		});
 
@@ -103,11 +105,7 @@ describe('MongoWrapper', () => {
 			sinon.assert.calledOnce(RealMongoClient.connect);
 			sinon.assert.calledWithExactly(RealMongoClient.connect,
 				`mongodb://foo:bar@${config.host}:27017/${config.database}`,
-				{
-					useNewUrlParser: true,
-					useUnifiedTopology: true,
-					writeConcern: { w: 1 }
-				}
+				connectionParams
 			);
 		});
 

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [1.17.1] - 2021-04-15
+### Fixed
+- Avoid `writeConcern` duplication
+
 ## [1.17.0] - 2021-04-14
 ### Changed
 - `update` Method now supports the options parameter.
