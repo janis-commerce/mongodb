@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [1.18.0] - 2021-07-07
+### Added
+- Query filter types `elemMatch`, `nearSphere` and `geoIntersects` are now supported
+- You can pass an unknown filter type if it starts with `$` (for passing mongo raw types that are not being supported)
+
 ## [1.17.1] - 2021-04-15
 ### Fixed
 - Avoid `writeConcern` duplication

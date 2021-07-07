@@ -256,8 +256,14 @@ The following table shows all the supported filter types, and it's equivalence:
 | search         | $regex            |
 | all            | $all              |
 | exists         | $exists           |
+| text           | $text             |
+| elemMatch      | $elemMatch        |
+| nearSphere     | $nearSphere       |
+| geoIntersects  | $geoIntersects    |
 
 If the type isn't defined in the model nor in the query, it defaults to `equal` for single valued filters or `in` for multivalued filter.
+
+You can also pass an _unsupported_ mongodb `type` (it must start with the `$` character, for example: `$mod`).
 
 **Internal field names**
 
