@@ -49,6 +49,19 @@ describe('MongoDBFilters', () => {
 			assert.deepStrictEqual(MongoDBFilters.parseFilters([]), {});
 		});
 
+		it('Should accept an unknown filter type if it starts with the $ character', () => {
+
+			const parsedFilters = MongoDBFilters.parseFilters({
+				foo: { type: '$lt', value: 10 }
+			}, getModel());
+
+			assert.deepStrictEqual(parsedFilters, {
+				foo: {
+					$lt: 10
+				}
+			});
+		});
+
 		it('Should return the filters as \'equal\' or \'in\' filters when no custom configuration is set', () => {
 
 			const parsedFilters = MongoDBFilters.parseFilters({
