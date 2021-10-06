@@ -1,6 +1,6 @@
 {
   "name": "@janiscommerce/mongodb",
-  "version": "1.18.0",
+  "version": "1.19.0-beta.0",
   "description": "",
   "main": "lib/mongodb.js",
   "scripts": {
@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/janis-commerce/mongodb#readme",
   "dependencies": {
+    "@janiscommerce/events": "^0.1.0",
     "mongodb": "^3.6.6",
     "superstruct": "^0.6.2"
   },

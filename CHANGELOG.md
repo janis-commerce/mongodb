@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [1.19.0-beta.0] - 2021-10-06
+### Added
+- Closing connections when event `janiscommerce.ended` was emitted
+- Events listened with `@janiscommerce/events`
+
 ## [1.18.0] - 2021-07-07
 ### Added
 - Query filter types `elemMatch`, `nearSphere` and `geoIntersects` are now supported

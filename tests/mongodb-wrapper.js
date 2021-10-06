@@ -5,6 +5,8 @@ const sinon = require('sinon');
 
 const { MongoClient: RealMongoClient, ObjectID: RealObjectID } = require('mongodb');
 
+const Events = require('@janiscommerce/events');
+
 const { MongoWrapper, ObjectID } = require('../lib/mongodb-wrapper');
 
 describe('ObjectID', () => {
@@ -69,7 +71,8 @@ describe('MongoWrapper', () => {
 				isConnected: sinon.stub().returns(false),
 				db: sinon.stub().returns({
 					collection: sinon.stub()
-				})
+				}),
+				close: sinon.stub()
 			});
 
 			const callback = sinon.stub();
@@ -77,11 +80,9 @@ describe('MongoWrapper', () => {
 			const mongoWrapper = new MongoWrapper(config);
 			await mongoWrapper.makeQuery(model, callback);
 
-			sinon.assert.calledOnce(RealMongoClient.connect);
-			sinon.assert.calledWithExactly(RealMongoClient.connect,
-				`mongodb://${config.host}:27017/${config.database}`,
-				connectionParams
-			);
+			const connectionString = `mongodb://${config.host}:27017/${config.database}`;
+
+			sinon.assert.calledOnceWithExactly(RealMongoClient.connect, connectionString, connectionParams);
 		});
 
 		it('Should generate the connection string with user and password', async () => {
@@ -90,7 +91,8 @@ describe('MongoWrapper', () => {
 				isConnected: sinon.stub().returns(false),
 				db: sinon.stub().returns({
 					collection: sinon.stub()
-				})
+				}),
+				close: sinon.stub()
 			});
 
 			const callback = sinon.stub();
@@ -102,11 +104,35 @@ describe('MongoWrapper', () => {
 			});
 			await mongoWrapper.makeQuery(model, callback);
 
-			sinon.assert.calledOnce(RealMongoClient.connect);
-			sinon.assert.calledWithExactly(RealMongoClient.connect,
-				`mongodb://foo:bar@${config.host}:27017/${config.database}`,
-				connectionParams
-			);
+			const connectionString = `mongodb://foo:bar@${config.host}:27017/${config.database}`;
+
+			sinon.assert.calledOnceWithExactly(RealMongoClient.connect, connectionString, connectionParams);
+		});
+
+		it('Should close the connection when janiscommerce.ended event was emitted', async () => {
+
+			const closeStub = sinon.stub();
+
+			RealMongoClient.connect.resolves({
+				isConnected: sinon.stub().returns(false),
+				db: sinon.stub().returns({
+					collection: sinon.stub()
+				}),
+				close: closeStub
+			});
+
+			const callback = sinon.stub();
+
+			const mongoWrapper = new MongoWrapper(config);
+			await mongoWrapper.makeQuery(model, callback);
+
+			const connectionString = `mongodb://${config.host}:27017/${config.database}`;
+
+			sinon.assert.calledOnceWithExactly(RealMongoClient.connect, connectionString, connectionParams);
+
+			Events.emit('janiscommerce.ended');
+
+			sinon.assert.calledOnceWithExactly(closeStub);
 		});
 
 		it('Should call the callback, passing the collection defined by the model', async () => {
@@ -118,7 +144,8 @@ describe('MongoWrapper', () => {
 				isConnected: sinon.stub().returns(false),
 				db: sinon.stub().returns({
 					collection: collectionStub
-				})
+				}),
+				close: sinon.stub()
 			});
 
 			const callback = sinon.stub();
@@ -126,11 +153,8 @@ describe('MongoWrapper', () => {
 			const mongoWrapper = new MongoWrapper({ ...config });
 			await mongoWrapper.makeQuery(model, callback);
 
-			sinon.assert.calledOnce(collectionStub);
-			sinon.assert.calledWithExactly(collectionStub, 'myCollection');
-
-			sinon.assert.calledOnce(callback);
-			sinon.assert.calledWithExactly(callback, collection);
+			sinon.assert.calledOnceWithExactly(collectionStub, 'myCollection');
+			sinon.assert.calledOnceWithExactly(callback, collection);
 		});
 
 		it('Should connect only once for the same DB config key', async () => {
@@ -139,7 +163,8 @@ describe('MongoWrapper', () => {
 				isConnected: sinon.stub().returns(true),
 				db: sinon.stub().returns({
 					collection: sinon.stub()
-				})
+				}),
+				close: sinon.stub()
 			});
 
 			const callback = sinon.stub();
@@ -162,7 +187,8 @@ describe('MongoWrapper', () => {
 				isConnected: sinon.stub().returns(false),
 				db: sinon.stub().returns({
 					collection: sinon.stub()
-				})
+				}),
+				close: sinon.stub()
 			});
 
 			const callback = sinon.stub();
