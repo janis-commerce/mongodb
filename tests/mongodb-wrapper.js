@@ -21,23 +21,50 @@ describe('MongoWrapper', () => {
 		port: 27017,
 		database: 'myDatabase',
 		user: '',
-		password: '',
-		limit: 500
+		password: ''
 	};
 
 	const connectionParams = {
-		useNewUrlParser: true,
-		useUnifiedTopology: true,
 		writeConcern: { w: 1 }
 	};
 
 	beforeEach(() => {
-		sinon.stub(RealMongoClient, 'connect');
+		sinon.stub(RealMongoClient.prototype, 'connect');
 		config.host = `${Date.now()}.localhost`;
 	});
 
 	afterEach(() => {
 		sinon.restore();
+	});
+
+	describe('Connection params', () => {
+
+		it('Should have the proper connection params', () => {
+			const mongoWrapper = new MongoWrapper({});
+			assert.deepStrictEqual(mongoWrapper.connectionParams, connectionParams);
+		});
+
+		it('Should format the connection string with the minimum config params', () => {
+
+			const { protocol, host, database } = config;
+
+			const mongoWrapper = new MongoWrapper({ protocol, host, database });
+
+			assert.strictEqual(mongoWrapper.connectionString, `mongodb://${config.host}:27017/myDatabase`);
+		});
+
+		it('Should format the connection string every config params', () => {
+
+			const mongoWrapper = new MongoWrapper({
+				...config,
+				user: 'john.doe',
+				password: 'Str0ngP4ss',
+				port: 5646
+			});
+
+			assert.strictEqual(mongoWrapper.connectionString, `mongodb://john.doe:Str0ngP4ss@${config.host}:5646/myDatabase`);
+		});
+
 	});
 
 	describe('makeQuery()', () => {
@@ -52,7 +79,7 @@ describe('MongoWrapper', () => {
 
 		it('Should reject if connection fails', async () => {
 
-			RealMongoClient.connect.rejects(new Error('Connection error'));
+			RealMongoClient.prototype.connect.rejects(new Error('Connection error'));
 
 			const callback = sinon.stub();
 
@@ -60,13 +87,12 @@ describe('MongoWrapper', () => {
 			await assert.rejects(() => mongoWrapper.makeQuery(model, callback));
 
 			sinon.assert.notCalled(callback);
-			sinon.assert.calledOnce(RealMongoClient.connect);
+			sinon.assert.calledOnce(RealMongoClient.prototype.connect);
 		});
 
 		it('Should generate the connection string without user and password', async () => {
 
-			RealMongoClient.connect.resolves({
-				isConnected: sinon.stub().returns(false),
+			RealMongoClient.prototype.connect.resolves({
 				db: sinon.stub().returns({
 					collection: sinon.stub()
 				})
@@ -77,17 +103,12 @@ describe('MongoWrapper', () => {
 			const mongoWrapper = new MongoWrapper(config);
 			await mongoWrapper.makeQuery(model, callback);
 
-			sinon.assert.calledOnce(RealMongoClient.connect);
-			sinon.assert.calledWithExactly(RealMongoClient.connect,
-				`mongodb://${config.host}:27017/${config.database}`,
-				connectionParams
-			);
+			sinon.assert.calledOnceWithExactly(RealMongoClient.prototype.connect);
 		});
 
 		it('Should generate the connection string with user and password', async () => {
 
-			RealMongoClient.connect.resolves({
-				isConnected: sinon.stub().returns(false),
+			RealMongoClient.prototype.connect.resolves({
 				db: sinon.stub().returns({
 					collection: sinon.stub()
 				})
@@ -102,11 +123,7 @@ describe('MongoWrapper', () => {
 			});
 			await mongoWrapper.makeQuery(model, callback);
 
-			sinon.assert.calledOnce(RealMongoClient.connect);
-			sinon.assert.calledWithExactly(RealMongoClient.connect,
-				`mongodb://foo:bar@${config.host}:27017/${config.database}`,
-				connectionParams
-			);
+			sinon.assert.calledOnceWithExactly(RealMongoClient.prototype.connect);
 		});
 
 		it('Should call the callback, passing the collection defined by the model', async () => {
@@ -114,8 +131,7 @@ describe('MongoWrapper', () => {
 			const collection = {};
 			const collectionStub = sinon.stub().returns(collection);
 
-			RealMongoClient.connect.resolves({
-				isConnected: sinon.stub().returns(false),
+			RealMongoClient.prototype.connect.resolves({
 				db: sinon.stub().returns({
 					collection: collectionStub
 				})
@@ -135,7 +151,7 @@ describe('MongoWrapper', () => {
 
 		it('Should connect only once for the same DB config key', async () => {
 
-			RealMongoClient.connect.resolves({
+			RealMongoClient.prototype.connect.resolves({
 				isConnected: sinon.stub().returns(true),
 				db: sinon.stub().returns({
 					collection: sinon.stub()
@@ -153,29 +169,7 @@ describe('MongoWrapper', () => {
 
 			await mongoWrapper2.makeQuery(model, callback);
 
-			sinon.assert.calledOnce(RealMongoClient.connect);
-		});
-
-		it('Should reconnect to the same DB if it\'s not connected', async () => {
-
-			RealMongoClient.connect.resolves({
-				isConnected: sinon.stub().returns(false),
-				db: sinon.stub().returns({
-					collection: sinon.stub()
-				})
-			});
-
-			const callback = sinon.stub();
-
-			const mongoWrapper = new MongoWrapper({ ...config });
-
-			await mongoWrapper.makeQuery(model, callback);
-
-			const mongoWrapper2 = new MongoWrapper({ ...config, database: 'myDatabase2' });
-
-			await mongoWrapper2.makeQuery(model, callback);
-
-			sinon.assert.calledTwice(RealMongoClient.connect);
+			sinon.assert.calledOnce(RealMongoClient.prototype.connect);
 		});
 	});
 });

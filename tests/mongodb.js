@@ -49,7 +49,9 @@ describe('MongoDB', () => {
 	};
 
 	const config = {
-		database: 'myDatabase'
+		host: 'localhost',
+		database: 'janis-fizzmodarg',
+		port: 30400
 	};
 
 	const stubMongo = (getDbIsSuccessful, collectionReturnValue) => {
@@ -491,13 +493,13 @@ describe('MongoDB', () => {
 				name: 'Some name'
 			};
 
-			const findAndModify = sinon.stub().rejects(new Error('FindAndModify internal error'));
+			const findOneAndUpdate = sinon.stub().rejects(new Error('findOneAndUpdate internal error'));
 
-			const collection = stubMongo(true, { findAndModify });
+			const collection = stubMongo(true, { findOneAndUpdate });
 
 			const mongodb = new MongoDB(config);
 			await assert.rejects(() => mongodb.save(getModel(), { ...item }), {
-				message: 'FindAndModify internal error',
+				message: 'findOneAndUpdate internal error',
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
 
@@ -519,9 +521,9 @@ describe('MongoDB', () => {
 				}
 			};
 
-			const findAndModify = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
 
-			const collection = stubMongo(true, { findAndModify });
+			const collection = stubMongo(true, { findOneAndUpdate });
 
 			const mongodb = new MongoDB(config);
 			const result = await mongodb.save(getModel(), { ...item });
@@ -530,7 +532,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-			sinon.assert.calledOnceWithExactly(findAndModify, {
+			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 				_id: {
 					$eq: ObjectID(id)
 				}
@@ -544,7 +546,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
-			}, { upsert: true, new: true });
+			}, { upsert: true, returnNewDocument: true });
 		});
 
 		it('Should use a unique index as filter if id is not passed', async () => {
@@ -556,9 +558,9 @@ describe('MongoDB', () => {
 				name: 'Some name'
 			};
 
-			const findAndModify = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
 
-			const collection = stubMongo(true, { findAndModify });
+			const collection = stubMongo(true, { findOneAndUpdate });
 
 			const mongodb = new MongoDB(config);
 			const result = await mongodb.save(getModel({
@@ -571,7 +573,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-			sinon.assert.calledOnceWithExactly(findAndModify, {
+			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 				otherId: {
 					$eq: ObjectID('5df0151dbc1d570011949d87')
 				}
@@ -582,7 +584,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
-			}, { upsert: true, new: true });
+			}, { upsert: true, returnNewDocument: true });
 		});
 
 		['indexes', 'uniqueIndexes'].forEach(indexesGetter => {
@@ -596,9 +598,9 @@ describe('MongoDB', () => {
 						name: 'Some name'
 					};
 
-					const findAndModify = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
+					const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
 
-					const collection = stubMongo(true, { findAndModify });
+					const collection = stubMongo(true, { findOneAndUpdate });
 
 					const mongodb = new MongoDB(config);
 					const result = await mongodb.save(getModel({}, [
@@ -610,7 +612,7 @@ describe('MongoDB', () => {
 
 					sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-					sinon.assert.calledOnceWithExactly(findAndModify, {
+					sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 						otherId: {
 							$eq: '5df0151dbc1d570011949d87'
 						},
@@ -624,7 +626,7 @@ describe('MongoDB', () => {
 						},
 						$currentDate: { dateModified: true },
 						$setOnInsert: { dateCreated: sinon.match.date }
-					}, { upsert: true, new: true });
+					}, { upsert: true, returnNewDocument: true });
 				});
 			});
 		});
@@ -643,9 +645,9 @@ describe('MongoDB', () => {
 				status: 'active'
 			};
 
-			const findAndModify = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
 
-			const collection = stubMongo(true, { findAndModify });
+			const collection = stubMongo(true, { findOneAndUpdate });
 
 			const mongodb = new MongoDB(config);
 			const result = await mongodb.save(getModel(), { ...item }, setOnInsert);
@@ -654,7 +656,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-			sinon.assert.calledOnceWithExactly(findAndModify, {
+			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 				_id: {
 					$eq: ObjectID(id)
 				}
@@ -665,7 +667,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date, ...setOnInsert }
-			}, { upsert: true, new: true });
+			}, { upsert: true, returnNewDocument: true });
 		});
 
 		it('Should throw if no unique indexes are defined and id is not passed', async () => {
@@ -677,9 +679,9 @@ describe('MongoDB', () => {
 				name: 'Some name'
 			};
 
-			const findAndModify = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
 
-			const collection = stubMongo(true, { findAndModify });
+			const collection = stubMongo(true, { findOneAndUpdate });
 
 			const mongodb = new MongoDB(config);
 			await assert.rejects(() => mongodb.save(getModel({}, []), { ...item }), {
@@ -687,7 +689,7 @@ describe('MongoDB', () => {
 			});
 
 			sinon.assert.notCalled(collection);
-			sinon.assert.notCalled(findAndModify);
+			sinon.assert.notCalled(findOneAndUpdate);
 		});
 
 		it('Should throw if no unique indexes can be matched', async () => {
@@ -699,9 +701,9 @@ describe('MongoDB', () => {
 				name: 'Some name'
 			};
 
-			const findAndModify = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
 
-			const collection = stubMongo(true, { findAndModify });
+			const collection = stubMongo(true, { findOneAndUpdate });
 
 			const mongodb = new MongoDB(config);
 			await assert.rejects(() => mongodb.save(getModel({}, ['otherIndex']), { ...item }), {
@@ -709,7 +711,7 @@ describe('MongoDB', () => {
 			});
 
 			sinon.assert.notCalled(collection);
-			sinon.assert.notCalled(findAndModify);
+			sinon.assert.notCalled(findOneAndUpdate);
 		});
 
 		it('Should remove conflictive fields from data', async () => {
@@ -724,9 +726,9 @@ describe('MongoDB', () => {
 				dateModified: new Date()
 			};
 
-			const findAndModify = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
 
-			const collection = stubMongo(true, { findAndModify });
+			const collection = stubMongo(true, { findOneAndUpdate });
 
 			const mongodb = new MongoDB(config);
 			const result = await mongodb.save(getModel(), { ...item });
@@ -735,7 +737,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-			sinon.assert.calledOnceWithExactly(findAndModify, {
+			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 				_id: {
 					$eq: ObjectID(id)
 				}
@@ -746,7 +748,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
-			}, { upsert: true, new: true });
+			}, { upsert: true, returnNewDocument: true });
 		});
 
 		it('Should remove conflictive fields from default insert values', async () => {
@@ -767,9 +769,9 @@ describe('MongoDB', () => {
 				quantity: 100
 			};
 
-			const findAndModify = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
 
-			const collection = stubMongo(true, { findAndModify });
+			const collection = stubMongo(true, { findOneAndUpdate });
 
 			const mongodb = new MongoDB(config);
 			const result = await mongodb.save(getModel(), { ...item }, setOnInsert);
@@ -778,7 +780,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-			sinon.assert.calledOnceWithExactly(findAndModify, {
+			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 				_id: {
 					$eq: ObjectID(id)
 				}
@@ -790,7 +792,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date, quantity: 100 }
-			}, { upsert: true, new: true });
+			}, { upsert: true, returnNewDocument: true });
 		});
 
 		it('Should map the model defined ID fields to ObjectIDs', async () => {
@@ -803,9 +805,9 @@ describe('MongoDB', () => {
 				name: 'Some name'
 			};
 
-			const findAndModify = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
 
-			const collection = stubMongo(true, { findAndModify });
+			const collection = stubMongo(true, { findOneAndUpdate });
 
 			const mongodb = new MongoDB(config);
 			const result = await mongodb.save(getModel({
@@ -818,7 +820,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-			sinon.assert.calledOnceWithExactly(findAndModify, {
+			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 				_id: {
 					$eq: ObjectID(id)
 				}
@@ -829,7 +831,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
-			}, { upsert: true, new: true });
+			}, { upsert: true, returnNewDocument: true });
 		});
 	});
 
@@ -1100,11 +1102,9 @@ describe('MongoDB', () => {
 			};
 
 			const insertMany = sinon.stub().resolves({
-				result: { ok: 1 },
-				ops: [{
-					...expectedItem,
-					_id: ObjectID('5df0151dbc1d570011949d86')
-				}]
+				acknowledged: true,
+				insertedCount: 1,
+				insertedIds: { 0: ObjectID('5df0151dbc1d570011949d86') }
 			});
 
 			const collection = stubMongo(true, { insertMany });
@@ -1116,8 +1116,9 @@ describe('MongoDB', () => {
 				}
 			}), [{ ...item }]);
 
-			assert.deepStrictEqual(result, [{
+			sinon.assert.match(result, [{
 				...expectedItem,
+				otherId: '5df0151dbc1d570011949d87',
 				id: '5df0151dbc1d570011949d86'
 			}]);
 
@@ -1684,13 +1685,13 @@ describe('MongoDB', () => {
 
 		it('Should throw if mongodb increment method fails', async () => {
 
-			const findAndModify = sinon.stub().rejects(new Error('FindAndModify internal error'));
+			const findOneAndUpdate = sinon.stub().rejects(new Error('findOneAndUpdate internal error'));
 
-			const collection = stubMongo(true, { findAndModify });
+			const collection = stubMongo(true, { findOneAndUpdate });
 
 			const mongodb = new MongoDB(config);
 			await assert.rejects(() => mongodb.increment(getModel(null, ['name']), filters, incrementData, setData), {
-				message: 'FindAndModify internal error',
+				message: 'findOneAndUpdate internal error',
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
 
@@ -1703,9 +1704,9 @@ describe('MongoDB', () => {
 
 				it('Should use id as filter if it\'s passed', async () => {
 
-					const findAndModify = sinon.stub().resolves(response);
+					const findOneAndUpdate = sinon.stub().resolves(response);
 
-					const collection = stubMongo(true, { findAndModify });
+					const collection = stubMongo(true, { findOneAndUpdate });
 
 					const mongodb = new MongoDB(config);
 					const result = await mongodb.increment(getModel(null, ['name'], indexesGetter), { id }, incrementData, setData);
@@ -1714,7 +1715,7 @@ describe('MongoDB', () => {
 
 					sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-					sinon.assert.calledOnceWithExactly(findAndModify, {
+					sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 						_id: {
 							$eq: ObjectID(id)
 						}
@@ -1724,14 +1725,14 @@ describe('MongoDB', () => {
 							dateModified: sinon.match.date
 						},
 						$inc: incrementData
-					}, { upsert: false, new: true });
+					}, { upsert: false, returnNewDocument: true });
 				});
 
 				it('Should use a unique index as filter if id is not passed', async () => {
 
-					const findAndModify = sinon.stub().resolves(response);
+					const findOneAndUpdate = sinon.stub().resolves(response);
 
-					const collection = stubMongo(true, { findAndModify });
+					const collection = stubMongo(true, { findOneAndUpdate });
 
 					const mongodb = new MongoDB(config);
 					const result = await mongodb.increment(getModel(null, ['name'], indexesGetter), filters, incrementData, setData);
@@ -1740,7 +1741,7 @@ describe('MongoDB', () => {
 
 					sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-					sinon.assert.calledOnceWithExactly(findAndModify, {
+					sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 						name: {
 							$eq: 'Fake'
 						}
@@ -1750,14 +1751,14 @@ describe('MongoDB', () => {
 							dateModified: sinon.match.date
 						},
 						$inc: incrementData
-					}, { upsert: false, new: true });
+					}, { upsert: false, returnNewDocument: true });
 				});
 
 				it('Should use a multifield unique index as filter if id is not passed', async () => {
 
-					const findAndModify = sinon.stub().resolves({ value: { ...response.value, code: 'fake-code' } });
+					const findOneAndUpdate = sinon.stub().resolves({ value: { ...response.value, code: 'fake-code' } });
 
-					const collection = stubMongo(true, { findAndModify });
+					const collection = stubMongo(true, { findOneAndUpdate });
 
 					const mongodb = new MongoDB(config);
 					const result = await mongodb.increment(getModel({}, [
@@ -1768,7 +1769,7 @@ describe('MongoDB', () => {
 
 					sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-					sinon.assert.calledOnceWithExactly(findAndModify, {
+					sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 						code: {
 							$eq: 'fake-code'
 						},
@@ -1781,14 +1782,14 @@ describe('MongoDB', () => {
 							dateModified: sinon.match.date
 						},
 						$inc: incrementData
-					}, { upsert: false, new: true });
+					}, { upsert: false, returnNewDocument: true });
 				});
 
 				it('Should update only with increments and dateModified if no Set Data is passed', async () => {
 
-					const findAndModify = sinon.stub().resolves(response);
+					const findOneAndUpdate = sinon.stub().resolves(response);
 
-					const collection = stubMongo(true, { findAndModify });
+					const collection = stubMongo(true, { findOneAndUpdate });
 
 					const mongodb = new MongoDB(config);
 					const result = await mongodb.increment(getModel(null, ['name']), { id }, incrementData);
@@ -1797,7 +1798,7 @@ describe('MongoDB', () => {
 
 					sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-					sinon.assert.calledOnceWithExactly(findAndModify, {
+					sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 						_id: {
 							$eq: ObjectID(id)
 						}
@@ -1806,14 +1807,14 @@ describe('MongoDB', () => {
 							dateModified: sinon.match.date
 						},
 						$inc: incrementData
-					}, { upsert: false, new: true });
+					}, { upsert: false, returnNewDocument: true });
 				});
 
 				it('Should throw if no unique indexes are defined', async () => {
 
-					const findAndModify = sinon.stub().resolves(response);
+					const findOneAndUpdate = sinon.stub().resolves(response);
 
-					const collection = stubMongo(true, { findAndModify });
+					const collection = stubMongo(true, { findOneAndUpdate });
 
 					const mongodb = new MongoDB(config);
 					await assert.rejects(() => mongodb.increment(getModel({}, []), filters, incrementData, setData), {
@@ -1821,14 +1822,14 @@ describe('MongoDB', () => {
 					});
 
 					sinon.assert.notCalled(collection);
-					sinon.assert.notCalled(findAndModify);
+					sinon.assert.notCalled(findOneAndUpdate);
 				});
 
 				it('Should throw if no unique indexes can be matched', async () => {
 
-					const findAndModify = sinon.stub().resolves(response);
+					const findOneAndUpdate = sinon.stub().resolves(response);
 
-					const collection = stubMongo(true, { findAndModify });
+					const collection = stubMongo(true, { findOneAndUpdate });
 
 					const mongodb = new MongoDB(config);
 					await assert.rejects(() => mongodb.increment(getModel({}, ['name']), { code: 'fake-code' }, incrementData, setData), {
@@ -1836,14 +1837,14 @@ describe('MongoDB', () => {
 					});
 
 					sinon.assert.notCalled(collection);
-					sinon.assert.notCalled(findAndModify);
+					sinon.assert.notCalled(findOneAndUpdate);
 				});
 
 				it('Should throw if no increment data is passed', async () => {
 
-					const findAndModify = sinon.stub();
+					const findOneAndUpdate = sinon.stub();
 
-					const collection = stubMongo(true, { findAndModify });
+					const collection = stubMongo(true, { findOneAndUpdate });
 
 					const mongodb = new MongoDB(config);
 					await assert.rejects(() => mongodb.increment(getModel({}, ['name']), filters, {}, setData), {
@@ -1851,14 +1852,14 @@ describe('MongoDB', () => {
 					});
 
 					sinon.assert.notCalled(collection);
-					sinon.assert.notCalled(findAndModify);
+					sinon.assert.notCalled(findOneAndUpdate);
 				});
 
 				it('Should throw if wrong increment data is passed', async () => {
 
-					const findAndModify = sinon.stub();
+					const findOneAndUpdate = sinon.stub();
 
-					const collection = stubMongo(true, { findAndModify });
+					const collection = stubMongo(true, { findOneAndUpdate });
 
 					const mongodb = new MongoDB(config);
 					await assert.rejects(() => mongodb.increment(getModel({}, ['name']), filters, { quantity: '100' }, setData), {
@@ -1866,7 +1867,7 @@ describe('MongoDB', () => {
 					});
 
 					sinon.assert.notCalled(collection);
-					sinon.assert.notCalled(findAndModify);
+					sinon.assert.notCalled(findOneAndUpdate);
 				});
 
 			});
@@ -2048,7 +2049,7 @@ describe('MongoDB', () => {
 
 		it('Should return true if can create the indexes into the model collection successfully', async () => {
 
-			const createIndexesStub = sinon.stub().resolves({ ok: true });
+			const createIndexesStub = sinon.stub().resolves(indexes.map(({ name }) => name));
 			const collectionStub = stubMongo(true, { createIndexes: createIndexesStub });
 
 			const mongodb = new MongoDB(config);
@@ -2449,7 +2450,7 @@ describe('MongoDB', () => {
 
 			const mongodb = new MongoDB(config);
 
-			const dropDatabaseStub = sinon.stub().resolves({ ok: true });
+			const dropDatabaseStub = sinon.stub().resolves(true);
 
 			sinon.stub(MongoWrapper.prototype, 'getDb')
 				.resolves({ dropDatabase: dropDatabaseStub });
@@ -2465,7 +2466,7 @@ describe('MongoDB', () => {
 
 			const mongodb = new MongoDB(config);
 
-			const dropDatabaseStub = sinon.stub().resolves({ ok: false });
+			const dropDatabaseStub = sinon.stub().resolves(false);
 
 			sinon.stub(MongoWrapper.prototype, 'getDb')
 				.resolves({ dropDatabase: dropDatabaseStub });
