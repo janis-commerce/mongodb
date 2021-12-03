@@ -28,7 +28,7 @@ This is used to configure which collection should be used, which unique indexes 
 
 - host `String` (optional): MongoDB host, default: `localhost`
 - protocol `String` (optional): host protocol, default: `mongodb://`
-- port `Number` (optional): host port, default: `27017`
+- port `Number` (optional): host port, default none
 - user `String` (optional): host username, default none
 - password `String` (optional): host user password, default none
 - database `String` **(required)**: MongoDB database

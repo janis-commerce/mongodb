@@ -81,7 +81,6 @@ describe('ConfigValidator - validate()', () => {
 		assert.deepStrictEqual(finalConfig, {
 			protocol: 'mongodb://',
 			host: 'localhost',
-			port: 27017,
 			user: '',
 			password: '',
 			database: 'myDb',
