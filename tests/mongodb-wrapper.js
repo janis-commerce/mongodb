@@ -50,10 +50,10 @@ describe('MongoWrapper', () => {
 
 			const mongoWrapper = new MongoWrapper({ protocol, host, database });
 
-			assert.strictEqual(mongoWrapper.connectionString, `mongodb://${config.host}:27017/myDatabase`);
+			assert.strictEqual(mongoWrapper.connectionString, `mongodb://${config.host}/myDatabase`);
 		});
 
-		it('Should format the connection string every config params', () => {
+		it('Should format the connection string with every config params', () => {
 
 			const mongoWrapper = new MongoWrapper({
 				...config,
@@ -63,6 +63,24 @@ describe('MongoWrapper', () => {
 			});
 
 			assert.strictEqual(mongoWrapper.connectionString, `mongodb://john.doe:Str0ngP4ss@${config.host}:5646/myDatabase`);
+		});
+
+		it('Should format the connection string with complex hostname', () => {
+
+			const mongoWrapper = new MongoWrapper({
+				protocol: 'mongodb+srv://',
+				host: 'test.foo.mongodb.net/test?retryWrites=true&w=majority',
+				database: 'myDatabase',
+				user: 'john.doe',
+				password: 'Str0ngP4ss',
+				port: 5646
+			});
+
+			assert.strictEqual(
+				mongoWrapper.connectionString,
+				'mongodb+srv://john.doe:Str0ngP4ss@test.foo.mongodb.net:5646/myDatabase?retryWrites=true&w=majority'
+			);
+
 		});
 
 	});
