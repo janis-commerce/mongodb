@@ -11,6 +11,18 @@
 npm install --save @janiscommerce/mongodb
 ```
 
+## :new: Changes from _v2.0.0_
+
+### MongoDB Driver v4
+
+Now we are using [mongodb](https://www.npmjs.com/package/mongodb) `^4.3.1` driver (upgraded from v3)
+
+### Events and closing connections
+
+Connections will be closed when the event `janiscommerce.ended` was emitted. The event `janiscommerce.ended` will be emitted in the end of `janiscommerce` functions.
+
+For more information see [@janiscommerce/events](https://www.npmjs.com/package/@janiscommerce/events).
+
 ## Models
 Whenever the `Model` type is mentioned in this document, it refers to an instance of [@janiscommerce/model](https://www.npmjs.com/package/@janiscommerce/model).
 

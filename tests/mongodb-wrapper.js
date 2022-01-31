@@ -5,6 +5,8 @@ const sinon = require('sinon');
 
 const { MongoClient: RealMongoClient, ObjectID: RealObjectID } = require('mongodb');
 
+const Events = require('@janiscommerce/events');
+
 const { MongoWrapper, ObjectID } = require('../lib/mongodb-wrapper');
 
 describe('ObjectID', () => {
@@ -113,7 +115,8 @@ describe('MongoWrapper', () => {
 			RealMongoClient.prototype.connect.resolves({
 				db: sinon.stub().returns({
 					collection: sinon.stub()
-				})
+				}),
+				close: sinon.stub()
 			});
 
 			const callback = sinon.stub();
@@ -129,7 +132,8 @@ describe('MongoWrapper', () => {
 			RealMongoClient.prototype.connect.resolves({
 				db: sinon.stub().returns({
 					collection: sinon.stub()
-				})
+				}),
+				close: sinon.stub()
 			});
 
 			const callback = sinon.stub();
@@ -144,6 +148,31 @@ describe('MongoWrapper', () => {
 			sinon.assert.calledOnceWithExactly(RealMongoClient.prototype.connect);
 		});
 
+		it('Should close the connection when janiscommerce.ended event was emitted', async () => {
+
+			const closeStub = sinon.stub();
+
+			RealMongoClient.prototype.connect.resolves({
+				isConnected: sinon.stub().returns(false),
+				db: sinon.stub().returns({
+					collection: sinon.stub()
+				}),
+				close: closeStub
+			});
+
+			const callback = sinon.stub();
+
+			const mongoWrapper = new MongoWrapper(config);
+			await mongoWrapper.makeQuery(model, callback);
+
+			sinon.assert.calledOnceWithExactly(RealMongoClient.prototype.connect);
+
+			Events.emit('janiscommerce.ended');
+
+			sinon.assert.calledOnceWithExactly(closeStub);
+		});
+
+
 		it('Should call the callback, passing the collection defined by the model', async () => {
 
 			const collection = {};
@@ -152,7 +181,8 @@ describe('MongoWrapper', () => {
 			RealMongoClient.prototype.connect.resolves({
 				db: sinon.stub().returns({
 					collection: collectionStub
-				})
+				}),
+				close: sinon.stub()
 			});
 
 			const callback = sinon.stub();
@@ -173,7 +203,8 @@ describe('MongoWrapper', () => {
 				isConnected: sinon.stub().returns(true),
 				db: sinon.stub().returns({
 					collection: sinon.stub()
-				})
+				}),
+				close: sinon.stub()
 			});
 
 			const callback = sinon.stub();
