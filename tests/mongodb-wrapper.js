@@ -46,11 +46,11 @@ describe('MongoWrapper', () => {
 
 		it('Should format the connection string with the minimum config params', () => {
 
-			const { protocol, host, database } = config;
+			const { protocol, host } = config;
 
-			const mongoWrapper = new MongoWrapper({ protocol, host, database });
+			const mongoWrapper = new MongoWrapper({ protocol, host });
 
-			assert.strictEqual(mongoWrapper.connectionString, `mongodb://${config.host}/myDatabase`);
+			assert.strictEqual(mongoWrapper.connectionString, `mongodb://${config.host}`);
 		});
 
 		it('Should format the connection string with every config params', () => {
