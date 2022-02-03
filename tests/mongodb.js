@@ -536,7 +536,7 @@ describe('MongoDB', () => {
 				_id: {
 					$eq: ObjectID(id)
 				}
-			}, {}, {
+			}, {
 				$set: {
 					otherId: '5df0151dbc1d570011949d87',
 					name: 'Some name'
@@ -577,7 +577,7 @@ describe('MongoDB', () => {
 				otherId: {
 					$eq: ObjectID('5df0151dbc1d570011949d87')
 				}
-			}, {}, {
+			}, {
 				$set: {
 					otherId: ObjectID('5df0151dbc1d570011949d87'),
 					name: 'Some name'
@@ -619,7 +619,7 @@ describe('MongoDB', () => {
 						name: {
 							$eq: 'Some name'
 						}
-					}, {}, {
+					}, {
 						$set: {
 							otherId: '5df0151dbc1d570011949d87',
 							name: 'Some name'
@@ -660,7 +660,7 @@ describe('MongoDB', () => {
 				_id: {
 					$eq: ObjectID(id)
 				}
-			}, {}, {
+			}, {
 				$set: {
 					otherId: '5df0151dbc1d570011949d87',
 					name: 'Some name'
@@ -741,7 +741,7 @@ describe('MongoDB', () => {
 				_id: {
 					$eq: ObjectID(id)
 				}
-			}, {}, {
+			}, {
 				$set: {
 					otherId: '5df0151dbc1d570011949d87',
 					name: 'Some name'
@@ -784,7 +784,7 @@ describe('MongoDB', () => {
 				_id: {
 					$eq: ObjectID(id)
 				}
-			}, {}, {
+			}, {
 				$set: {
 					otherId: '5df0151dbc1d570011949d87',
 					name: 'Some name',
@@ -824,7 +824,7 @@ describe('MongoDB', () => {
 				_id: {
 					$eq: ObjectID(id)
 				}
-			}, {}, {
+			}, {
 				$set: {
 					otherId: ObjectID('5df0151dbc1d570011949d87'),
 					name: 'Some name'
