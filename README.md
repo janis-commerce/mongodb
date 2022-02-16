@@ -293,7 +293,7 @@ class MyModel extends Model {
 }
 ```
 
-**Mongo ObjectIDs**
+**Mongo ObjectIds**
 
 The fields of type `ObjectId` can be defined in the model this way:
 ```js
@@ -308,7 +308,7 @@ class MyModel extends Model {
 }
 ```
 
-The package will handle the `string` to `ObjectID` conversion automatically for you. The `id` field is also automatically mapped to `_id` and converted to an `ObjectID`
+The package will handle the `string` to `ObjectId` conversion automatically for you. The `id` field is also automatically mapped to `_id` and converted to an `ObjectId`
 
 It also maps `_id` field to `id` when retrieving documents.
 
@@ -354,10 +354,10 @@ mongodb.get(myModel, {
 // This is converted to the following mongo filter:
 {
 	id: {
-		$eq: ObjectID('5df0151dbc1d570011949d86') // Automatically converted to ObjectID, default $eq type
+		$eq: ObjectId('5df0151dbc1d570011949d86') // Automatically converted to ObjectId, default $eq type
 	},
 	otherIdField: {
-		$in: [ObjectID('5df0151dbc1d570011949d87'), ObjectID('5df0151dbc1d570011949d88')] // Converted to ObjectID by model, default $in type
+		$in: [ObjectId('5df0151dbc1d570011949d87'), ObjectId('5df0151dbc1d570011949d88')] // Converted to ObjectId by model, default $in type
 	},
 	greaterField: {
 		$gte: 15 // $gte type defined by model
