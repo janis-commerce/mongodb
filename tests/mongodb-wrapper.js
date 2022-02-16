@@ -3,15 +3,15 @@
 const assert = require('assert');
 const sinon = require('sinon');
 
-const { MongoClient: RealMongoClient, ObjectID: RealObjectID } = require('mongodb');
+const { MongoClient: RealMongoClient, ObjectId: RealObjectId } = require('mongodb');
 
 const Events = require('@janiscommerce/events');
 
-const { MongoWrapper, ObjectID } = require('../lib/mongodb-wrapper');
+const { MongoWrapper, ObjectId } = require('../lib/mongodb-wrapper');
 
-describe('ObjectID', () => {
-	it('Should export the Mongo ObjectID', () => {
-		assert.deepStrictEqual(ObjectID, RealObjectID);
+describe('ObjectId', () => {
+	it('Should export the Mongo ObjectId', () => {
+		assert.deepStrictEqual(ObjectId, RealObjectId);
 	});
 });
 
