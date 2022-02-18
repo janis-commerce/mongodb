@@ -19,7 +19,15 @@ Now we are using [mongodb](https://www.npmjs.com/package/mongodb) `^4.3.1` drive
 
 ### Events and closing connections
 
-Connections will be closed when the event `janiscommerce.ended` was emitted. The event `janiscommerce.ended` will be emitted in the end of `janiscommerce` functions.
+Connections will be closed according to `CLOSE_MONGODB_CONNECTIONS` environment variable value:
+
+| Value | Close connection |
+|-------|------------------|
+| `not exist` | :white_check_mark: |
+| `false` | :x: |
+| `exists with any other value` | :white_check_mark: |
+
+The connection is closed through the event `janiscommerce.ended`. The event `janiscommerce.ended` will be emitted in the end of `janiscommerce` functions.
 
 For more information see [@janiscommerce/events](https://www.npmjs.com/package/@janiscommerce/events).
 
