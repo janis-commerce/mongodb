@@ -33,10 +33,12 @@ describe('MongoWrapper', () => {
 	beforeEach(() => {
 		sinon.stub(RealMongoClient.prototype, 'connect');
 		config.host = `${Date.now()}.localhost`;
+		process.env.CLOSE_MONGODB_CONNECTIONS = false;
 	});
 
 	afterEach(() => {
 		sinon.restore();
+		delete process.env.CLOSE_MONGODB_CONNECTIONS;
 	});
 
 	describe('Connection params', () => {
@@ -152,6 +154,8 @@ describe('MongoWrapper', () => {
 
 			const closeStub = sinon.stub();
 
+			process.env.CLOSE_MONGODB_CONNECTIONS = true;
+
 			RealMongoClient.prototype.connect.resolves({
 				isConnected: sinon.stub().returns(false),
 				db: sinon.stub().returns({
@@ -164,6 +168,34 @@ describe('MongoWrapper', () => {
 
 			const mongoWrapper = new MongoWrapper(config);
 			await mongoWrapper.makeQuery(model, callback);
+
+
+			sinon.assert.calledOnceWithExactly(RealMongoClient.prototype.connect);
+
+			Events.emit('janiscommerce.ended');
+
+			sinon.assert.calledOnceWithExactly(closeStub);
+		});
+
+		it('Should close the connection when CLOSE_MONGODB_CONNECTIONS does not exist', async () => {
+
+			const closeStub = sinon.stub();
+
+			delete process.env.CLOSE_MONGODB_CONNECTIONS;
+
+			RealMongoClient.prototype.connect.resolves({
+				isConnected: sinon.stub().returns(false),
+				db: sinon.stub().returns({
+					collection: sinon.stub()
+				}),
+				close: closeStub
+			});
+
+			const callback = sinon.stub();
+
+			const mongoWrapper = new MongoWrapper(config);
+			await mongoWrapper.makeQuery(model, callback);
+
 
 			sinon.assert.calledOnceWithExactly(RealMongoClient.prototype.connect);
 
