@@ -19,6 +19,8 @@ Now we are using [mongodb](https://www.npmjs.com/package/mongodb) `^4.3.1` drive
 
 ### Events and closing connections
 
+To close connections, it is optional to define the environment variable `CLOSE_MONGODB_CONNECTIONS` in `Serverless.js` file.
+
 Connections will be closed according to `CLOSE_MONGODB_CONNECTIONS` environment variable value:
 
 | Value | Close connection |
@@ -27,7 +29,7 @@ Connections will be closed according to `CLOSE_MONGODB_CONNECTIONS` environment 
 | `false` | :x: |
 | `exists with any other value` | :white_check_mark: |
 
-The connection is closed through the event `janiscommerce.ended`. The event `janiscommerce.ended` will be emitted in the end of `janiscommerce` functions.
+Connection will be closed by emitting a `janiscommerce.ended` event. The event will be emitted in the end of `janiscommerce` functions.
 
 For more information see [@janiscommerce/events](https://www.npmjs.com/package/@janiscommerce/events).
 
