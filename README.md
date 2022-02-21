@@ -20,7 +20,6 @@ Now we are using [mongodb](https://www.npmjs.com/package/mongodb) `^4.3.1` drive
 ### Events and closing connections
 
 To close connections, it is optional to define the environment variable `CLOSE_MONGODB_CONNECTIONS` in `Serverless.js` file.
-
 Connections will be closed according to `CLOSE_MONGODB_CONNECTIONS` environment variable value:
 
 | Value | Close connection |
