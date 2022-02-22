@@ -33,7 +33,7 @@ describe('MongoWrapper', () => {
 	beforeEach(() => {
 		sinon.stub(RealMongoClient.prototype, 'connect');
 		config.host = `${Date.now()}.localhost`;
-		process.env.CLOSE_MONGODB_CONNECTIONS = 'false';
+		process.env.CLOSE_MONGODB_CONNECTIONS = false;
 	});
 
 	afterEach(() => {
