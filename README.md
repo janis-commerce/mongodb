@@ -24,9 +24,9 @@ Connections will be closed according to `CLOSE_MONGODB_CONNECTIONS` environment 
 
 | Value | Close connection | Remarks |
 |-------|------------------|---------|
-| `undefined` | :white_check_mark: | Is equivalent to nonexistent and is the default behavior |
-| `'false'` | :x: |  |
-| `1`, `'true'`, etc... | :white_check_mark: | any other value different from the above |
+| `undefined` (no value set) | :white_check_mark: | **Default behavior**, if you not set any value or create the env variable. |
+| `'false'` or `false` | :x: | :warning: Can be `false` or `'false'` because env variables are saved as string |
+| `1`, `'true'`, etc (any value set) | :white_check_mark: | Any other value different from the above. :warning:  We recommend to use `true` or no set any value |
 
 Connection will be closed by emitting a `janiscommerce.ended` event. The event will be emitted in the end of `janiscommerce` functions.
 
