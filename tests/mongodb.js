@@ -3,7 +3,7 @@
 const assert = require('assert');
 const sinon = require('sinon');
 
-const { MongoWrapper, ObjectID } = require('../lib/mongodb-wrapper');
+const { MongoWrapper, ObjectId } = require('../lib/mongodb-wrapper');
 const MongoDBError = require('../lib/mongodb-error');
 const MongoDB = require('../lib/mongodb');
 
@@ -254,7 +254,7 @@ describe('MongoDB', () => {
 		it('Should resolve what the mongodb find-method-chain resolves mapping _id field to id', async () => {
 
 			mockChain(true, [{
-				_id: ObjectID('5df0151dbc1d570011949d86'),
+				_id: ObjectId('5df0151dbc1d570011949d86'),
 				foo: 'bar'
 			}]);
 
@@ -291,7 +291,7 @@ describe('MongoDB', () => {
 					foo: 'bar',
 					baz: 1,
 					id: '5df0151dbc1d570011949d86',
-					otherId: ObjectID('5df0151dbc1d570011949d87')
+					otherId: ObjectId('5df0151dbc1d570011949d87')
 				}
 			});
 
@@ -303,10 +303,10 @@ describe('MongoDB', () => {
 					$eq: 1
 				},
 				_id: {
-					$eq: ObjectID('5df0151dbc1d570011949d86')
+					$eq: ObjectId('5df0151dbc1d570011949d86')
 				},
 				otherId: {
-					$eq: ObjectID('5df0151dbc1d570011949d87')
+					$eq: ObjectId('5df0151dbc1d570011949d87')
 				}
 			}, undefined, 0, 500);
 		});
@@ -327,7 +327,7 @@ describe('MongoDB', () => {
 					{
 						foo: 'bar',
 						id: '5df0151dbc1d570011949d86',
-						otherId: [ObjectID('5df0151dbc1d570011949d87'), '5df0151dbc1d570011949d88']
+						otherId: [ObjectId('5df0151dbc1d570011949d87'), '5df0151dbc1d570011949d88']
 					},
 					{
 						baz: {
@@ -346,10 +346,10 @@ describe('MongoDB', () => {
 							$eq: 'bar'
 						},
 						_id: {
-							$eq: ObjectID('5df0151dbc1d570011949d86')
+							$eq: ObjectId('5df0151dbc1d570011949d86')
 						},
 						otherId: {
-							$in: [ObjectID('5df0151dbc1d570011949d87'), ObjectID('5df0151dbc1d570011949d88')]
+							$in: [ObjectId('5df0151dbc1d570011949d87'), ObjectId('5df0151dbc1d570011949d88')]
 						}
 					},
 					{
@@ -521,7 +521,7 @@ describe('MongoDB', () => {
 				}
 			};
 
-			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
 
 			const collection = stubMongo(true, { findOneAndUpdate });
 
@@ -534,7 +534,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 				_id: {
-					$eq: ObjectID(id)
+					$eq: ObjectId(id)
 				}
 			}, {
 				$set: {
@@ -558,7 +558,7 @@ describe('MongoDB', () => {
 				name: 'Some name'
 			};
 
-			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
 
 			const collection = stubMongo(true, { findOneAndUpdate });
 
@@ -575,11 +575,11 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 				otherId: {
-					$eq: ObjectID('5df0151dbc1d570011949d87')
+					$eq: ObjectId('5df0151dbc1d570011949d87')
 				}
 			}, {
 				$set: {
-					otherId: ObjectID('5df0151dbc1d570011949d87'),
+					otherId: ObjectId('5df0151dbc1d570011949d87'),
 					name: 'Some name'
 				},
 				$currentDate: { dateModified: true },
@@ -598,7 +598,7 @@ describe('MongoDB', () => {
 						name: 'Some name'
 					};
 
-					const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
+					const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
 
 					const collection = stubMongo(true, { findOneAndUpdate });
 
@@ -645,7 +645,7 @@ describe('MongoDB', () => {
 				status: 'active'
 			};
 
-			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
 
 			const collection = stubMongo(true, { findOneAndUpdate });
 
@@ -658,7 +658,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 				_id: {
-					$eq: ObjectID(id)
+					$eq: ObjectId(id)
 				}
 			}, {
 				$set: {
@@ -679,7 +679,7 @@ describe('MongoDB', () => {
 				name: 'Some name'
 			};
 
-			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
 
 			const collection = stubMongo(true, { findOneAndUpdate });
 
@@ -701,7 +701,7 @@ describe('MongoDB', () => {
 				name: 'Some name'
 			};
 
-			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
 
 			const collection = stubMongo(true, { findOneAndUpdate });
 
@@ -726,7 +726,7 @@ describe('MongoDB', () => {
 				dateModified: new Date()
 			};
 
-			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
 
 			const collection = stubMongo(true, { findOneAndUpdate });
 
@@ -739,7 +739,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 				_id: {
-					$eq: ObjectID(id)
+					$eq: ObjectId(id)
 				}
 			}, {
 				$set: {
@@ -769,7 +769,7 @@ describe('MongoDB', () => {
 				quantity: 100
 			};
 
-			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
 
 			const collection = stubMongo(true, { findOneAndUpdate });
 
@@ -782,7 +782,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 				_id: {
-					$eq: ObjectID(id)
+					$eq: ObjectId(id)
 				}
 			}, {
 				$set: {
@@ -795,7 +795,7 @@ describe('MongoDB', () => {
 			}, { upsert: true, returnNewDocument: true });
 		});
 
-		it('Should map the model defined ID fields to ObjectIDs', async () => {
+		it('Should map the model defined ID fields to ObjectIds', async () => {
 
 			const id = '5df0151dbc1d570011949d86';
 
@@ -805,7 +805,7 @@ describe('MongoDB', () => {
 				name: 'Some name'
 			};
 
-			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectID(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
 
 			const collection = stubMongo(true, { findOneAndUpdate });
 
@@ -822,11 +822,11 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 				_id: {
-					$eq: ObjectID(id)
+					$eq: ObjectId(id)
 				}
 			}, {
 				$set: {
-					otherId: ObjectID('5df0151dbc1d570011949d87'),
+					otherId: ObjectId('5df0151dbc1d570011949d87'),
 					name: 'Some name'
 				},
 				$currentDate: { dateModified: true },
@@ -891,7 +891,7 @@ describe('MongoDB', () => {
 				name: 'Some name'
 			};
 
-			const insertOne = sinon.stub().resolves({ insertedId: ObjectID(id) });
+			const insertOne = sinon.stub().resolves({ insertedId: ObjectId(id) });
 
 			const collection = stubMongo(true, { insertOne });
 
@@ -907,7 +907,7 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
 			const expectedItem = {
-				otherId: ObjectID('5df0151dbc1d570011949d87'),
+				otherId: ObjectId('5df0151dbc1d570011949d87'),
 				name: 'Some name',
 				dateCreated: sinon.match.date
 			};
@@ -1004,7 +1004,7 @@ describe('MongoDB', () => {
 			const expectedItem = {
 				$set: {
 					dateModified: sinon.match.date,
-					otherId: ObjectID('5df0151dbc1d570011949d87'),
+					otherId: ObjectId('5df0151dbc1d570011949d87'),
 					name: 'Some name',
 					description: 'The description'
 				},
@@ -1021,7 +1021,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(updateMany, {
 				_id: {
-					$eq: ObjectID(id)
+					$eq: ObjectId(id)
 				}
 			}, expectedItem, options);
 		});
@@ -1096,7 +1096,7 @@ describe('MongoDB', () => {
 			};
 
 			const expectedItem = {
-				otherId: ObjectID('5df0151dbc1d570011949d87'),
+				otherId: ObjectId('5df0151dbc1d570011949d87'),
 				name: 'Some name',
 				dateCreated: sinon.match.date
 			};
@@ -1104,7 +1104,7 @@ describe('MongoDB', () => {
 			const insertMany = sinon.stub().resolves({
 				acknowledged: true,
 				insertedCount: 1,
-				insertedIds: { 0: ObjectID('5df0151dbc1d570011949d86') }
+				insertedIds: { 0: ObjectId('5df0151dbc1d570011949d86') }
 			});
 
 			const collection = stubMongo(true, { insertMany });
@@ -1234,12 +1234,12 @@ describe('MongoDB', () => {
 					updateOne: {
 						filter: {
 							_id: {
-								$eq: ObjectID('5df0151dbc1d570011949d86')
+								$eq: ObjectId('5df0151dbc1d570011949d86')
 							}
 						},
 						update: {
 							$set: {
-								otherId: ObjectID('5df0151dbc1d570011949d87'),
+								otherId: ObjectId('5df0151dbc1d570011949d87'),
 								name: 'Some name',
 								status: 'active',
 								quantity: 100
@@ -1254,12 +1254,12 @@ describe('MongoDB', () => {
 					updateOne: {
 						filter: {
 							otherId: {
-								$eq: ObjectID('5df0151dbc1d570011949d88')
+								$eq: ObjectId('5df0151dbc1d570011949d88')
 							}
 						},
 						update: {
 							$set: {
-								otherId: ObjectID('5df0151dbc1d570011949d88'),
+								otherId: ObjectId('5df0151dbc1d570011949d88'),
 								name: 'Some name'
 							},
 							$currentDate: { dateModified: true },
@@ -1348,7 +1348,7 @@ describe('MongoDB', () => {
 
 			const expectedItem = {
 				_id: {
-					$eq: ObjectID(id)
+					$eq: ObjectId(id)
 				}
 			};
 
@@ -1379,7 +1379,7 @@ describe('MongoDB', () => {
 
 			const expectedItem = {
 				otherId: {
-					$eq: ObjectID('5df0151dbc1d570011949d87')
+					$eq: ObjectId('5df0151dbc1d570011949d87')
 				}
 			};
 
@@ -1483,10 +1483,10 @@ describe('MongoDB', () => {
 
 			const expectedFilter = {
 				_id: {
-					$in: [ObjectID(id1), ObjectID(id2)]
+					$in: [ObjectId(id1), ObjectId(id2)]
 				},
 				otherId: {
-					$eq: ObjectID('5df0151dbc1d570011949d88')
+					$eq: ObjectId('5df0151dbc1d570011949d88')
 				},
 				name: {
 					$eq: 'Some name'
@@ -1656,7 +1656,7 @@ describe('MongoDB', () => {
 
 		const response = {
 			value: {
-				_id: ObjectID(id),
+				_id: ObjectId(id),
 				name: 'Fake',
 				quantity: 10,
 				total: 100,
@@ -1717,7 +1717,7 @@ describe('MongoDB', () => {
 
 					sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 						_id: {
-							$eq: ObjectID(id)
+							$eq: ObjectId(id)
 						}
 					}, {}, {
 						$set: {
@@ -1800,7 +1800,7 @@ describe('MongoDB', () => {
 
 					sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 						_id: {
-							$eq: ObjectID(id)
+							$eq: ObjectId(id)
 						}
 					}, {}, {
 						$set: {

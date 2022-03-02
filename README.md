@@ -19,7 +19,16 @@ Now we are using [mongodb](https://www.npmjs.com/package/mongodb) `^4.3.1` drive
 
 ### Events and closing connections
 
-Connections will be closed when the event `janiscommerce.ended` was emitted. The event `janiscommerce.ended` will be emitted in the end of `janiscommerce` functions.
+To close connections, it is optional to define the environment variable `CLOSE_MONGODB_CONNECTIONS`.
+Connections will be closed according to `CLOSE_MONGODB_CONNECTIONS` environment variable value:
+
+| Value | Close connection | Remarks |
+|-------|------------------|---------|
+| `undefined` (no value set) | :white_check_mark: | **Default behavior**, if you not set any value or create the env variable. |
+| `'false'` or `false` | :x: | :warning: Can be `false` or `'false'` because env variables are saved as string. |
+| `1`, `'true'`, etc (any value set) | :white_check_mark: | Any other value different from the above. :warning:  We recommend to use `true` or no set any value. |
+
+Connection will be closed by emitting a `janiscommerce.ended` event. The event will be emitted in the end of `janiscommerce` functions.
 
 For more information see [@janiscommerce/events](https://www.npmjs.com/package/@janiscommerce/events).
 
@@ -293,7 +302,7 @@ class MyModel extends Model {
 }
 ```
 
-**Mongo ObjectIDs**
+**Mongo ObjectIds**
 
 The fields of type `ObjectId` can be defined in the model this way:
 ```js
@@ -308,7 +317,7 @@ class MyModel extends Model {
 }
 ```
 
-The package will handle the `string` to `ObjectID` conversion automatically for you. The `id` field is also automatically mapped to `_id` and converted to an `ObjectID`
+The package will handle the `string` to `ObjectId` conversion automatically for you. The `id` field is also automatically mapped to `_id` and converted to an `ObjectId`
 
 It also maps `_id` field to `id` when retrieving documents.
 
@@ -354,10 +363,10 @@ mongodb.get(myModel, {
 // This is converted to the following mongo filter:
 {
 	id: {
-		$eq: ObjectID('5df0151dbc1d570011949d86') // Automatically converted to ObjectID, default $eq type
+		$eq: ObjectId('5df0151dbc1d570011949d86') // Automatically converted to ObjectId, default $eq type
 	},
 	otherIdField: {
-		$in: [ObjectID('5df0151dbc1d570011949d87'), ObjectID('5df0151dbc1d570011949d88')] // Converted to ObjectID by model, default $in type
+		$in: [ObjectId('5df0151dbc1d570011949d87'), ObjectId('5df0151dbc1d570011949d88')] // Converted to ObjectId by model, default $in type
 	},
 	greaterField: {
 		$gte: 15 // $gte type defined by model
