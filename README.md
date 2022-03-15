@@ -127,7 +127,7 @@ await mongo.multiInsert(model, [
 <summary>Updates one or more documents in a collection</summary>
 
 - model: `Model`: A model instance
-- values: `Object`: The values to set in the documents
+- values: `Object` or `Array<Object>`: The values to set in the documents
 - filter: `Object`: Filter criteria to match documents
 - options: `Object`: Optional parameters (such as [arrayFilters](https://docs.mongodb.com/v3.6/release-notes/3.6/#arrayfilters)) of the query [See more](https://docs.mongodb.com/v3.6/reference/method/db.collection.updateMany/#definition)
 
