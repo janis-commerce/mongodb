@@ -1786,7 +1786,7 @@ describe('MongoDB', () => {
 						_id: {
 							$eq: ObjectId(id)
 						}
-					}, {}, {
+					}, {
 						$set: {
 							...setData,
 							dateModified: sinon.match.date
@@ -1812,7 +1812,7 @@ describe('MongoDB', () => {
 						name: {
 							$eq: 'Fake'
 						}
-					}, {}, {
+					}, {
 						$set: {
 							...setData,
 							dateModified: sinon.match.date
@@ -1843,7 +1843,7 @@ describe('MongoDB', () => {
 						name: {
 							$eq: 'Fake'
 						}
-					}, {}, {
+					}, {
 						$set: {
 							...setData,
 							dateModified: sinon.match.date
@@ -1869,7 +1869,7 @@ describe('MongoDB', () => {
 						_id: {
 							$eq: ObjectId(id)
 						}
-					}, {}, {
+					}, {
 						$set: {
 							dateModified: sinon.match.date
 						},
