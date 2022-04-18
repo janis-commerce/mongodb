@@ -757,7 +757,7 @@ To learn more about aggregation, see [MongoDB documentation](https://www.mongodb
 **Usage:**
 ```js
 await mongo.aggregate(model, [
-	{ $match: { _id: '0000000055f2255a1a8e0c54' } }, // find the document with that id
+	{ $match: { id: '0000000055f2255a1a8e0c54' } }, // find the document with that id
 	{ $unset: 'category' }, // Removes the category field
 ]);
 /* > [
