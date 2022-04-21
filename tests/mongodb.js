@@ -631,6 +631,44 @@ describe('MongoDB', () => {
 			});
 		});
 
+		it('Should use a unique index as filter if id not exist', async () => {
+
+			const id = '5df0151dbc1d570011949d86';
+
+			const item = {
+				otherId: '5df0151dbc1d570011949d87',
+				name: 'Some name'
+			};
+
+			const findOneAndUpdate = sinon.stub().resolves({ lastErrorObject: { upserted: ObjectId(id) }, value: null });
+
+			const collection = stubMongo(true, { findOneAndUpdate });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.save(getModel({
+				otherId: {
+					isID: true
+				}
+			}, ['otherId']), { ...item });
+
+			assert.deepStrictEqual(result, id);
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+
+			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
+				otherId: {
+					$eq: ObjectId('5df0151dbc1d570011949d87')
+				}
+			}, {
+				$set: {
+					otherId: ObjectId('5df0151dbc1d570011949d87'),
+					name: 'Some name'
+				},
+				$currentDate: { dateModified: true },
+				$setOnInsert: { dateCreated: sinon.match.date }
+			}, { upsert: true, returnNewDocument: true });
+		});
+
 		it('Should use extra default insert values', async () => {
 
 			const id = '5df0151dbc1d570011949d86';
