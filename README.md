@@ -741,6 +741,37 @@ await mongo.dropDatabase();
 
 </details>
 
+### ***async*** `aggregate(model, stages)`
+
+<details>
+<summary>Execute Aggregation operations to obtain computed results</summary>
+
+- model: `Model`: A model instance used for the query.
+- stages: `[Object]`: An array with the aggregation stages. See [Pipelines Stages - MongoDB documentation](https://www.mongodb.com/docs/manual/aggregation/#std-label-aggregation-pipeline-intro) for more information.
+
+- Resolves `[Object]`: The results of executing the stages. The array may contain one document or multiple documents.
+- Rejects `Error` When something bad occurs
+
+To learn more about aggregation, see [MongoDB documentation](https://www.mongodb.com/docs/manual/aggregation/#std-label-aggregation-pipeline-intro)
+
+**Usage:**
+```js
+await mongo.aggregate(model, [
+	{ $match: { id: '0000000055f2255a1a8e0c54' } }, // find the document with that id
+	{ $unset: 'category' }, // Removes the category field
+]);
+/* > [
+	{
+		id: '0000000055f2255a1a8e0c54',
+		name: 'Product 1',
+		description: 'Product 1 description'
+	}
+]
+*/
+```
+
+</details>
+
 ## Errors
 
 The errors are informed with a `MongoDBError`.

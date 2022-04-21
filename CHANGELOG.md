@@ -6,7 +6,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Now can use `aggregate` function.
 
+### Fixed
+- Now can use `$unset` operator in stages correctly.
 ## [2.2.1] - 2022-04-12
 ### Fixed
 - Fix in `increment()`, internal bad argument `{}`

@@ -2546,4 +2546,102 @@ describe('MongoDB', () => {
 		});
 	});
 
+	describe('aggregate()', () => {
+
+		it('Should throw if no model is passed', async () => {
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.aggregate(null), {
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
+		const invalidStages = [
+			['$unset', 'only a string'],
+			[100, 'only a number'],
+			[{ $unset: 'field' }, 'only an object'],
+			[null, 'empty values']
+		];
+
+		invalidStages.forEach(async ([invalidStage, value]) => {
+
+			it(`Should throw if pipe stages with ${value} are passed`, async () => {
+
+				const mongodb = new MongoDB(config);
+
+				await assert.rejects(() => mongodb.aggregate(getModel(), invalidStage), {
+					code: MongoDBError.codes.INVALID_STAGES
+				});
+			});
+		});
+
+		const itemId = '5df0151dbc1d570011949d87';
+
+		const stages = [
+			{ $match: { id: itemId, referenceId: 'display-id' } },
+			{ $unset: 'category' }
+		];
+
+		it('Should throw if connection to DB fails', async () => {
+
+			const collection = stubMongo(false);
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(() => mongodb.aggregate(getModel(), stages), {
+				message: 'Error getting DB',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.notCalled(collection);
+		});
+
+		it('Should throw if mongodb aggregate method fails', async () => {
+
+			const toArray = sinon.stub().rejects(new Error('Aggregate internal error'));
+			const aggregate = sinon.stub().returns({ toArray });
+
+			const collection = stubMongo(true, { aggregate, toArray });
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(() => mongodb.aggregate(getModel(), stages), {
+				message: 'Aggregate internal error',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+		});
+
+		it('Should execute every pipe stage', async () => {
+
+			const item = {
+				_id: itemId,
+				name: 'Some name',
+				referenceId: 'display-id'
+			};
+
+			const toArray = sinon.stub().resolves([item]);
+			const aggregate = sinon.stub().returns({ toArray });
+
+			const collection = stubMongo(true, { aggregate, toArray });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.aggregate(getModel(), stages);
+
+			assert.deepStrictEqual(result, [{
+				id: itemId,
+				name: 'Some name',
+				referenceId: 'display-id'
+			}]);
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+
+			sinon.assert.calledOnceWithExactly(aggregate, [
+				{ $match: { _id: ObjectId(itemId), referenceId: 'display-id' } },
+				{ $unset: 'category' }
+			]);
+
+			sinon.assert.calledOnce(toArray);
+		});
+	});
 });
