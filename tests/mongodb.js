@@ -2556,9 +2556,9 @@ describe('MongoDB', () => {
 		});
 
 		const invalidStages = [
-			['$unset', 'only with a string'],
-			[100, 'only with a number'],
-			[{ $unset: 'field' }, 'only with an object'],
+			['$unset', 'only a string'],
+			[100, 'only a number'],
+			[{ $unset: 'field' }, 'only an object'],
 			[null, 'empty values']
 		];
 
