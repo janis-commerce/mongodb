@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [2.3.2] - 2022-05-02
 ### Fixed
 - Bug using `$unset` operator in stages in `update` method
 
@@ -45,7 +47,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Closing connections when event `janiscommerce.ended` was emitted
 - Events listened with `@janiscommerce/events`
-- Using `mongodb@4.3.1` drive
+
+### Changed
+- Using `mongodb@4.3.1` drive **BREAKING CHANGE**
+- Support for node 12 dropped **BREAKING CHANGE**
 
 ## [1.18.0] - 2021-07-07
 ### Added
