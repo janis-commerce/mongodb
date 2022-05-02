@@ -1071,22 +1071,11 @@ describe('MongoDB', () => {
 			const item = {
 				otherId: '5df0151dbc1d570011949d87',
 				name: 'Some name',
-				$set: {
-					description: 'The description'
-				},
-				$inc: {
-					quantity: -5
-				},
-				$push: {
-					children: {
-						id: '5df0151dbc1d570011949d88',
-						name: 'Children name'
-					}
-				}
+				description: 'The description'
 			};
 
 			const item2 = {
-				age: 10
+				$unset: ['children.5df0151dbc1d570011949d88', 'children.5df0151dbc1d570011949d89']
 			};
 
 			const options = { upsert: true };
@@ -1107,15 +1096,33 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-			const expectedItem = {
-				$set: {
-					otherId: ObjectId('5df0151dbc1d570011949d87'),
-					name: 'Some name',
-					description: 'The description'
+			const expectedItem = [
+				{
+					$set: {
+						otherId: ObjectId('5df0151dbc1d570011949d87'),
+						name: 'Some name',
+						description: 'The description'
+					}
 				},
-				$inc: {
-					quantity: -5
-				},
+				{ $unset: ['children.5df0151dbc1d570011949d88', 'children.5df0151dbc1d570011949d89'] },
+				{ $set: { dateModified: sinon.match.date } }
+			];
+
+			sinon.assert.calledOnceWithExactly(updateMany, {
+				_id: {
+					$eq: ObjectId(id)
+				}
+			}, expectedItem, options);
+		});
+
+		it('Should throw with multiple data but multiple stage in one pipeline', async () => {
+
+			const id = '5df0151dbc1d570011949d86';
+
+			const item = {
+				otherId: '5df0151dbc1d570011949d87',
+				name: 'Some name',
+				description: 'The description',
 				$push: {
 					children: {
 						id: '5df0151dbc1d570011949d88',
@@ -1124,11 +1131,27 @@ describe('MongoDB', () => {
 				}
 			};
 
-			sinon.assert.calledOnceWithExactly(updateMany, {
-				_id: {
-					$eq: ObjectId(id)
+			const item2 = {
+				$unset: 'children.5df0151dbc1d570011949d88'
+			};
+
+			const options = { upsert: true };
+
+			const updateMany = sinon.stub();
+
+			const collection = stubMongo(true, { updateMany });
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(() => mongodb.update(getModel({
+				otherId: {
+					isID: true
 				}
-			}, [expectedItem, { $set: { age: 10 } }, { $set: { dateModified: sinon.match.date } }], options);
+			}), [item, item2], { id }, options));
+
+
+			sinon.assert.notCalled(collection);
+			sinon.assert.notCalled(updateMany);
 		});
 	});
 
