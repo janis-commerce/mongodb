@@ -741,6 +741,42 @@ await mongo.dropDatabase();
 
 </details>
 
+</details>
+
+### ***async*** `dropCollection(collection)`
+
+<details>
+<summary>Drops a collection from the database for the current config.</summary>
+
+- Resolves `Boolean`: `true` if the collection was successfully dropped, false otherwise.
+- Rejects `Error`: When something bad occurs
+
+**Usage:**
+```js
+await mongo.dropCollection('my-collection');
+// > true|false
+```
+
+</details>
+
+</details>
+
+### ***async*** `deleteAllDocuments(collection)`
+
+<details>
+<summary>Deletes all documents from a collection of the database for the current config.</summary>
+
+- Resolves `Integer`: With the count of deleted documents.
+- Rejects `Error`: When something bad occurs
+
+**Usage:**
+```js
+await mongo.deleteAllDocuments('my-collection');
+// > 49
+```
+
+</details>
+
 ### ***async*** `aggregate(model, stages)`
 
 <details>

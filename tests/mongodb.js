@@ -2607,6 +2607,146 @@ describe('MongoDB', () => {
 		});
 	});
 
+	describe('dropCollection()', () => {
+
+		it('Should throw if connection to DB fails', async () => {
+
+			stubMongo(false);
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(() => mongodb.dropCollection('my-collection'), {
+				message: 'Error getting DB',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+		});
+
+		it('Should throw if mongodb dropCollection method fails', async () => {
+
+			const mongodb = new MongoDB(config);
+
+			const dropCollectionStub = sinon.stub().rejects(new Error('dropCollection internal error'));
+
+			sinon.stub(MongoWrapper.prototype, 'getDb')
+				.resolves({
+					collection: () => ({ drop: dropCollectionStub })
+				});
+
+			await assert.rejects(() => mongodb.dropCollection('my-collection'), {
+				message: 'dropCollection internal error',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.calledOnceWithExactly(dropCollectionStub);
+		});
+
+		it('Should return true if can drop the collection when dropCollection is called', async () => {
+
+			const mongodb = new MongoDB(config);
+
+			const dropCollectionStub = sinon.stub().resolves(true);
+
+			sinon.stub(MongoWrapper.prototype, 'getDb')
+				.resolves({
+					collection: () => ({ drop: dropCollectionStub })
+				});
+
+			const result = await mongodb.dropCollection('my-collection');
+
+			assert.deepStrictEqual(result, true);
+
+			sinon.assert.calledOnceWithExactly(dropCollectionStub);
+		});
+
+		it('Should return false if can\'t drop the collection when dropCollection is called', async () => {
+
+			const mongodb = new MongoDB(config);
+
+			const dropCollectionStub = sinon.stub().resolves(false);
+
+			sinon.stub(MongoWrapper.prototype, 'getDb')
+				.resolves({
+					collection: () => ({ drop: dropCollectionStub })
+				});
+
+			const result = await mongodb.dropCollection('my-collection');
+
+			assert.deepStrictEqual(result, false);
+
+			sinon.assert.calledOnceWithExactly(dropCollectionStub);
+		});
+	});
+
+	describe('deleteAllDocuments()', () => {
+
+		it('Should throw if connection to DB fails', async () => {
+
+			stubMongo(false);
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(() => mongodb.deleteAllDocuments('my-collection'), {
+				message: 'Error getting DB',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+		});
+
+		it('Should throw if mongodb deleteAllDocuments method fails', async () => {
+
+			const mongodb = new MongoDB(config);
+
+			const deleteAllDocumentsStub = sinon.stub().rejects(new Error('deleteAllDocuments internal error'));
+
+			sinon.stub(MongoWrapper.prototype, 'getDb')
+				.resolves({
+					collection: () => ({ deleteMany: deleteAllDocumentsStub })
+				});
+
+			await assert.rejects(() => mongodb.deleteAllDocuments('my-collection'), {
+				message: 'deleteAllDocuments internal error',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.calledOnceWithExactly(deleteAllDocumentsStub, {});
+		});
+
+		it('Should return the count of deleted documents if can delete collection documents when deleteAllDocuments is called', async () => {
+
+			const mongodb = new MongoDB(config);
+
+			const deleteAllDocumentsStub = sinon.stub().resolves({ deletedCount: 10 });
+
+			sinon.stub(MongoWrapper.prototype, 'getDb')
+				.resolves({
+					collection: () => ({ deleteMany: deleteAllDocumentsStub })
+				});
+
+			const result = await mongodb.deleteAllDocuments('my-collection');
+
+			assert.deepStrictEqual(result, 10);
+
+			sinon.assert.calledOnceWithExactly(deleteAllDocumentsStub, {});
+		});
+
+		it('Should return 0 if can\'t delete collection documents when deleteAllDocuments is called', async () => {
+
+			const mongodb = new MongoDB(config);
+
+			const deleteAllDocumentsStub = sinon.stub().resolves({ deletedCount: 0 });
+
+			sinon.stub(MongoWrapper.prototype, 'getDb')
+				.resolves({
+					collection: () => ({ deleteMany: deleteAllDocumentsStub })
+				});
+
+			const result = await mongodb.deleteAllDocuments('my-collection');
+
+			assert.deepStrictEqual(result, 0);
+
+			sinon.assert.calledOnceWithExactly(deleteAllDocumentsStub, {});
+		});
+	});
+
 	describe('aggregate()', () => {
 
 		it('Should throw if no model is passed', async () => {
