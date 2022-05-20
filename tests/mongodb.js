@@ -2705,4 +2705,13 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnce(toArray);
 		});
 	});
+
+	describe('idStruct()', () => {
+
+		it('Should return an idStruct function', async () => {
+			const mongodb = new MongoDB(config);
+
+			assert.rejects(() => mongodb.idStruct(('123')));
+		});
+	});
 });
