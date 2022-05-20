@@ -9,7 +9,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Valid id struct getter
 
-
 ## [2.3.2] - 2022-05-02
 ### Fixed
 - Bug using `$unset` operator in stages in `update` method
