@@ -2710,8 +2710,11 @@ describe('MongoDB', () => {
 
 		it('Should return an idStruct function', async () => {
 			const mongodb = new MongoDB(config);
-
-			assert.rejects(() => mongodb.idStruct(('123')));
+			try {
+				mongodb.idStruct('123');
+			} catch(error) {
+				assert.deepStrictEqual(error.message, 'Expected a value of type `objectId` but received `"123"`.');
+			}
 		});
 	});
 });
