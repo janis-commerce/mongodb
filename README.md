@@ -772,6 +772,21 @@ await mongo.aggregate(model, [
 
 </details>
 
+### `get idStruct()`
+
+<details>
+<summary>Returns valid id struct function.</summary>
+
+- Returns `Function`: struct function to validate ids.
+- Rejects `Error`: When received id is not of type `objectId`.
+
+**Usage:**
+```js
+await mongo.idStruct('6282c2484f64bffff55bcd7c');
+```
+
+</details>
+
 ## Errors
 
 The errors are informed with a `MongoDBError`.
