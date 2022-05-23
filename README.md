@@ -782,7 +782,7 @@ await mongo.aggregate(model, [
 
 **Usage:**
 ```js
-await mongo.idStruct('6282c2484f64bffff55bcd7c');
+	mongo.idStruct('6282c2484f64bffff55bcd7c');
 ```
 
 </details>
