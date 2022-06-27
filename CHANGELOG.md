@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.5.1] - 2022-05-27
+### Fixed
+- Added sort by _id by default to ensure sort consistency
+
 ## [2.5.0] - 2022-05-26
 ### Added
 - Valid id struct getter
