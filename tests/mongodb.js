@@ -417,7 +417,8 @@ describe('MongoDB', () => {
 
 			assertChain(stubs, 'myCollection', {}, {
 				foo: 1,
-				bar: -1
+				bar: -1,
+				_id: -1
 			}, 0, 500);
 		});
 
