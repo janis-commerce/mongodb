@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-## [2.5.1] - 2022-05-27
+## [2.5.2] - 2022-07-11
+### Fixed
+- Multiple concurrent connections do not leak any more
+
+## [2.5.1] - 2022-06-27
 ### Fixed
 - Added sort by _id by default to ensure sort consistency
 
