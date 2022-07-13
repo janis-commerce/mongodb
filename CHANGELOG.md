@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.5.3] - 2022-07-13
+### Changed
+- Not adding sort by `_id` when received "date field" in order parameter
+
 ## [2.5.2] - 2022-07-11
 ### Fixed
 - Multiple concurrent connections do not leak any more

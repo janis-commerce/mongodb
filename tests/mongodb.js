@@ -403,7 +403,7 @@ describe('MongoDB', () => {
 			assertChain(stubs, 'myCollection', {}, undefined, 0, 500);
 		});
 
-		it('Should pass the parsed sort params to the find-method-chain', async () => {
+		it('Should pass the parsed sort params to the find-method-chain adding _id to ensure sort consistency', async () => {
 
 			const stubs = mockChain(true, []);
 
@@ -419,6 +419,38 @@ describe('MongoDB', () => {
 				foo: 1,
 				bar: -1,
 				_id: -1
+			}, 0, 500);
+		});
+
+		it('Should pass the parsed sort params to the find-method-chain without adding _id when date fields (startsWith)', async () => {
+
+			const stubs = mockChain(true, []);
+
+			const mongodb = new MongoDB(config);
+			await mongodb.get(getModel(), {
+				order: {
+					dateCreated: 'asc'
+				}
+			});
+
+			assertChain(stubs, 'myCollection', {}, {
+				dateCreated: 1
+			}, 0, 500);
+		});
+
+		it('Should pass the parsed sort params to the find-method-chain without adding _id when date fields (endsWith)', async () => {
+
+			const stubs = mockChain(true, []);
+
+			const mongodb = new MongoDB(config);
+			await mongodb.get(getModel(), {
+				order: {
+					pickedDate: 'desc'
+				}
+			});
+
+			assertChain(stubs, 'myCollection', {}, {
+				pickedDate: -1
 			}, 0, 500);
 		});
 
