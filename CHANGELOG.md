@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.5.4] - 2022-07-14
+### Removed
+- Sort fixed `_id` to ensure sort consistency
+
 ## [2.5.3] - 2022-07-13
 ### Changed
 - Not adding sort by `_id` when received "date field" in order parameter
@@ -17,7 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [2.5.1] - 2022-06-27
 ### Fixed
-- Added sort by _id by default to ensure sort consistency
+- Added sort by `_id` by default to ensure sort consistency
 
 ## [2.5.0] - 2022-05-26
 ### Added
