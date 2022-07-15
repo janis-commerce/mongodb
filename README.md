@@ -573,7 +573,7 @@ await mongo.remove(model, { id: '0000000055f2255a1a8e0c54' });
 - model: `Model`: A model instance
 - filter: `Object`: Filter criteria to match documents
 
-- Resolves `Number`: Number that repesents the amount of removed documents.
+- Resolves `Number`: Number that represents the amount of removed documents.
 - Rejects `Error` When something bad occurs
 
 **Usage:**
@@ -748,6 +748,8 @@ await mongo.dropDatabase();
 <details>
 <summary>Drops a collection from the database for the current config.</summary>
 
+- collection: `String`: The collection name.
+
 - Resolves `Boolean`: `true` if the collection was successfully dropped, false otherwise.
 - Rejects `Error`: When something bad occurs
 
@@ -761,10 +763,13 @@ await mongo.dropCollection('my-collection');
 
 </details>
 
-### ***async*** `deleteAllDocuments(collection)`
+### ***async*** `deleteAllDocuments(collection, filter)`
 
 <details>
 <summary>Deletes all documents from a collection of the database for the current config.</summary>
+
+- collection: `String`: The collection name.
+- filter: `Object`: Filter criteria to match documents
 
 - Resolves `Integer`: With the count of deleted documents.
 - Rejects `Error`: When something bad occurs

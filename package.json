@@ -28,7 +28,7 @@
     "mongodb": "^4.5.0"
   },
   "devDependencies": {
-    "@janiscommerce/model": "^6.2.0",
+    "@janiscommerce/model": "^6.6.0",
     "eslint": "^8.14.0",
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-plugin-import": "^2.26.0",

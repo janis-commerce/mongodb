@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.5.5] - 2022-07-15
+### Changed
+- `deleteAllDocuments()` methods now can receive `filter` to apply to the `deleteMany()` command
+
 ## [2.5.4] - 2022-07-14
 ### Removed
 - Sort fixed `_id` to ensure sort consistency

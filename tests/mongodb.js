@@ -2728,6 +2728,24 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(deleteAllDocumentsStub, {});
 		});
 
+		it('Should pass the filter for the deleteMany command when filter received', async () => {
+
+			const mongodb = new MongoDB(config);
+
+			const deleteAllDocumentsStub = sinon.stub().resolves({ deletedCount: 10 });
+
+			sinon.stub(MongoWrapper.prototype, 'getDb')
+				.resolves({
+					collection: () => ({ deleteMany: deleteAllDocumentsStub })
+				});
+
+			const result = await mongodb.deleteAllDocuments('my-collection', { code: 2 });
+
+			assert.deepStrictEqual(result, 10);
+
+			sinon.assert.calledOnceWithExactly(deleteAllDocumentsStub, { code: 2 });
+		});
+
 		it('Should return 0 if can\'t delete collection documents when deleteAllDocuments is called', async () => {
 
 			const mongodb = new MongoDB(config);
