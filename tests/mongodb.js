@@ -1639,8 +1639,9 @@ describe('MongoDB', () => {
 			const mongodb = new MongoDB(config);
 
 			const countDocuments = sinon.stub();
+			const estimatedDocumentCount = sinon.stub();
 
-			const collection = stubMongo(true, { countDocuments });
+			const collection = stubMongo(true, { countDocuments, estimatedDocumentCount });
 
 			const result = await mongodb.getTotals(getModel());
 
@@ -1651,6 +1652,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.notCalled(collection);
 			sinon.assert.notCalled(countDocuments);
+			sinon.assert.notCalled(estimatedDocumentCount);
 		});
 
 		it('Should return without calling mongo if last query was empty', async () => {
@@ -1678,90 +1680,135 @@ describe('MongoDB', () => {
 			sinon.assert.notCalled(countDocuments);
 		});
 
-		it('Should throw if no mongo countDocuments method fails', async () => {
+		context('When using filters', () => {
 
-			const mongodb = new MongoDB(config);
+			it('Should throw if mongo countDocuments method fails', async () => {
 
-			const countDocuments = sinon.stub().rejects(new Error('CountDocuments internal error'));
+				const mongodb = new MongoDB(config);
 
-			const { collection } = mockChain(true, [{}], { countDocuments });
+				const countDocuments = sinon.stub().rejects(new Error('countDocuments internal error'));
+				const estimatedDocumentCount = sinon.stub();
 
-			const model = getModel();
+				const { collection } = mockChain(true, [{}], { countDocuments, estimatedDocumentCount });
 
-			// Get to populate internal properties
-			await mongodb.get(model, {});
+				const model = getModel();
 
-			await assert.rejects(() => mongodb.getTotals(model), {
-				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+				// Get to populate internal properties
+				await mongodb.get(model, {
+					filters: { status: 'active' }
+				});
+
+				await assert.rejects(() => mongodb.getTotals(model), {
+					code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+				});
+
+				// Collection se llama una vez para el get
+				sinon.assert.calledTwice(collection);
+				sinon.assert.calledOnceWithExactly(countDocuments, {
+					status: { $eq: 'active' }
+				});
+
+				sinon.assert.notCalled(estimatedDocumentCount);
 			});
 
-			// Collection se llama una vez para el get
-			sinon.assert.calledTwice(collection);
-			sinon.assert.calledOnceWithExactly(countDocuments, {});
+
+			it('Should return the totals object for queries with filters, specific page and custom limit using countDocuments()', async () => {
+
+				const mongodb = new MongoDB(config);
+
+				const estimatedDocumentCount = sinon.stub();
+				const countDocuments = sinon.stub().resolves(140);
+
+				const { collection } = mockChain(true, [{}], { countDocuments, estimatedDocumentCount });
+
+				const model = getModel();
+
+				// Get to populate internal properties
+				await mongodb.get(model, {
+					filters: {
+						status: 'active'
+					},
+					page: 2,
+					limit: 60
+				});
+
+				const result = await mongodb.getTotals(model);
+
+				assert.deepStrictEqual(result, {
+					total: 140,
+					pageSize: 60,
+					pages: 3,
+					page: 2
+				});
+
+				// Collection se llama una vez para el get
+				sinon.assert.calledTwice(collection);
+				sinon.assert.calledOnceWithExactly(countDocuments, {
+					status: {
+						$eq: 'active'
+					}
+				});
+
+				sinon.assert.notCalled(estimatedDocumentCount);
+			});
 		});
 
-		it('Should return the totals object for one item', async () => {
+		context('When not using filters', () => {
 
-			const mongodb = new MongoDB(config);
+			it('Should throw if mongo estimatedDocumentCount method fails', async () => {
 
-			const countDocuments = sinon.stub().resolves(1);
+				const mongodb = new MongoDB(config);
 
-			const { collection } = mockChain(true, [{}], { countDocuments });
+				const estimatedDocumentCount = sinon.stub().rejects(new Error('estimatedDocumentCount internal error'));
+				const countDocuments = sinon.stub();
 
-			const model = getModel();
+				const { collection } = mockChain(true, [{}], { estimatedDocumentCount, countDocuments });
 
-			// Get to populate internal properties
-			await mongodb.get(model, {});
+				const model = getModel();
 
-			const result = await mongodb.getTotals(model);
+				// Get to populate internal properties
+				await mongodb.get(model, {});
 
-			assert.deepStrictEqual(result, {
-				total: 1,
-				pageSize: 500,
-				pages: 1,
-				page: 1
+				await assert.rejects(() => mongodb.getTotals(model), {
+					code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+				});
+
+				// Collection se llama una vez para el get
+				sinon.assert.calledTwice(collection);
+				sinon.assert.calledOnceWithExactly(estimatedDocumentCount);
+				sinon.assert.notCalled(countDocuments);
 			});
 
-			// Collection se llama una vez para el get
-			sinon.assert.calledTwice(collection);
-			sinon.assert.calledOnceWithExactly(countDocuments, {});
-		});
 
-		it('Should return the totals object for queries with filters, specific page and custom limit', async () => {
+			it('Should return the totals object for one item using estimatedDocumentCount()', async () => {
 
-			const mongodb = new MongoDB(config);
+				const mongodb = new MongoDB(config);
 
-			const countDocuments = sinon.stub().resolves(140);
+				const estimatedDocumentCount = sinon.stub().resolves(1);
+				const countDocuments = sinon.stub();
 
-			const { collection } = mockChain(true, [{}], { countDocuments });
+				const { collection } = mockChain(true, [{}], { countDocuments, estimatedDocumentCount });
 
-			const model = getModel();
+				const model = getModel();
 
-			// Get to populate internal properties
-			await mongodb.get(model, {
-				filters: {
-					status: 'active'
-				},
-				page: 2,
-				limit: 60
+				// Get to populate internal properties
+				await mongodb.get(model, {});
+
+				const result = await mongodb.getTotals(model);
+
+				assert.deepStrictEqual(result, {
+					total: 1,
+					pageSize: 500,
+					pages: 1,
+					page: 1
+				});
+
+				// Collection se llama una vez para el get
+				sinon.assert.calledTwice(collection);
+				sinon.assert.calledOnceWithExactly(estimatedDocumentCount);
+				sinon.assert.notCalled(countDocuments);
 			});
 
-			const result = await mongodb.getTotals(model);
-
-			assert.deepStrictEqual(result, {
-				total: 140,
-				pageSize: 60,
-				pages: 3,
-				page: 2
-			});
-
-			// Collection se llama una vez para el get
-			sinon.assert.calledTwice(collection);
-			sinon.assert.calledOnceWithExactly(countDocuments, {
-				status: {
-					$eq: 'active'
-				}
-			});
 		});
 	});
 
