@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.5.7] - 2022-07-22
+### Changed
+- Now `getTotals()` no performs a mongo query when length of results are lesser than the limit
+
 ## [2.5.6] - 2022-07-21
 ### Changed
 - Using **mongodb** `estimatedDocumentCount()` when `getTotals()` is called for queries without `filters`

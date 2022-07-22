@@ -1660,8 +1660,9 @@ describe('MongoDB', () => {
 			const mongodb = new MongoDB(config);
 
 			const countDocuments = sinon.stub();
+			const estimatedDocumentCount = sinon.stub();
 
-			const { collection } = mockChain(true, [], { countDocuments });
+			const { collection } = mockChain(true, [], { countDocuments, estimatedDocumentCount });
 
 			const model = getModel();
 
@@ -1678,6 +1679,39 @@ describe('MongoDB', () => {
 			// Collection se llama una vez para el get
 			sinon.assert.calledOnce(collection);
 			sinon.assert.notCalled(countDocuments);
+			sinon.assert.notCalled(estimatedDocumentCount);
+		});
+
+		it('Should calculate totals without calling mongo if length or result is lesser than limit', async () => {
+
+			const mongodb = new MongoDB(config);
+
+			const countDocuments = sinon.stub();
+			const estimatedDocumentCount = sinon.stub();
+
+			const { collection } = mockChain(true, [{ a: 1 }, { b: 2 }], { countDocuments, estimatedDocumentCount });
+
+			const model = getModel();
+
+			// Get to populate internal properties
+			await mongodb.get(model, {
+				limit: 100,
+				page: 450
+			});
+
+			const result = await mongodb.getTotals(model);
+
+			assert.deepStrictEqual(result, {
+				total: 44902,
+				pageSize: 100,
+				pages: 450,
+				page: 450
+			});
+
+			// Collection se llama una vez para el get
+			sinon.assert.calledOnce(collection);
+			sinon.assert.notCalled(countDocuments);
+			sinon.assert.notCalled(estimatedDocumentCount);
 		});
 
 		context('When using filters', () => {
@@ -1689,13 +1723,14 @@ describe('MongoDB', () => {
 				const countDocuments = sinon.stub().rejects(new Error('countDocuments internal error'));
 				const estimatedDocumentCount = sinon.stub();
 
-				const { collection } = mockChain(true, [{}], { countDocuments, estimatedDocumentCount });
+				const { collection } = mockChain(true, [{ a: 1 }], { countDocuments, estimatedDocumentCount });
 
 				const model = getModel();
 
 				// Get to populate internal properties
 				await mongodb.get(model, {
-					filters: { status: 'active' }
+					filters: { status: 'active' },
+					limit: 1
 				});
 
 				await assert.rejects(() => mongodb.getTotals(model), {
@@ -1711,42 +1746,37 @@ describe('MongoDB', () => {
 				sinon.assert.notCalled(estimatedDocumentCount);
 			});
 
-
 			it('Should return the totals object for queries with filters, specific page and custom limit using countDocuments()', async () => {
 
 				const mongodb = new MongoDB(config);
 
 				const estimatedDocumentCount = sinon.stub();
-				const countDocuments = sinon.stub().resolves(140);
+				const countDocuments = sinon.stub().resolves(4);
 
-				const { collection } = mockChain(true, [{}], { countDocuments, estimatedDocumentCount });
+				const { collection } = mockChain(true, [{ a: 3 }, { a: 4 }], { countDocuments, estimatedDocumentCount });
 
 				const model = getModel();
 
 				// Get to populate internal properties
 				await mongodb.get(model, {
-					filters: {
-						status: 'active'
-					},
+					filters: { status: 'active' },
 					page: 2,
-					limit: 60
+					limit: 2
 				});
 
 				const result = await mongodb.getTotals(model);
 
 				assert.deepStrictEqual(result, {
-					total: 140,
-					pageSize: 60,
-					pages: 3,
+					total: 4,
+					pageSize: 2,
+					pages: 2,
 					page: 2
 				});
 
 				// Collection se llama una vez para el get
 				sinon.assert.calledTwice(collection);
 				sinon.assert.calledOnceWithExactly(countDocuments, {
-					status: {
-						$eq: 'active'
-					}
+					status: { $eq: 'active' }
 				});
 
 				sinon.assert.notCalled(estimatedDocumentCount);
@@ -1762,12 +1792,14 @@ describe('MongoDB', () => {
 				const estimatedDocumentCount = sinon.stub().rejects(new Error('estimatedDocumentCount internal error'));
 				const countDocuments = sinon.stub();
 
-				const { collection } = mockChain(true, [{}], { estimatedDocumentCount, countDocuments });
+				const { collection } = mockChain(true, [{ a: 1 }], { estimatedDocumentCount, countDocuments });
 
 				const model = getModel();
 
 				// Get to populate internal properties
-				await mongodb.get(model, {});
+				await mongodb.get(model, {
+					limit: 1
+				});
 
 				await assert.rejects(() => mongodb.getTotals(model), {
 					code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
@@ -1784,21 +1816,23 @@ describe('MongoDB', () => {
 
 				const mongodb = new MongoDB(config);
 
-				const estimatedDocumentCount = sinon.stub().resolves(1);
+				const estimatedDocumentCount = sinon.stub().resolves(2);
 				const countDocuments = sinon.stub();
 
-				const { collection } = mockChain(true, [{}], { countDocuments, estimatedDocumentCount });
+				const { collection } = mockChain(true, [{ a: 1 }, { b: 2 }], { countDocuments, estimatedDocumentCount });
 
 				const model = getModel();
 
 				// Get to populate internal properties
-				await mongodb.get(model, {});
+				await mongodb.get(model, {
+					limit: 2
+				});
 
 				const result = await mongodb.getTotals(model);
 
 				assert.deepStrictEqual(result, {
-					total: 1,
-					pageSize: 500,
+					total: 2,
+					pageSize: 2,
 					pages: 1,
 					page: 1
 				});
@@ -1808,7 +1842,6 @@ describe('MongoDB', () => {
 				sinon.assert.calledOnceWithExactly(estimatedDocumentCount);
 				sinon.assert.notCalled(countDocuments);
 			});
-
 		});
 	});
 
