@@ -1634,25 +1634,18 @@ describe('MongoDB', () => {
 			});
 		});
 
-		it('Should return without calling mongo if get is not called first', async () => {
+		it('Should call get without params if it was not called before', async () => {
 
 			const mongodb = new MongoDB(config);
 
-			const countDocuments = sinon.stub();
-			const estimatedDocumentCount = sinon.stub();
+			sinon.spy(mongodb, 'get');
 
-			const collection = stubMongo(true, { countDocuments, estimatedDocumentCount });
+			mockChain(true, [], null);
 
-			const result = await mongodb.getTotals(getModel());
+			const model = getModel();
+			await mongodb.getTotals(model);
 
-			assert.deepStrictEqual(result, {
-				total: 0,
-				pages: 0
-			});
-
-			sinon.assert.notCalled(collection);
-			sinon.assert.notCalled(countDocuments);
-			sinon.assert.notCalled(estimatedDocumentCount);
+			sinon.assert.calledOnceWithExactly(mongodb.get, model);
 		});
 
 		it('Should return without calling mongo if last query was empty', async () => {
