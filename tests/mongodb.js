@@ -1634,31 +1634,6 @@ describe('MongoDB', () => {
 			});
 		});
 
-		it('Should calculate the totals using estimatedDocumentCount() if get() was not called before', async () => {
-
-			const mongodb = new MongoDB(config);
-
-			const countDocuments = sinon.spy();
-			const estimatedDocumentCount = sinon.stub().resolves(1);
-
-			const { collection } = mockChain(true, [{ a: 1 }], { countDocuments, estimatedDocumentCount });
-
-			const model = getModel();
-
-			const result = await mongodb.getTotals(model);
-
-			assert.deepStrictEqual(result, {
-				total: 1,
-				pageSize: 500,
-				pages: 1,
-				page: 0
-			});
-
-			sinon.assert.calledOnce(collection);
-			sinon.assert.notCalled(countDocuments);
-			sinon.assert.calledOnce(estimatedDocumentCount);
-		});
-
 		it('Should return without calling mongo if last query was empty', async () => {
 
 			const mongodb = new MongoDB(config);
@@ -1716,6 +1691,53 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnce(collection);
 			sinon.assert.notCalled(countDocuments);
 			sinon.assert.notCalled(estimatedDocumentCount);
+		});
+
+		context('When get() is not called first', () => {
+
+			it('Should calculate the totals using estimatedDocumentCount() if get() was not called before', async () => {
+
+				const mongodb = new MongoDB(config);
+
+				const countDocuments = sinon.spy();
+				const estimatedDocumentCount = sinon.stub().resolves(1);
+
+				const { collection } = mockChain(true, [{ a: 1 }], { countDocuments, estimatedDocumentCount });
+
+				const model = getModel();
+
+				const result = await mongodb.getTotals(model);
+
+				assert.deepStrictEqual(result, {
+					total: 1,
+					pageSize: 500,
+					pages: 1,
+					page: 0
+				});
+
+				sinon.assert.calledOnce(collection);
+				sinon.assert.notCalled(countDocuments);
+				sinon.assert.calledOnce(estimatedDocumentCount);
+			});
+
+			it('Should throw if mongo estimatedDocumentCount method fails', async () => {
+				const mongodb = new MongoDB(config);
+
+				const countDocuments = sinon.spy();
+				const estimatedDocumentCount = sinon.stub().rejects(new Error('estimatedDocumentCount internal error'));
+
+				const { collection } = mockChain(true, [{ a: 1 }], { countDocuments, estimatedDocumentCount });
+
+				const model = getModel();
+
+				await assert.rejects(() => mongodb.getTotals(model), {
+					code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+				});
+
+				sinon.assert.calledOnce(collection);
+				sinon.assert.notCalled(countDocuments);
+				sinon.assert.calledOnce(estimatedDocumentCount);
+			});
 		});
 
 		context('When using filters', () => {
