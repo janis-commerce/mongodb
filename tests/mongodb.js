@@ -1634,18 +1634,29 @@ describe('MongoDB', () => {
 			});
 		});
 
-		it('Should call get without params if it was not called before', async () => {
+		it('Should calculate the totals using estimatedDocumentCount() if get() was not called before', async () => {
 
 			const mongodb = new MongoDB(config);
 
-			sinon.spy(mongodb, 'get');
+			const countDocuments = sinon.spy();
+			const estimatedDocumentCount = sinon.stub().resolves(1);
 
-			mockChain(true, [], null);
+			const { collection } = mockChain(true, [{ a: 1 }], { countDocuments, estimatedDocumentCount });
 
 			const model = getModel();
-			await mongodb.getTotals(model);
 
-			sinon.assert.calledOnceWithExactly(mongodb.get, model);
+			const result = await mongodb.getTotals(model);
+
+			assert.deepStrictEqual(result, {
+				total: 1,
+				pageSize: 500,
+				pages: 1,
+				page: 0
+			});
+
+			sinon.assert.calledOnce(collection);
+			sinon.assert.notCalled(countDocuments);
+			sinon.assert.calledOnce(estimatedDocumentCount);
 		});
 
 		it('Should return without calling mongo if last query was empty', async () => {
