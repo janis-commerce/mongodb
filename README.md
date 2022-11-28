@@ -446,7 +446,7 @@ Return example:
 If the last query response was empty, it will just return the `total` and `pages` properties with a value of zero.
 
 **Since *UNRELEASED*:**
-- If no query was executed before, it will call a `get(model)` without filters first.
+- If no query was executed before, it will return the totals of the whole collection without filters.
 
 **Usage:**
 ```js

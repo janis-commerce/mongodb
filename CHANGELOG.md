@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Changed
-- Now `getTotals()` performs a `get()` if it was not called before
+- Now `getTotals()` will return the totals of the whole collection without filters if `get()` is not called before
 
 ## [2.5.7] - 2022-07-22
 ### Changed
