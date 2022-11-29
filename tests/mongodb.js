@@ -1695,14 +1695,14 @@ describe('MongoDB', () => {
 
 		context('When get() is not called first', () => {
 
-			it('Should calculate the totals using estimatedDocumentCount() if get() was not called before', async () => {
+			it('Should calculate the totals using estimatedDocumentCount()', async () => {
 
 				const mongodb = new MongoDB(config);
 
 				const countDocuments = sinon.spy();
 				const estimatedDocumentCount = sinon.stub().resolves(1);
 
-				const { collection } = mockChain(true, [{ a: 1 }], { countDocuments, estimatedDocumentCount });
+				const collection = stubMongo(true, { countDocuments, estimatedDocumentCount });
 
 				const model = getModel();
 
@@ -1712,26 +1712,7 @@ describe('MongoDB', () => {
 					total: 1,
 					pageSize: 500,
 					pages: 1,
-					page: 0
-				});
-
-				sinon.assert.calledOnce(collection);
-				sinon.assert.notCalled(countDocuments);
-				sinon.assert.calledOnce(estimatedDocumentCount);
-			});
-
-			it('Should throw if mongo estimatedDocumentCount method fails', async () => {
-				const mongodb = new MongoDB(config);
-
-				const countDocuments = sinon.spy();
-				const estimatedDocumentCount = sinon.stub().rejects(new Error('estimatedDocumentCount internal error'));
-
-				const { collection } = mockChain(true, [{ a: 1 }], { countDocuments, estimatedDocumentCount });
-
-				const model = getModel();
-
-				await assert.rejects(() => mongodb.getTotals(model), {
-					code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+					page: 1
 				});
 
 				sinon.assert.calledOnce(collection);
