@@ -1712,7 +1712,7 @@ describe('MongoDB', () => {
 					total: 1,
 					pageSize: 500,
 					pages: 1,
-					page: 1
+					page: 0
 				});
 
 				sinon.assert.calledOnce(collection);
