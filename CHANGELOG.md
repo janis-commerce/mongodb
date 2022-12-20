@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.6.0] - 2022-12-20
+### Changed
+- Updated `@janiscommerce/events` to make `async` the callback `janiscommerce.ended` to ensure to close connections
+
 ## [2.5.8] - 2022-12-12
 ### Changed
 - Now `getTotals()` will return the totals of the whole collection without filters if `get()` is not called before

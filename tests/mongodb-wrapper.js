@@ -172,7 +172,7 @@ describe('MongoWrapper', () => {
 
 			sinon.assert.calledOnceWithExactly(RealMongoClient.prototype.connect);
 
-			Events.emit('janiscommerce.ended');
+			await Events.emit('janiscommerce.ended');
 
 			sinon.assert.calledOnceWithExactly(closeStub);
 		});
@@ -198,7 +198,7 @@ describe('MongoWrapper', () => {
 
 			sinon.assert.calledOnceWithExactly(RealMongoClient.prototype.connect);
 
-			Events.emit('janiscommerce.ended');
+			await Events.emit('janiscommerce.ended');
 
 			sinon.assert.calledOnceWithExactly(closeStub);
 		});

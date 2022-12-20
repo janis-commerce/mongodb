@@ -23,12 +23,12 @@
   },
   "homepage": "https://github.com/janis-commerce/mongodb#readme",
   "dependencies": {
-    "@janiscommerce/events": "^0.1.0",
-    "@janiscommerce/superstruct": "^1.2.0",
+    "@janiscommerce/events": "^0.2.0",
+    "@janiscommerce/superstruct": "^1.2.1",
     "mongodb": "^4.5.0"
   },
   "devDependencies": {
-    "@janiscommerce/model": "^6.6.0",
+    "@janiscommerce/model": "^6.8.2",
     "eslint": "^8.14.0",
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-plugin-import": "^2.26.0",
