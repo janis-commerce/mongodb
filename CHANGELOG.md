@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.6.1] - 2023-01-04
+### Fixed
+- Added `force=true` to connection close to fix File descriptor leak
+
 ## [2.6.0] - 2022-12-20
 ### Changed
 - Updated `@janiscommerce/events` to make `async` the callback `janiscommerce.ended` to ensure to close connections
