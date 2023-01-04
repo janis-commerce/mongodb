@@ -174,7 +174,7 @@ describe('MongoWrapper', () => {
 
 			await Events.emit('janiscommerce.ended');
 
-			sinon.assert.calledOnceWithExactly(closeStub);
+			sinon.assert.calledOnceWithExactly(closeStub, true);
 		});
 
 		it('Should close the connection when CLOSE_MONGODB_CONNECTIONS does not exist', async () => {
@@ -200,7 +200,7 @@ describe('MongoWrapper', () => {
 
 			await Events.emit('janiscommerce.ended');
 
-			sinon.assert.calledOnceWithExactly(closeStub);
+			sinon.assert.calledOnceWithExactly(closeStub, true);
 		});
 
 
