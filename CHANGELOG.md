@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.7.0] - 2023-01-17
+### Added
+- Added params `fields` and `excludeFields` to be used on `find()` queries to reduce responses
+
 ## [2.6.1] - 2023-01-04
 ### Fixed
 - Added `force=true` to connection close to fix File descriptor leak
