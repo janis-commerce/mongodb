@@ -68,10 +68,11 @@ describe('MongoDB', () => {
 		return collection;
 	};
 
-	const mockChain = (getDbIsSuccessful, response, collectionExtraData) => {
+	const mockChain = (getDbIsSuccessful = true, response = [], collectionExtraData) => {
 
 		const toArray = response instanceof Error ? sinon.stub().rejects(response) : sinon.stub().resolves(response);
-		const limit = sinon.stub().returns({ toArray });
+		const project = sinon.stub().returns({ toArray });
+		const limit = sinon.stub().returns({ project, toArray });
 		const skip = sinon.stub().returns({ limit });
 		const sort = sinon.stub().returns({ skip });
 		const find = sinon.stub().returns({ sort });
@@ -80,6 +81,7 @@ describe('MongoDB', () => {
 
 		return {
 			toArray,
+			project,
 			limit,
 			skip,
 			sort,
@@ -88,7 +90,7 @@ describe('MongoDB', () => {
 		};
 	};
 
-	const assertChain = (stubs, collectionName, filters, order, skip, limit) => {
+	const assertChain = (stubs, collectionName, filters, order, skip, limit, project) => {
 
 		sinon.assert.calledOnceWithExactly(stubs.collection, collectionName);
 
@@ -99,6 +101,9 @@ describe('MongoDB', () => {
 		sinon.assert.calledOnceWithExactly(stubs.skip, skip);
 
 		sinon.assert.calledOnceWithExactly(stubs.limit, limit);
+
+		if(project)
+			sinon.assert.calledOnceWithExactly(stubs.project, project);
 
 		sinon.assert.calledOnceWithExactly(stubs.toArray);
 	};
@@ -269,7 +274,7 @@ describe('MongoDB', () => {
 
 		it('Should pass the default values to the find-method-chain', async () => {
 
-			const stubs = mockChain(true, []);
+			const stubs = mockChain();
 
 			const mongodb = new MongoDB(config);
 			await mongodb.get(getModel(), {});
@@ -279,7 +284,7 @@ describe('MongoDB', () => {
 
 		it('Should pass the parsed filters (including id to _id mapping) to the find-method-chain', async () => {
 
-			const stubs = mockChain(true, []);
+			const stubs = mockChain();
 
 			const mongodb = new MongoDB(config);
 			await mongodb.get(getModel({
@@ -313,7 +318,7 @@ describe('MongoDB', () => {
 
 		it('Should pass the parsed filters (as OR filters) to the find-method-chain', async () => {
 
-			const stubs = mockChain(true, []);
+			const stubs = mockChain();
 
 			const date = new Date();
 
@@ -366,7 +371,7 @@ describe('MongoDB', () => {
 
 		it('Should not pass the parsed sort params to the find-method-chain if they are invalid', async () => {
 
-			const stubs = mockChain(true, []);
+			const stubs = mockChain();
 
 			const mongodb = new MongoDB(config);
 			await mongodb.get(getModel(), {
@@ -378,7 +383,7 @@ describe('MongoDB', () => {
 
 		it('Should not pass the parsed sort params to the find-method-chain if they are empty', async () => {
 
-			const stubs = mockChain(true, []);
+			const stubs = mockChain();
 
 			const mongodb = new MongoDB(config);
 			await mongodb.get(getModel(), {
@@ -390,7 +395,7 @@ describe('MongoDB', () => {
 
 		it('Should not pass the parsed sort params to the find-method-chain if the direction is invalid', async () => {
 
-			const stubs = mockChain(true, []);
+			const stubs = mockChain();
 
 			const mongodb = new MongoDB(config);
 			await mongodb.get(getModel(), {
@@ -405,7 +410,7 @@ describe('MongoDB', () => {
 
 		it('Should pass the parsed sort params to the find-method-chain', async () => {
 
-			const stubs = mockChain(true, []);
+			const stubs = mockChain();
 
 			const mongodb = new MongoDB(config);
 			await mongodb.get(getModel(), {
@@ -423,7 +428,7 @@ describe('MongoDB', () => {
 
 		it('Should pass the limit param to the find-method-chain', async () => {
 
-			const stubs = mockChain(true, []);
+			const stubs = mockChain();
 
 			const mongodb = new MongoDB(config);
 			await mongodb.get(getModel(), {
@@ -435,7 +440,7 @@ describe('MongoDB', () => {
 
 		it('Should pass the skip param based on page number to the find-method-chain', async () => {
 
-			const stubs = mockChain(true, []);
+			const stubs = mockChain();
 
 			const mongodb = new MongoDB(config);
 			await mongodb.get(getModel(), {
@@ -447,7 +452,7 @@ describe('MongoDB', () => {
 
 		it('Should pass the skip param based on page number and limit to the find-method-chain', async () => {
 
-			const stubs = mockChain(true, []);
+			const stubs = mockChain();
 
 			const mongodb = new MongoDB(config);
 			await mongodb.get(getModel(), {
@@ -456,6 +461,46 @@ describe('MongoDB', () => {
 			});
 
 			assertChain(stubs, 'myCollection', {}, undefined, 60, 30);
+		});
+
+		describe('projection', () => {
+
+			it('Should pass the project param to select fields to the find-method-chain when received fields', async () => {
+
+				const stubs = mockChain();
+
+				const mongodb = new MongoDB(config);
+				await mongodb.get(getModel(), {
+					fields: ['foo']
+				});
+
+				assertChain(stubs, 'myCollection', {}, undefined, 0, 500, { foo: true });
+			});
+
+			it('Should pass the project param to exclude fields to the find-method-chain when received excludeFields', async () => {
+
+				const stubs = mockChain();
+
+				const mongodb = new MongoDB(config);
+				await mongodb.get(getModel(), {
+					excludeFields: ['foo']
+				});
+
+				assertChain(stubs, 'myCollection', {}, undefined, 0, 500, { foo: false });
+			});
+
+			it('Should only pass the project param to select fields to the find-method-chain when received fields and excludeFields', async () => {
+
+				const stubs = mockChain();
+
+				const mongodb = new MongoDB(config);
+				await mongodb.get(getModel(), {
+					fields: ['foo'],
+					excludeFields: ['bar']
+				});
+
+				assertChain(stubs, 'myCollection', {}, undefined, 0, 500, { foo: true });
+			});
 		});
 	});
 

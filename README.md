@@ -212,6 +212,8 @@ await mongo.distinct(model, { key: 'color', filters: { status: 'active' } });
 - limit `Number`: Sets the page size when fetching documents. Defaults to the limit of the constructor.
 - page `Number`: Sets the current page to retrieve.
 - filters `Object|Array<Object>`: Sets the criteria to match documents. An object means AND operation between multiple filters. An array mean an OR operation. See examples [below](#filters).
+- fields `Array<String>`: **Since 2.7.0**. Specific fields to be returned in the query for every document. This feature uses MongoDB projections. See more: https://www.mongodb.com/docs/manual/tutorial/project-fields-from-query-results/
+- excludeFields `Array<String>`: **Since 2.7.0**. Specific fields to exclude in the query for every document. Available when `fields` was not received. This feature also uses MongoDB projections.
 
 Parameters example:
 ```js
@@ -227,7 +229,8 @@ Parameters example:
          'value': ['foo', 'bar'],
          'type' : 'in'
       }
-   }
+   },
+	fields: ['itemField', 'otherItemField']
 }
 ```
 
