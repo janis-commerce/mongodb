@@ -634,7 +634,7 @@ describe('MongoDB', () => {
 
 		['indexes', 'uniqueIndexes'].forEach(indexesGetter => {
 			context(`When model has ${indexesGetter} getter`, () => {
-				it('Should use a multifield unique index as filter if id is not passed', async () => {
+				it('Should use a multi-field unique index as filter if id is not passed', async () => {
 
 					const id = '5df0151dbc1d570011949d86';
 
@@ -916,6 +916,98 @@ describe('MongoDB', () => {
 				$setOnInsert: { dateCreated: sinon.match.date }
 			}, { upsert: true, returnNewDocument: true });
 		});
+
+		it('Should send only in $setOnInsert the dateCreated value when received as valid iso date', async () => {
+
+			const id = '5df0151dbc1d570011949d86';
+
+			const item = {
+				id,
+				name: 'Blue rocket',
+				dateCreated: '2023-02-22T17:43:45.460Z'
+			};
+
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
+
+			const collection = stubMongo(true, { findOneAndUpdate });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.save(getModel(), { ...item });
+
+			assert.deepStrictEqual(result, id);
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+
+			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
+				_id: { $eq: ObjectId(id) }
+			}, {
+				$set: { name: 'Blue rocket' },
+				$currentDate: { dateModified: true },
+				$setOnInsert: { dateCreated: new Date(item.dateCreated) }
+			}, { upsert: true, returnNewDocument: true });
+		});
+
+		it('Should send only in $setOnInsert the dateCreated value when received as valid date object', async () => {
+
+			const id = '5df0151dbc1d570011949d86';
+
+			const item = {
+				id,
+				name: 'Blue rocket',
+				dateCreated: new Date('2023-02-22T17:43:45.460Z')
+			};
+
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
+
+			const collection = stubMongo(true, { findOneAndUpdate });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.save(getModel(), { ...item });
+
+			assert.deepStrictEqual(result, id);
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+
+			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
+				_id: { $eq: ObjectId(id) }
+			}, {
+				$set: { name: 'Blue rocket' },
+				$currentDate: { dateModified: true },
+				$setOnInsert: { dateCreated: new Date(item.dateCreated) }
+			}, { upsert: true, returnNewDocument: true });
+		});
+
+		it('Should send current Date when received an invalid date as string', async () => {
+
+			sinon.useFakeTimers();
+
+			const id = '5df0151dbc1d570011949d86';
+
+			const item = {
+				id,
+				name: 'Blue rocket',
+				dateCreated: '22/02/2023' // invalid date
+			};
+
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
+
+			const collection = stubMongo(true, { findOneAndUpdate });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.save(getModel(), { ...item });
+
+			assert.deepStrictEqual(result, id);
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+
+			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
+				_id: { $eq: ObjectId(id) }
+			}, {
+				$set: { name: 'Blue rocket' },
+				$currentDate: { dateModified: true },
+				$setOnInsert: { dateCreated: new Date() }
+			}, { upsert: true, returnNewDocument: true });
+		});
 	});
 
 	describe('insert()', () => {
@@ -945,7 +1037,7 @@ describe('MongoDB', () => {
 			sinon.assert.notCalled(collection);
 		});
 
-		it('Should throw if mongodb save method fails', async () => {
+		it('Should throw if mongodb insert method fails', async () => {
 
 			const item = {
 				id: '5df0151dbc1d570011949d86',
@@ -996,6 +1088,86 @@ describe('MongoDB', () => {
 			};
 
 			sinon.assert.calledOnceWithExactly(insertOne, expectedItem);
+		});
+
+		it('Should insert item adding the dateCreated value when received as valid iso date', async () => {
+
+			const id = '5df0151dbc1d570011949d86';
+
+			const item = {
+				name: 'Blue rocket',
+				dateCreated: '2023-02-22T17:43:45.460Z'
+			};
+
+			const insertOne = sinon.stub().resolves({ insertedId: ObjectId(id) });
+
+			const collection = stubMongo(true, { insertOne });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.insert(getModel(), { ...item });
+
+			assert.deepStrictEqual(result, id);
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+
+			sinon.assert.calledOnceWithExactly(insertOne, {
+				name: item.name,
+				dateCreated: new Date(item.dateCreated)
+			});
+		});
+
+		it('Should insert item adding the dateCreated value when received as valid date object', async () => {
+
+			const id = '5df0151dbc1d570011949d86';
+
+			const item = {
+				name: 'Blue rocket',
+				dateCreated: new Date('2023-02-22T17:43:45.460Z')
+			};
+
+			const insertOne = sinon.stub().resolves({ insertedId: ObjectId(id) });
+
+			const collection = stubMongo(true, { insertOne });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.insert(getModel(), { ...item });
+
+			assert.deepStrictEqual(result, id);
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+
+			sinon.assert.calledOnceWithExactly(insertOne, {
+				name: item.name,
+				dateCreated: new Date(item.dateCreated)
+			});
+		});
+
+		it('Should insert item using current Date on dateCreated field when received an invalid date as string', async () => {
+
+			sinon.useFakeTimers();
+
+			const id = '5df0151dbc1d570011949d86';
+
+			const item = {
+				name: 'Blue rocket',
+				dateCreated: 'invalid date'
+			};
+
+			const insertOne = sinon.stub().resolves({ insertedId: ObjectId(id) });
+
+			const collection = stubMongo(true, { insertOne });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.insert(getModel(), { ...item });
+
+			assert.deepStrictEqual(result, id);
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+
+			sinon.assert.calledOnceWithExactly(insertOne, {
+				name: item.name,
+				dateCreated: new Date()
+			});
 		});
 	});
 
