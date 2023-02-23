@@ -834,6 +834,19 @@ await mongo.aggregate(model, [
 
 </details>
 
+## Configurations
+
+### `static get hasCustomId()`
+
+<details>
+<summary>Using a custom id instead of ObjectId.</summary>
+
+This configuration allows you to have a custom `id` and not to convert it to **ObjectId** before making write queries.
+
+> :warning: This _getter_ must be present in the **Model**
+
+</details>
+
 ## Errors
 
 The errors are informed with a `MongoDBError`.

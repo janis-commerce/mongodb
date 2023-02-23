@@ -1471,6 +1471,51 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(insertMany, [expectedItem]);
 		});
+
+		it('Should not convert the id has ObjectId when hasCustomId is truthy', async () => {
+
+			const customId = 'f168aee3-a534-409c-aee8-b7a160c032bb';
+
+			const item = {
+				id: customId,
+				name: 'Blue rocket'
+			};
+
+			const expectedItem = {
+				name: 'Blue rocket',
+				dateCreated: sinon.match.date
+			};
+
+			const insertMany = sinon.stub().resolves({
+				acknowledged: true,
+				insertedCount: 1,
+				insertedIds: { 0: customId }
+			});
+
+			const collection = stubMongo(true, { insertMany });
+
+			class Model {
+
+				static get table() {
+					return 'myCollection';
+				}
+
+				static get hasCustomId() {
+					return true;
+				}
+			}
+
+			const model = new Model();
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.multiInsert(model, [{ ...item }]);
+
+			sinon.assert.match(result, [{ ...expectedItem, id: customId }]);
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+
+			sinon.assert.calledOnceWithExactly(insertMany, [{ ...expectedItem, _id: customId }]);
+		});
 	});
 
 	describe('multiSave()', () => {

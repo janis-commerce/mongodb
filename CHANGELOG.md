@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.9.0] - 2023-02-23
+### Added
+- Using getter `hasCustomId()` from Model to have an `id` that is not an **ObjectId**
+
 ## [2.8.0] - 2023-02-22
 ### Changed
 - Now methods `insert()`, `save()`, `multiInsert()`, `multiSave()` will write `dateCreated` field when received
