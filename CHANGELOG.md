@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.10.0] - 2023-03-08
+### Changed
+- Now `multiInsert()` uses `ordered: false` to ensure inserting valid items no matter the received order
+- **Important** when duplicate key errors `multiInsert()` will no reject by default
+
 ## [2.9.0] - 2023-02-23
 ### Added
 - Using getter `hasCustomId()` from Model to have an `id` that is not an **ObjectId**

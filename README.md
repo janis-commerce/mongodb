@@ -104,6 +104,7 @@ await mongo.insert(model, {
 <summary>Inserts multiple documents in a collection</summary>
 
 This methods uses the `insertMany()` command.
+
 **Since 2.10.0**. Inserts using MongoDB `ordered: false` to ensure inserting valid items no matter the order of the items received.
 
 - model: `Model`: A model instance
