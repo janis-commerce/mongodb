@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [3.0.0] - 2023-03-22
+### Changed
+- Now `multiInsert()` uses `ordered: false` to ensure inserting valid items no matter the received order
+- **Important** when duplicate key errors `multiInsert()` will no reject by default
+
 ## [2.10.1] - 2023-03-22
 ### Security
 - Avoiding version `2.10.0`

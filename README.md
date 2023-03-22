@@ -98,26 +98,59 @@ await mongo.insert(model, {
 
 </details>
 
-### ***async*** `multiInsert(model, items)`
+### ***async*** `multiInsert(model, items, options)`
 
 <details>
 <summary>Inserts multiple documents in a collection</summary>
 
+This methods uses the `insertMany()` command.
+
+**Since 3.0.0**. Inserts using MongoDB `ordered: false` to ensure inserting valid items no matter the order of the items received.
+
 - model: `Model`: A model instance
 - item: `Array<Object>`: The items to save in the collection
+- options: `Object`:
+	- failOnDuplicateErrors: `Boolean`: **Since 3.0.0**. When **true** `multiInsert()` will reject on 'duplicate key' errors. Default: **false**.
 
-- Resolves `Array<Object>`: Items inserted
+- Resolves `Array<Object>`: Items inserted, adding the `id` of every item inserted item
 - Rejects `Error` When something bad occurs
 
-**Usage:**
+**Example:**
+
 ```js
-await mongo.multiInsert(model, [
-   { id: 2, name: 'test 1' },
-   { id: 3, name: 'test 2' },
-   { id: 4, name: 'test 3' }
+const itemsInserted = await mongo.multiInsert(model, [
+   { id: 1, name: 'Red' },
+   { id: 2, name: 'Blue' },
+   { id: 3, name: 'Green' }
 ]);
-// > true
+/**
+ * itemsInserted: [
+ * 	{ id: 1, name: 'Red' },
+ * 	{ id: 2, name: 'Blue' },
+ * 	{ id: 3, name: 'Green' }
+ * ]
+*/
 ```
+
+**Example when duplicate keys:**
+
+```js
+const itemsInserted = await mongo.multiInsert(model, [
+   { refId: 1, name: 'Red' },
+   { refId: 2, name: 'Blue' },
+   { refId: 2, name: 'Blue' }, // repeated, assuming refId is associated to an unique index
+   { refId: 3, name: 'Green' }
+]);
+/**
+ * itemsInserted: [
+ * 	{ id: '640887ca7371be16d9bda607', refId: 1, name: 'Red' },
+ * 	{ id: '640887ceb9f381f8ae167f67', refId: 2, name: 'Blue' },
+ * 	{ id: '640887d5927c84d0cd6d6d72', refId: 3, name: 'Green' }
+ * ]
+*/
+```
+
+> :warning: When no items were inserted will return an empty array []
 
 </details>
 
