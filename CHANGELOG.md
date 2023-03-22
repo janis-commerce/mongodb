@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.10.1] - 2023-03-22
+### Security
+- Avoiding version `2.10.0`
+
 ## [2.9.1] - 2023-03-22
 ### Fixed
 - Ensure closing connections once. When multiple connections handled in single execution
