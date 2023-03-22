@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.9.1] - 2023-03-22
+### Fixed
+- Ensure closing connections once. When multiple connections handled in single execution
+
 ## [2.9.0] - 2023-02-23
 ### Added
 - Using getter `hasCustomId()` from Model to have an `id` that is not an **ObjectId**

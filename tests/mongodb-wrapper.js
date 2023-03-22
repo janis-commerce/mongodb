@@ -39,6 +39,9 @@ describe('MongoWrapper', () => {
 	afterEach(() => {
 		sinon.restore();
 		delete process.env.CLOSE_MONGODB_CONNECTIONS;
+
+		// eslint-disable-next-line no-underscore-dangle
+		MongoWrapper._cleanCloseFlag();
 	});
 
 	describe('Connection params', () => {
