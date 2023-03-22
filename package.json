@@ -1,6 +1,6 @@
 {
   "name": "@janiscommerce/mongodb",
-  "version": "2.9.1",
+  "version": "2.10.1",
   "description": "",
   "main": "lib/mongodb.js",
   "scripts": {
