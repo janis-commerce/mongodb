@@ -426,6 +426,18 @@ describe('MongoDB', () => {
 			}, 0, 500);
 		});
 
+		it('Should parse the field id into _id before sort', async () => {
+
+			const stubs = mockChain();
+
+			const mongodb = new MongoDB(config);
+			await mongodb.get(getModel(), {
+				order: { id: 'asc' }
+			});
+
+			assertChain(stubs, 'myCollection', {}, { _id: 1 }, 0, 500);
+		});
+
 		it('Should pass the limit param to the find-method-chain', async () => {
 
 			const stubs = mockChain();
