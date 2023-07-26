@@ -22,6 +22,10 @@ describe('MongoDBFilters', () => {
 		const id = '5df0151dbc1d570011949d86';
 		const id2 = '5df0151dbc1d570011949d87';
 		const date = new Date();
+		const dateCreated = new Date();
+		dateCreated.setDate(dateCreated.getDate() - 2);
+		const dateModified = new Date();
+		dateModified.setDate(dateModified.getDate() - 1);
 
 		it('Should return an empty object if no filters are passed', () => {
 			assert.deepStrictEqual(MongoDBFilters.parseFilters(), {});
@@ -68,11 +72,25 @@ describe('MongoDBFilters', () => {
 				foo: ['bar'],
 				baz: 1,
 				date,
+				dateCreated: dateCreated.toISOString(),
+				dateCreatedFrom: dateCreated.toISOString(),
+				dateCreatedTo: dateCreated.toISOString(),
+				dateModified: [dateModified.toISOString()],
+				dateModifiedFrom: dateModified,
+				dateModifiedTo: dateModified.toISOString(),
+				dateModifiedToCustom: dateModified.toISOString(),
 				nullable: null,
 				nullable2: { type: 'notEqual', value: null },
 				id
 			}, getModel({
-				foo: true
+				foo: true,
+				dateModifiedTo: {
+					type: 'lesserOrEqual'
+				},
+				dateModifiedToCustom: {
+					type: 'lesserOrEqual',
+					mapper: value => value.replace('Z', '')
+				}
 			}));
 
 			assert.deepStrictEqual(parsedFilters, {
@@ -84,6 +102,27 @@ describe('MongoDBFilters', () => {
 				},
 				date: {
 					$eq: date
+				},
+				dateCreated: {
+					$eq: dateCreated
+				},
+				dateCreatedFrom: {
+					$eq: dateCreated
+				},
+				dateCreatedTo: {
+					$eq: dateCreated
+				},
+				dateModified: {
+					$in: [dateModified]
+				},
+				dateModifiedFrom: {
+					$eq: dateModified
+				},
+				dateModifiedTo: {
+					$lte: dateModified
+				},
+				dateModifiedToCustom: {
+					$lte: dateModified.toISOString().replace('Z', '')
 				},
 				nullable: {
 					$eq: null
