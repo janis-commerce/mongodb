@@ -6,6 +6,7 @@ const sinon = require('sinon');
 const { MongoWrapper, ObjectId } = require('../lib/mongodb-wrapper');
 const MongoDBError = require('../lib/mongodb-error');
 const MongoDB = require('../lib/mongodb');
+const ValueMapper = require('../lib/helpers/value-mapper');
 
 describe('MongoDB', () => {
 
@@ -114,6 +115,10 @@ describe('MongoDB', () => {
 
 	afterEach(() => {
 		sinon.restore();
+	});
+
+	it('Should return the value mapper', () => {
+		assert.ok(MongoDB.valueMapper === ValueMapper);
 	});
 
 	describe('distinct()', () => {
