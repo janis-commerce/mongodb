@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+- When using `update()` method and received `options.updateOne` as **true**, will use `updateOne()` instead of `updateMany()` Mongo operation
+
 ## [3.0.1] - 2023-05-08
 ### Changed
 - Now when sorting by field `id`, will be changed to `_id`

@@ -1382,6 +1382,37 @@ describe('MongoDB', () => {
 			sinon.assert.notCalled(collection);
 			sinon.assert.notCalled(updateMany);
 		});
+
+		it('Should use updateOne() method when updateOne option was received', async () => {
+
+			const updateOne = sinon.stub().resolves({ modifiedCount: 1 });
+
+			const collection = stubMongo(true, { updateOne });
+
+			const mongodb = new MongoDB(config);
+
+			const result = await mongodb.update(getModel(), {
+				status: 'processing'
+			}, {
+				status: 'pending'
+			}, {
+				updateOne: true
+			});
+
+			assert.deepStrictEqual(result, 1);
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+
+			sinon.assert.calledOnceWithExactly(updateOne, {
+				status: { $eq: 'pending' }
+			}, {
+				$set: {
+					status: 'processing',
+					dateModified: sinon.match.date
+				}
+			}, {});
+
+		});
 	});
 
 	describe('multiInsert()', () => {
