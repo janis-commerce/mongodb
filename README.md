@@ -163,6 +163,7 @@ const itemsInserted = await mongo.multiInsert(model, [
 - values: `Object` or `Array<Object>`: The values to set in the documents
 - filter: `Object`: Filter criteria to match documents
 - options: `Object`: Optional parameters (such as [arrayFilters](https://docs.mongodb.com/v3.6/release-notes/3.6/#arrayfilters)) of the query [See more](https://docs.mongodb.com/v3.6/reference/method/db.collection.updateMany/#definition)
+	- `updateOne`: _Boolean_. When receive as **true**, `updateOne()` operation will be used, otherwise `updateMany()` is used.
 
 - Resolves `Number`: The number of modified documents
 - Rejects `Error` When something bad occurs
