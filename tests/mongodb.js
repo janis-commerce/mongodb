@@ -1358,7 +1358,7 @@ describe('MongoDB', () => {
 				$unset: ['children.5df0151dbc1d570011949d88', 'children.5df0151dbc1d570011949d89']
 			};
 
-			const options = { upsert: true, skipAutomaticSetDateModified: true };
+			const options = { upsert: true, skipAutomaticSetModifiedData: true };
 
 			const updateMany = sinon.stub().resolves({ modifiedCount: 1 });
 
@@ -1478,7 +1478,7 @@ describe('MongoDB', () => {
 				status: 'pending'
 			}, {
 				updateOne: true,
-				skipAutomaticSetDateModified: true
+				skipAutomaticSetModifiedData: true
 			});
 
 			assert.deepStrictEqual(result, 1);
