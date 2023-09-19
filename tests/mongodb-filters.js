@@ -77,6 +77,7 @@ describe('MongoDBFilters', () => {
 				dateCreatedTo: dateCreated.toISOString(),
 				dateModified: [dateModified.toISOString()],
 				dateModifiedFrom: dateModified,
+				dateModifiedFromCustom: dateModified.toISOString(),
 				dateModifiedTo: dateModified.toISOString(),
 				dateModifiedToCustom: dateModified.toISOString(),
 				nullable: null,
@@ -86,6 +87,10 @@ describe('MongoDBFilters', () => {
 				foo: true,
 				dateModifiedTo: {
 					type: 'lesserOrEqual'
+				},
+				dateModifiedFromCustom: {
+					type: 'greaterOrEqual',
+					mapper: 'toDate'
 				},
 				dateModifiedToCustom: {
 					type: 'lesserOrEqual',
@@ -120,6 +125,9 @@ describe('MongoDBFilters', () => {
 				},
 				dateModifiedTo: {
 					$lte: dateModified
+				},
+				dateModifiedFromCustom: {
+					$gte: dateModified
 				},
 				dateModifiedToCustom: {
 					$lte: dateModified.toISOString().replace('Z', '')

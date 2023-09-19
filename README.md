@@ -868,19 +868,6 @@ await mongo.aggregate(model, [
 
 </details>
 
-### `static get valueMapper()`
-
-<details>
-<summary>Returns value mappers.</summary>
-
-**Usage:**
-```js
-	MongoDB.valueMapper.toDate('2023-09-08T15:00:00.000Z');
-	// > new Date('2023-09-08T15:00:00.000Z')
-```
-
-</details>
-
 ## Configurations
 
 ### `static get hasCustomId()`
