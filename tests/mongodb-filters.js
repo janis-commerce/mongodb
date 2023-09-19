@@ -34,6 +34,15 @@ describe('MongoDBFilters', () => {
 		it('Should throw if invalid filters are passed', () => {
 			assert.throws(() => MongoDBFilters.parseFilters(true));
 			assert.throws(() => MongoDBFilters.parseFilters('invalid'));
+			assert.throws(() => MongoDBFilters.parseFilters({
+				dateCreated
+			}, getModel({
+				foo: true,
+				dateCreated: {
+					type: 'lesserOrEqual',
+					mapper: []
+				}
+			})));
 		});
 
 		it('Should throw if invalid filter types are passed', () => {
@@ -86,7 +95,8 @@ describe('MongoDBFilters', () => {
 			}, getModel({
 				foo: true,
 				dateModifiedTo: {
-					type: 'lesserOrEqual'
+					type: 'lesserOrEqual',
+					mapper: false
 				},
 				dateModifiedFromCustom: {
 					type: 'greaterOrEqual',
@@ -124,7 +134,7 @@ describe('MongoDBFilters', () => {
 					$eq: dateModified
 				},
 				dateModifiedTo: {
-					$lte: dateModified
+					$lte: dateModified.toISOString()
 				},
 				dateModifiedFromCustom: {
 					$gte: dateModified
