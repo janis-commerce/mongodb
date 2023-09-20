@@ -299,6 +299,26 @@ mongodb.get(myModel, {
 });
 ```
 
+The mapper option for a field can take three forms:
+```js
+mongodb.get(myModel, {
+	filters: {
+		myField: {
+			type: 'lesserOrEqual',
+			mapper: 'toDate'
+		}
+	}
+});
+```
+
+Declare a function: The value will pass through this function as a custom mapper.
+string: It will attempt to access existing mappers within the package.
+`false`: This disables any default mapper the field may have.
+
+For specific fields like dateCreated, dateCreatedFrom, dateCreatedTo, dateModified, dateModifiedFrom, and dateModifiedTo, it's important to note that they pass through the default mapper toDate by default.
+
+In all cases, if the mapper does not conform to these specifications, an error will be raised.
+
 The following table shows all the supported filter types, and it's equivalence:
 
 | Type           | Mongo equivalence |
