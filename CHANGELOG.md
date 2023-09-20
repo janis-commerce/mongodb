@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [3.2.0] - 2023-09-20
+### Added
+- Fields `mapper` can now be set to automatically map a value of a filter
+
 ## [3.1.0] - 2023-08-16
 ### Added
 - When using `update()` method and received `options.updateOne` as **true**, will use `updateOne()` instead of `updateMany()` Mongo operation
