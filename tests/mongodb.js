@@ -1344,6 +1344,56 @@ describe('MongoDB', () => {
 			}, expectedItem, options);
 		});
 
+		it('Should update with multiple data and skip set date modified if the flag is enable', async () => {
+
+			const id = '5df0151dbc1d570011949d86';
+
+			const item = {
+				otherId: '5df0151dbc1d570011949d87',
+				name: 'Some name',
+				description: 'The description'
+			};
+
+			const item2 = {
+				$unset: ['children.5df0151dbc1d570011949d88', 'children.5df0151dbc1d570011949d89']
+			};
+
+			const options = { upsert: true, skipAutomaticSetModifiedData: true };
+
+			const updateMany = sinon.stub().resolves({ modifiedCount: 1 });
+
+			const collection = stubMongo(true, { updateMany });
+
+			const mongodb = new MongoDB(config);
+
+			const result = await mongodb.update(getModel({
+				otherId: {
+					isID: true
+				}
+			}), [item, item2], { id }, options);
+
+			assert.deepStrictEqual(result, 1);
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+
+			const expectedItem = [
+				{
+					$set: {
+						otherId: ObjectId('5df0151dbc1d570011949d87'),
+						name: 'Some name',
+						description: 'The description'
+					}
+				},
+				{ $unset: ['children.5df0151dbc1d570011949d88', 'children.5df0151dbc1d570011949d89'] }
+			];
+
+			sinon.assert.calledOnceWithExactly(updateMany, {
+				_id: {
+					$eq: ObjectId(id)
+				}
+			}, expectedItem, { upsert: true });
+		});
+
 		it('Should throw with multiple data but multiple stage in one pipeline', async () => {
 
 			const id = '5df0151dbc1d570011949d86';
@@ -1409,6 +1459,37 @@ describe('MongoDB', () => {
 				$set: {
 					status: 'processing',
 					dateModified: sinon.match.date
+				}
+			}, {});
+
+		});
+
+		it('Should use updateOne() method when updateOne option was received and skip set date modified if the flag is enable', async () => {
+
+			const updateOne = sinon.stub().resolves({ modifiedCount: 1 });
+
+			const collection = stubMongo(true, { updateOne });
+
+			const mongodb = new MongoDB(config);
+
+			const result = await mongodb.update(getModel(), {
+				status: 'processing'
+			}, {
+				status: 'pending'
+			}, {
+				updateOne: true,
+				skipAutomaticSetModifiedData: true
+			});
+
+			assert.deepStrictEqual(result, 1);
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+
+			sinon.assert.calledOnceWithExactly(updateOne, {
+				status: { $eq: 'pending' }
+			}, {
+				$set: {
+					status: 'processing'
 				}
 			}, {});
 
