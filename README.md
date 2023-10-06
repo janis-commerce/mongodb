@@ -481,12 +481,13 @@ await mongo.get(model, { order: { id: 'desc' } });
 
 </details>
 
-### ***async*** `getTotals(model)`
+### ***async*** `getTotals(model, filter)`
 
 <details>
-<summary>Gets information about the quantity of documents matched by the last call to the `get()` method.</summary>
+<summary>Gets information about the quantity of documents matched by filters if present or the last call to the `get()` method.</summary>
 
 - model: `Model`: A model instance used for the query. **IMPORTANT**: This must be the same instance.
+- filter `Object|Array<Object>`: Sets the criteria to match documents. An object means AND operation between multiple filters. An array mean an OR operation. See examples [above](#filters).
 
 - Resolves `Object`: An object containing the totalizers
 - Rejects `Error` When something bad occurs
@@ -503,6 +504,11 @@ Return example:
 
 If the last query response was empty, it will just return the `total` and `pages` properties with a value of zero.
 
+
+
+**Since *3.2.0*:**
+- Added filter to params. If no filter param is present it will use last query filters. If no query was executed before, it will return the totals of the whole collection without filters.
+
 **Since *2.5.8*:**
 - If no query was executed before, it will return the totals of the whole collection without filters.
 
@@ -511,6 +517,10 @@ If the last query response was empty, it will just return the `total` and `pages
 // getTotals
 result = await mongo.getTotals(model);
 // > { page: 1, limit: 500, pages: 1, total: 4 }
+
+// with filter
+result = await mongo.getTotals(model, { name: 'foo' });
+// > { page: 1, limit: 500, pages: 1, total: 1 }
 ```
 
 </details>

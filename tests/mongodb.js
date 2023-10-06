@@ -2274,6 +2274,34 @@ describe('MongoDB', () => {
 
 				sinon.assert.notCalled(estimatedDocumentCount);
 			});
+
+			it('Should return the totals object for queries with filters though params, specific page and custom limit using countDocuments()', async () => {
+
+				const mongodb = new MongoDB(config);
+
+				const estimatedDocumentCount = sinon.stub();
+				const countDocuments = sinon.stub().resolves(4);
+
+				const { collection } = mockChain(true, [{ a: 3 }, { a: 4 }], { countDocuments, estimatedDocumentCount });
+
+				const model = getModel();
+				const result = await mongodb.getTotals(model, { status: 'active' });
+
+				assert.deepStrictEqual(result, {
+					total: 4,
+					pageSize: 500,
+					page: 0,
+					pages: 1
+				});
+
+				// Collection no se llama para el get
+				sinon.assert.calledOnce(collection);
+				sinon.assert.calledOnceWithExactly(countDocuments, {
+					status: { $eq: 'active' }
+				});
+
+				sinon.assert.notCalled(estimatedDocumentCount);
+			});
 		});
 
 		context('When not using filters', () => {
