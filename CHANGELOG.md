@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [3.4.0] - 2023-10-06
+### Added
+- Add filters in getTotals methods to improve the response
+
 ## [3.3.0] - 2023-09-21
 ### Added
 - Update method now accepts the `skipAutomaticSetModifiedData` option to avoid updating the `dateModified` field
