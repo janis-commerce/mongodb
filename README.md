@@ -15,22 +15,28 @@ npm install --save @janiscommerce/mongodb
 
 ### MongoDB Driver v4
 
-Now we are using [mongodb](https://www.npmjs.com/package/mongodb) `^4.3.1` driver (upgraded from v3)
+Now we are using [mongodb](https://www.npmjs.com/package/mongodb) `^4.x.x` version of the driver (upgraded from v3)
 
 ### Events and closing connections
 
-To close connections, it is optional to define the environment variable `CLOSE_MONGODB_CONNECTIONS`.
-Connections will be closed according to `CLOSE_MONGODB_CONNECTIONS` environment variable value:
+<details>
 
-| Value | Close connection | Remarks |
-|-------|------------------|---------|
-| `undefined` (no value set) | :white_check_mark: | **Default behavior**, if you not set any value or create the env variable. |
-| `'false'` or `false` | :x: | :warning: Can be `false` or `'false'` because env variables are saved as string. |
-| `1`, `'true'`, etc (any value set) | :white_check_mark: | Any other value different from the above. :warning:  We recommend to use `true` or no set any value. |
+<summary>Closing (or not) connections after ending execution</summary>
+
+To close connections, it is optional to define the environment variable `CLOSE_MONGODB_CONNECTIONS`.
+The possible scenarios are:
+
+| Value of env | Close connection |
+|--------------|------------------|
+| `undefined` (no value set) | :white_check_mark: |
+| `1`, `'true'`, etc (any value set) | :white_check_mark: |
+| `'false'` or `false` | :x: |
 
 Connection will be closed by emitting a `janiscommerce.ended` event. The event will be emitted in the end of `janiscommerce` functions.
 
 For more information see [@janiscommerce/events](https://www.npmjs.com/package/@janiscommerce/events).
+
+</details>
 
 ## Models
 Whenever the `Model` type is mentioned in this document, it refers to an instance of [@janiscommerce/model](https://www.npmjs.com/package/@janiscommerce/model).
@@ -477,6 +483,37 @@ await mongo.get(model, { limit: 10, page: 2 filters: { name: 'foo' } })
 // finding all entries ordered descendently by id
 await mongo.get(model, { order: { id: 'desc' } });
 // > [ ... ] // Every document in the collection, ordered by descending id, up to 500 documents.
+```
+
+</details>
+
+### ***async*** `getPaged(model, parameters, callback)`
+
+<details>
+<summary>Searches all documents from a collection that matches with filters</summary>
+
+> This method uses _cursors_ with [Asynchronous Iteration](https://www.mongodb.com/docs/drivers/node/current/fundamentals/crud/read-operations/cursor/#asynchronous-iteration).
+
+Find and accumulates documents in batch using `parameters.limit` or default value (500), for each batch calls the callback received.
+Returns the `total` documents quantity, the `batchSize` used and the number `pages` found.
+
+#### Parameters
+- model: `Model`: A model instance
+- parameters: `Object`: The query parameters. Use `{}` when no special parameter needed. This parameters are the same defined in `get()` method
+- callback: `function`:  A function to be executed for each page. Receives three arguments: the items found for the page, the current page number and the batch size used.
+
+#### Response
+- response: `Object`
+	- total: `Integer`: The documents total quantity.
+	- batchSize: `Integer`: The batch size used in `find()` query operations.
+	- pages: `Integer`: The totals pages found.
+
+#### Example
+```js
+const { total, batchSize, pages } = await myModel.getPaged(model, { filters: { status: 'active' } }, (items, page, limit) => {
+	// do some stuff with the "page" items
+});
+
 ```
 
 </details>

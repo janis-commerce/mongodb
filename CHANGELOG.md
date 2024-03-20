@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [3.5.0] - 2024-03-20
+### Added
+- New method `getPaged()` using _**cursor**_ and async iterators for getting all documents of a collection
+
 ## [3.4.0] - 2023-10-06
 ### Added
 - Add filters in getTotals methods to improve the response

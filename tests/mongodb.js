@@ -71,22 +71,23 @@ describe('MongoDB', () => {
 	const mockChain = (getDbIsSuccessful = true, response = [], collectionExtraData) => {
 
 		const toArray = response instanceof Error ? sinon.stub().rejects(response) : sinon.stub().resolves(response);
-		const project = sinon.stub().returns({ toArray });
-		const limit = sinon.stub().returns({ project, toArray });
-		const skip = sinon.stub().returns({ limit });
-		const sort = sinon.stub().returns({ skip });
-		const find = sinon.stub().returns({ sort });
+		const limit = sinon.stub();
+		const skip = sinon.stub().returns({ limit }); // the only one that is chainable
+		const project = sinon.stub();
+		const sort = sinon.stub();
 
-		const collection = stubMongo(getDbIsSuccessful, { find, ...(collectionExtraData || {}) });
+		const find = sinon.stub().returns({
+			sort, project, skip, toArray
+		});
 
 		return {
 			toArray,
-			project,
 			limit,
 			skip,
+			project,
 			sort,
 			find,
-			collection
+			collection: stubMongo(getDbIsSuccessful, { find, ...(collectionExtraData || {}) })
 		};
 	};
 
@@ -96,7 +97,8 @@ describe('MongoDB', () => {
 
 		sinon.assert.calledOnceWithExactly(stubs.find, filters);
 
-		sinon.assert.calledOnceWithExactly(stubs.sort, order);
+		if(order)
+			sinon.assert.calledOnceWithExactly(stubs.sort, order);
 
 		sinon.assert.calledOnceWithExactly(stubs.skip, skip);
 
@@ -513,6 +515,145 @@ describe('MongoDB', () => {
 
 				assertChain(stubs, 'myCollection', {}, undefined, 0, 500, { foo: true });
 			});
+		});
+	});
+
+	describe('getPaged()', () => {
+
+		const asyncIteratorMockChain = (getDbIsSuccessful = true, itemsToResolve = []) => {
+
+			const cursorStub = {
+				[Symbol.asyncIterator]() {
+					return {
+						async next() {
+
+							if(!itemsToResolve.length)
+								return { done: true };
+
+							const item = itemsToResolve.shift();
+
+							return { value: item, done: false };
+						}
+					};
+				},
+				project: sinon.stub(),
+				sort: sinon.stub(),
+				batchSize: sinon.stub()
+			};
+
+			const find = sinon.stub().returns(cursorStub);
+			const collection = stubMongo(getDbIsSuccessful, { find });
+
+			return {
+				cursorStub,
+				find,
+				collection
+			};
+		};
+
+		it('Should throw if no model is passed', async () => {
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.getPaged(null), {
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
+		it('Should throw if connection to DB fails', async () => {
+
+			const collection = stubMongo(false);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.getPaged(getModel(), {}), {
+				message: 'Error getting DB',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.notCalled(collection);
+		});
+
+		it('Should call the callback with pages for default batch size (500)', async () => {
+
+			const batchSize = 500;
+
+			const { find, cursorStub } = asyncIteratorMockChain(true, [
+				{ foo: 1 },
+				{ bar: 2 }
+			]);
+
+			const callbackStub = sinon.stub().resolves();
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.getPaged(getModel(), {}, callbackStub);
+
+			sinon.assert.calledOnceWithExactly(callbackStub, [{ foo: 1 }, { bar: 2 }], 1, batchSize);
+
+			sinon.assert.calledOnceWithExactly(find, {});
+			sinon.assert.calledOnceWithExactly(cursorStub.batchSize, batchSize);
+			sinon.assert.notCalled(cursorStub.sort);
+			sinon.assert.notCalled(cursorStub.project);
+
+			assert.deepStrictEqual(result, { total: 2, batchSize, pages: 1 });
+		});
+
+		it('Should call the callback for every page items using custom batchSize', async () => {
+
+			const batchSize = 1;
+
+			const { find, cursorStub } = asyncIteratorMockChain(true, [
+				{ foo: 1 },
+				{ bar: 2 }
+			]);
+
+			const callbackStub = sinon.stub().resolves();
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.getPaged(getModel(), { limit: 1 }, callbackStub);
+
+			sinon.assert.calledTwice(callbackStub);
+			sinon.assert.calledWithExactly(callbackStub, [{ foo: 1 }], 1, batchSize);
+			sinon.assert.calledWithExactly(callbackStub, [{ bar: 2 }], 2, batchSize);
+
+			sinon.assert.calledOnceWithExactly(find, {});
+			sinon.assert.calledOnceWithExactly(cursorStub.batchSize, batchSize);
+			sinon.assert.notCalled(cursorStub.sort);
+			sinon.assert.notCalled(cursorStub.project);
+
+			assert.deepStrictEqual(result, { total: 2, batchSize, pages: 2 });
+		});
+
+		it('Should call the callback for every page items using custom batchSize when page is not full and full params applied', async () => {
+
+			const batchSize = 2;
+
+			const { find, cursorStub } = asyncIteratorMockChain(true, [
+				{ key: 3 },
+				{ key: 2 },
+				{ key: 1 }
+			]);
+
+			const callbackStub = sinon.stub().resolves();
+
+			const mongodb = new MongoDB(config);
+
+			const params = {
+				filters: { key: { type: 'greater', value: 4 } },
+				limit: batchSize,
+				order: { key: 'desc' },
+				fields: ['key']
+			};
+
+			const result = await mongodb.getPaged(getModel(), params, callbackStub);
+
+			sinon.assert.calledTwice(callbackStub);
+			sinon.assert.calledWithExactly(callbackStub, [{ key: 3 }, { key: 2 }], 1, batchSize);
+			sinon.assert.calledWithExactly(callbackStub, [{ key: 1 }], 2, batchSize);
+
+			sinon.assert.calledOnceWithExactly(find, { key: { $gt: 4 } });
+			sinon.assert.calledOnceWithExactly(cursorStub.batchSize, batchSize);
+			sinon.assert.calledOnceWithExactly(cursorStub.sort, { key: -1 });
+			sinon.assert.calledOnceWithExactly(cursorStub.project, { key: true });
+
+			assert.deepStrictEqual(result, { total: 3, batchSize, pages: 2 });
 		});
 	});
 
@@ -2331,7 +2472,6 @@ describe('MongoDB', () => {
 				sinon.assert.calledOnceWithExactly(estimatedDocumentCount);
 				sinon.assert.notCalled(countDocuments);
 			});
-
 
 			it('Should return the totals object for one item using estimatedDocumentCount()', async () => {
 

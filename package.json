@@ -26,10 +26,10 @@
   "dependencies": {
     "@janiscommerce/events": "^0.2.0",
     "@janiscommerce/superstruct": "^1.2.1",
-    "mongodb": "^4.13.0"
+    "mongodb": "^4.17.2"
   },
   "devDependencies": {
-    "@janiscommerce/model": "^6.8.2",
+    "@janiscommerce/model": "^8.5.0",
     "eslint": "^8.50.0",
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-plugin-import": "^2.28.1",
