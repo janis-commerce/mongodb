@@ -2128,9 +2128,9 @@ describe('MongoDB', () => {
 								name: 'Some name',
 								status: 'active',
 								quantity: 100
-							}
-						},
-						$currentDate: { dateModified: true }
+							},
+							$currentDate: { dateModified: true }
+						}
 					}
 				},
 				{
@@ -2142,9 +2142,9 @@ describe('MongoDB', () => {
 							$set: {
 								otherId: '5df0151dbc1d570011949d88',
 								name: 'Some name'
-							}
-						},
-						$currentDate: { dateModified: true }
+							},
+							$currentDate: { dateModified: true }
+						}
 					}
 				}
 			];
