@@ -2093,7 +2093,7 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 		});
 
-		it.only('Should add Default modified Values', async () => {
+		it('Should add Default modified Values', async () => {
 
 			const item2 = {
 				otherId: '5df0151dbc1d570011949d88',
