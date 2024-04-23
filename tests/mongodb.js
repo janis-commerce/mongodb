@@ -2151,6 +2151,42 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(bulkWrite, expectedItems);
 		});
+
+		it('Should set default filters if none is received', async () => {
+
+			const bulkWrite = sinon.stub().resolves({ result: { ok: 2 } });
+
+			const collection = stubMongo(true, { bulkWrite });
+
+			const mongodb = new MongoDB(config);
+
+			const result = await mongodb.multiUpdate(getModel(), [
+				{ data: item1 }
+			]);
+
+			assert.deepStrictEqual(result, true);
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+
+			const expectedItems = [
+				{
+					updateMany: {
+						filter: {},
+						update: {
+							$set: {
+								otherId: '5df0151dbc1d570011949d87',
+								name: 'Some name',
+								status: 'active',
+								quantity: 100
+							},
+							$currentDate: { dateModified: true }
+						}
+					}
+				}
+			];
+
+			sinon.assert.calledOnceWithExactly(bulkWrite, expectedItems);
+		});
 	});
 
 	describe('remove()', () => {
