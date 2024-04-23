@@ -652,6 +652,30 @@ await mongo.multiSave(model, [
 
 </details>
 
+### ***async*** `multiUpdate(model, operations)`
+
+<details>
+<summary>Updates multiple documents in a collection.</summary>
+
+- model: `Model`: A model instance used for the query.
+- operations: `Array<Object>`: Array of objects, each defining a filter and the data to update in the documents that match the filter. Each object represents an individual `updateMany` operation on the database.
+- operations.filter: `Object`: Filters used to select the documents to be updated.
+- operations.data: `Object`: Key-value pairs representing the fields to update and their new values in the documents that match the corresponding filter.
+
+- Resolves `Boolean`: `true` if items can be upserted
+- Rejects `Error` When something bad occurs
+
+**Usage:**
+```js
+await mongo.multiUpdate(model, [
+   { filter: { id: [1,2,3] }, data: { name: 'test 1' } },
+   { filter: { otherId: 4 }, data: { name: 'test 2' } }
+]);
+// > true
+```
+
+</details>
+
 ### ***async*** `remove(model, item)`
 
 <details>

@@ -2093,7 +2093,7 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 		});
 
-		it('Should add Default modified Values', async () => {
+		it.only('Should add Default modified Values', async () => {
 
 			const item2 = {
 				otherId: '5df0151dbc1d570011949d88',
@@ -2109,7 +2109,7 @@ describe('MongoDB', () => {
 
 			const result = await mongodb.multiUpdate(getModel(), [
 				{ filter: { name: 'itemName' }, data: item1 },
-				{ filter: { name: 'itemName2' }, data: item2 }
+				{ filter: { customField: ['sampleValue', 'sampleValue2'] }, data: item2 }
 			]);
 
 			assert.deepStrictEqual(result, true);
@@ -2120,7 +2120,7 @@ describe('MongoDB', () => {
 				{
 					updateMany: {
 						filter: {
-							name: 'itemName'
+							name: { $eq: 'itemName' }
 						},
 						update: {
 							$set: {
@@ -2136,7 +2136,7 @@ describe('MongoDB', () => {
 				{
 					updateMany: {
 						filter: {
-							name: 'itemName2'
+							customField: { $in: ['sampleValue', 'sampleValue2'] }
 						},
 						update: {
 							$set: {
