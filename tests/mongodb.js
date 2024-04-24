@@ -2152,7 +2152,7 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(bulkWrite, expectedItems);
 		});
 
-		it('Should set default filters if none is received', async () => {
+		it('Should not update operations with no data to update', async () => {
 
 			const bulkWrite = sinon.stub().resolves({ result: { ok: 2 } });
 
@@ -2160,32 +2160,28 @@ describe('MongoDB', () => {
 
 			const mongodb = new MongoDB(config);
 
-			const result = await mongodb.multiUpdate(getModel(), [
-				{ data: item1 }
+			await mongodb.multiUpdate(getModel(), [
+				{ filter: { name: 'itemName' } }
 			]);
 
-			assert.deepStrictEqual(result, true);
+			sinon.assert.notCalled(collection);
+			sinon.assert.notCalled(bulkWrite);
+		});
 
-			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+		it('Should reject if no filter is received', async () => {
 
-			const expectedItems = [
-				{
-					updateMany: {
-						filter: {},
-						update: {
-							$set: {
-								otherId: '5df0151dbc1d570011949d87',
-								name: 'Some name',
-								status: 'active',
-								quantity: 100
-							},
-							$currentDate: { dateModified: true }
-						}
-					}
-				}
-			];
+			const bulkWrite = sinon.stub().resolves({ result: { ok: 2 } });
 
-			sinon.assert.calledOnceWithExactly(bulkWrite, expectedItems);
+			const collection = stubMongo(true, { bulkWrite });
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(mongodb.multiUpdate(getModel(), [
+				{ data: item1 }
+			]), { message: 'Every operation must have filters to apply'});
+
+			sinon.assert.notCalled(collection);
+			sinon.assert.notCalled(bulkWrite);
 		});
 	});
 
