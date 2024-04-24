@@ -2178,7 +2178,7 @@ describe('MongoDB', () => {
 
 			await assert.rejects(mongodb.multiUpdate(getModel(), [
 				{ data: item1 }
-			]), { message: 'Every operation must have filters to apply'});
+			]), { message: 'Every operation must have filters to apply' });
 
 			sinon.assert.notCalled(collection);
 			sinon.assert.notCalled(bulkWrite);
