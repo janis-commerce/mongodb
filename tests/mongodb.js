@@ -2160,9 +2160,9 @@ describe('MongoDB', () => {
 
 			const mongodb = new MongoDB(config);
 
-			await mongodb.multiUpdate(getModel(), [
+			await assert.rejects(mongodb.multiUpdate(getModel(), [
 				{ filter: { name: 'itemName' } }
-			]);
+			]), { message: 'Every operation must have data to update' });
 
 			sinon.assert.notCalled(collection);
 			sinon.assert.notCalled(bulkWrite);
