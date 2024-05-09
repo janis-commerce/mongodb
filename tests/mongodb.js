@@ -2029,6 +2029,162 @@ describe('MongoDB', () => {
 		});
 	});
 
+	describe('multiUpdate()', () => {
+
+		const id = '5df0151dbc1d570011949d86';
+
+		const item1 = {
+			id,
+			otherId: '5df0151dbc1d570011949d87',
+			name: 'Some name',
+			dateCreated: new Date(),
+			status: 'active',
+			quantity: 100
+		};
+
+		const sampleOperation = { filter: { name: 'itemName' }, data: item1 };
+
+		it('Should throw if no model is passed', async () => {
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.multiUpdate(null), {
+				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
+		it('Should throw if operations are not an array', async () => {
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.multiUpdate(getModel(), {}), {
+				code: MongoDBError.codes.INVALID_ITEM
+			});
+		});
+
+		it('Should throw if operations array is empty', async () => {
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.multiUpdate(getModel(), []), {
+				code: MongoDBError.codes.INVALID_ITEM
+			});
+		});
+
+		it('Should throw if connection to DB fails', async () => {
+
+			const collection = stubMongo(false);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.multiUpdate(getModel(), [sampleOperation]), {
+				message: 'Error getting DB',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.notCalled(collection);
+		});
+
+		it('Should throw if mongodb bulkWrite method fails', async () => {
+
+			const bulkWrite = sinon.stub().rejects(new Error('BulkWrite internal error'));
+
+			const collection = stubMongo(true, { bulkWrite });
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.multiUpdate(getModel(), [sampleOperation]), {
+				message: 'BulkWrite internal error',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+		});
+
+		it('Should add Default modified Values', async () => {
+
+			const item2 = {
+				otherId: '5df0151dbc1d570011949d88',
+				name: 'Some name',
+				dateModified: new Date()
+			};
+
+			const bulkWrite = sinon.stub().resolves({ result: { ok: 2 } });
+
+			const collection = stubMongo(true, { bulkWrite });
+
+			const mongodb = new MongoDB(config);
+
+			const result = await mongodb.multiUpdate(getModel(), [
+				{ filter: { name: 'itemName' }, data: item1 },
+				{ filter: { customField: ['sampleValue', 'sampleValue2'] }, data: item2 }
+			]);
+
+			assert.deepStrictEqual(result, true);
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+
+			const expectedItems = [
+				{
+					updateMany: {
+						filter: {
+							name: { $eq: 'itemName' }
+						},
+						update: {
+							$set: {
+								otherId: '5df0151dbc1d570011949d87',
+								name: 'Some name',
+								status: 'active',
+								quantity: 100
+							},
+							$currentDate: { dateModified: true }
+						}
+					}
+				},
+				{
+					updateMany: {
+						filter: {
+							customField: { $in: ['sampleValue', 'sampleValue2'] }
+						},
+						update: {
+							$set: {
+								otherId: '5df0151dbc1d570011949d88',
+								name: 'Some name'
+							},
+							$currentDate: { dateModified: true }
+						}
+					}
+				}
+			];
+
+			sinon.assert.calledOnceWithExactly(bulkWrite, expectedItems);
+		});
+
+		it('Should not update operations with no data to update', async () => {
+
+			const bulkWrite = sinon.stub().resolves({ result: { ok: 2 } });
+
+			const collection = stubMongo(true, { bulkWrite });
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(mongodb.multiUpdate(getModel(), [
+				{ filter: { name: 'itemName' } }
+			]), { message: 'Every operation must have data to update' });
+
+			sinon.assert.notCalled(collection);
+			sinon.assert.notCalled(bulkWrite);
+		});
+
+		it('Should reject if no filter is received', async () => {
+
+			const bulkWrite = sinon.stub().resolves({ result: { ok: 2 } });
+
+			const collection = stubMongo(true, { bulkWrite });
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(mongodb.multiUpdate(getModel(), [
+				{ data: item1 }
+			]), { message: 'Every operation must have filters to apply' });
+
+			sinon.assert.notCalled(collection);
+			sinon.assert.notCalled(bulkWrite);
+		});
+	});
+
 	describe('remove()', () => {
 
 		it('Should throw if no model is passed', async () => {
