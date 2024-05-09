@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [3.6.0] - 2024-05-09
+### Added
+- Add *multiUpdate* method to update multiple documents with different filters and values.
+
 ## [3.5.0] - 2024-03-20
 ### Added
 - New method `getPaged()` using _**cursor**_ and async iterators for getting all documents of a collection
