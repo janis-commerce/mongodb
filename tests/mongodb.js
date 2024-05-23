@@ -9,6 +9,8 @@ const MongoDB = require('../lib/mongodb');
 
 describe('MongoDB', () => {
 
+	const comment = 'MyLambdaFunction';
+
 	const createUniqueIndex = index => {
 		if(Array.isArray(index)) {
 			return {
@@ -95,7 +97,7 @@ describe('MongoDB', () => {
 
 		sinon.assert.calledOnceWithExactly(stubs.collection, collectionName);
 
-		sinon.assert.calledOnceWithExactly(stubs.find, filters);
+		sinon.assert.calledOnceWithExactly(stubs.find, filters, { comment });
 
 		if(order)
 			sinon.assert.calledOnceWithExactly(stubs.sort, order);
@@ -112,6 +114,10 @@ describe('MongoDB', () => {
 
 	beforeEach(() => {
 		sinon.stub(MongoWrapper.prototype, 'connect');
+		sinon.stub(process, 'env').value({
+			...process.env,
+			AWS_LAMBDA_FUNCTION_NAME: 'MyLambdaFunction'
+		});
 	});
 
 	afterEach(() => {
@@ -182,7 +188,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(collectionStub, 'myCollection');
 
-			sinon.assert.calledOnceWithExactly(mongoDistinctStub, 'foo', {});
+			sinon.assert.calledOnceWithExactly(mongoDistinctStub, 'foo', {}, { comment });
 		});
 
 		it('Should pass the parsed filters to the mongodb distinct method', async () => {
@@ -203,7 +209,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(collectionStub, 'myCollection');
 
-			sinon.assert.calledOnceWithExactly(mongoDistinctStub, 'foo', { field1: { $eq: 'value1' } });
+			sinon.assert.calledOnceWithExactly(mongoDistinctStub, 'foo', { field1: { $eq: 'value1' } }, { comment });
 		});
 	});
 
@@ -587,7 +593,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(callbackStub, [{ foo: 1 }, { bar: 2 }], 1, batchSize);
 
-			sinon.assert.calledOnceWithExactly(find, {});
+			sinon.assert.calledOnceWithExactly(find, {}, { comment });
 			sinon.assert.calledOnceWithExactly(cursorStub.batchSize, batchSize);
 			sinon.assert.notCalled(cursorStub.sort);
 			sinon.assert.notCalled(cursorStub.project);
@@ -613,7 +619,7 @@ describe('MongoDB', () => {
 			sinon.assert.calledWithExactly(callbackStub, [{ foo: 1 }], 1, batchSize);
 			sinon.assert.calledWithExactly(callbackStub, [{ bar: 2 }], 2, batchSize);
 
-			sinon.assert.calledOnceWithExactly(find, {});
+			sinon.assert.calledOnceWithExactly(find, {}, { comment });
 			sinon.assert.calledOnceWithExactly(cursorStub.batchSize, batchSize);
 			sinon.assert.notCalled(cursorStub.sort);
 			sinon.assert.notCalled(cursorStub.project);
@@ -648,7 +654,7 @@ describe('MongoDB', () => {
 			sinon.assert.calledWithExactly(callbackStub, [{ key: 3 }, { key: 2 }], 1, batchSize);
 			sinon.assert.calledWithExactly(callbackStub, [{ key: 1 }], 2, batchSize);
 
-			sinon.assert.calledOnceWithExactly(find, { key: { $gt: 4 } });
+			sinon.assert.calledOnceWithExactly(find, { key: { $gt: 4 } }, { comment });
 			sinon.assert.calledOnceWithExactly(cursorStub.batchSize, batchSize);
 			sinon.assert.calledOnceWithExactly(cursorStub.sort, { key: -1 });
 			sinon.assert.calledOnceWithExactly(cursorStub.project, { key: true });
@@ -744,7 +750,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
-			}, { upsert: true, returnNewDocument: true });
+			}, { upsert: true, returnNewDocument: true, comment });
 		});
 
 		it('Should use a unique index as filter if id is not passed', async () => {
@@ -782,7 +788,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
-			}, { upsert: true, returnNewDocument: true });
+			}, { upsert: true, returnNewDocument: true, comment });
 		});
 
 		['indexes', 'uniqueIndexes'].forEach(indexesGetter => {
@@ -824,7 +830,7 @@ describe('MongoDB', () => {
 						},
 						$currentDate: { dateModified: true },
 						$setOnInsert: { dateCreated: sinon.match.date }
-					}, { upsert: true, returnNewDocument: true });
+					}, { upsert: true, returnNewDocument: true, comment });
 				});
 			});
 		});
@@ -864,7 +870,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
-			}, { upsert: true, returnNewDocument: true });
+			}, { upsert: true, returnNewDocument: true, comment });
 		});
 
 		it('Should use extra default insert values', async () => {
@@ -903,7 +909,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date, ...setOnInsert }
-			}, { upsert: true, returnNewDocument: true });
+			}, { upsert: true, returnNewDocument: true, comment });
 		});
 
 		it('Should throw if no unique indexes are defined and id is not passed', async () => {
@@ -984,7 +990,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
-			}, { upsert: true, returnNewDocument: true });
+			}, { upsert: true, returnNewDocument: true, comment });
 		});
 
 		it('Should remove conflictive fields from default insert values', async () => {
@@ -1028,7 +1034,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date, quantity: 100 }
-			}, { upsert: true, returnNewDocument: true });
+			}, { upsert: true, returnNewDocument: true, comment });
 		});
 
 		it('Should map the model defined ID fields to ObjectIds', async () => {
@@ -1067,7 +1073,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
-			}, { upsert: true, returnNewDocument: true });
+			}, { upsert: true, returnNewDocument: true, comment });
 		});
 
 		it('Should send only in $setOnInsert the dateCreated value when received as valid iso date', async () => {
@@ -1097,7 +1103,7 @@ describe('MongoDB', () => {
 				$set: { name: 'Blue rocket' },
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: new Date(item.dateCreated) }
-			}, { upsert: true, returnNewDocument: true });
+			}, { upsert: true, returnNewDocument: true, comment });
 		});
 
 		it('Should send only in $setOnInsert the dateCreated value when received as valid date object', async () => {
@@ -1127,7 +1133,7 @@ describe('MongoDB', () => {
 				$set: { name: 'Blue rocket' },
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: new Date(item.dateCreated) }
-			}, { upsert: true, returnNewDocument: true });
+			}, { upsert: true, returnNewDocument: true, comment });
 		});
 
 		it('Should send current Date when received an invalid date as string', async () => {
@@ -1159,7 +1165,7 @@ describe('MongoDB', () => {
 				$set: { name: 'Blue rocket' },
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: new Date() }
-			}, { upsert: true, returnNewDocument: true });
+			}, { upsert: true, returnNewDocument: true, comment });
 		});
 	});
 
@@ -1240,7 +1246,7 @@ describe('MongoDB', () => {
 				dateCreated: sinon.match.date
 			};
 
-			sinon.assert.calledOnceWithExactly(insertOne, expectedItem);
+			sinon.assert.calledOnceWithExactly(insertOne, expectedItem, { comment });
 		});
 
 		it('Should insert item adding the dateCreated value when received as valid iso date', async () => {
@@ -1266,7 +1272,7 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(insertOne, {
 				name: item.name,
 				dateCreated: new Date(item.dateCreated)
-			});
+			}, { comment });
 		});
 
 		it('Should insert item adding the dateCreated value when received as valid date object', async () => {
@@ -1292,7 +1298,7 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(insertOne, {
 				name: item.name,
 				dateCreated: new Date(item.dateCreated)
-			});
+			}, { comment });
 		});
 
 		it('Should insert item using current Date on dateCreated field when received an invalid date as string', async () => {
@@ -1320,7 +1326,7 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(insertOne, {
 				name: item.name,
 				dateCreated: new Date()
-			});
+			}, { comment });
 		});
 	});
 
@@ -1431,7 +1437,10 @@ describe('MongoDB', () => {
 				_id: {
 					$eq: ObjectId(id)
 				}
-			}, expectedItem, options);
+			}, expectedItem, {
+				...options,
+				comment
+			});
 		});
 
 		it('Should update with multiple data', async () => {
@@ -1482,7 +1491,10 @@ describe('MongoDB', () => {
 				_id: {
 					$eq: ObjectId(id)
 				}
-			}, expectedItem, options);
+			}, expectedItem, {
+				...options,
+				comment
+			});
 		});
 
 		it('Should update with multiple data and skip set date modified if the flag is enable', async () => {
@@ -1532,7 +1544,10 @@ describe('MongoDB', () => {
 				_id: {
 					$eq: ObjectId(id)
 				}
-			}, expectedItem, { upsert: true });
+			}, expectedItem, {
+				upsert: true,
+				comment
+			});
 		});
 
 		it('Should throw with multiple data but multiple stage in one pipeline', async () => {
@@ -1601,7 +1616,7 @@ describe('MongoDB', () => {
 					status: 'processing',
 					dateModified: sinon.match.date
 				}
-			}, {});
+			}, { comment });
 
 		});
 
@@ -1632,7 +1647,7 @@ describe('MongoDB', () => {
 				$set: {
 					status: 'processing'
 				}
-			}, {});
+			}, { comment });
 
 		});
 	});
@@ -1734,7 +1749,10 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-			sinon.assert.calledOnceWithExactly(insertMany, [expectedItem], { ordered: false });
+			sinon.assert.calledOnceWithExactly(insertMany, [expectedItem], {
+				ordered: false,
+				comment
+			});
 		});
 
 		it('Should not convert the id has ObjectId when hasCustomId is truthy', async () => {
@@ -1779,7 +1797,10 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
-			sinon.assert.calledOnceWithExactly(insertMany, [{ ...expectedItem, _id: customId }], { ordered: false });
+			sinon.assert.calledOnceWithExactly(insertMany, [{ ...expectedItem, _id: customId }], {
+				ordered: false,
+				comment
+			});
 		});
 
 		it('Should insert items and not throw when duplicate error', async () => {
@@ -2025,7 +2046,7 @@ describe('MongoDB', () => {
 				}
 			];
 
-			sinon.assert.calledOnceWithExactly(bulkWrite, expectedItems);
+			sinon.assert.calledOnceWithExactly(bulkWrite, expectedItems, { comment });
 		});
 	});
 
@@ -2149,7 +2170,7 @@ describe('MongoDB', () => {
 				}
 			];
 
-			sinon.assert.calledOnceWithExactly(bulkWrite, expectedItems);
+			sinon.assert.calledOnceWithExactly(bulkWrite, expectedItems, { comment });
 		});
 
 		it('Should not update operations with no data to update', async () => {
@@ -2263,7 +2284,7 @@ describe('MongoDB', () => {
 				}
 			};
 
-			sinon.assert.calledOnceWithExactly(deleteOne, expectedItem);
+			sinon.assert.calledOnceWithExactly(deleteOne, expectedItem, { comment });
 		});
 
 		it('Should delete the item using a unique index if ID is not defined', async () => {
@@ -2294,7 +2315,7 @@ describe('MongoDB', () => {
 				}
 			};
 
-			sinon.assert.calledOnceWithExactly(deleteOne, expectedItem);
+			sinon.assert.calledOnceWithExactly(deleteOne, expectedItem, { comment });
 		});
 
 		it('Should throw if no unique indexes can be matched', async () => {
@@ -2404,7 +2425,7 @@ describe('MongoDB', () => {
 				}
 			};
 
-			sinon.assert.calledOnceWithExactly(deleteMany, expectedFilter);
+			sinon.assert.calledOnceWithExactly(deleteMany, expectedFilter, { comment });
 		});
 	});
 
@@ -2531,7 +2552,7 @@ describe('MongoDB', () => {
 				sinon.assert.calledTwice(collection);
 				sinon.assert.calledOnceWithExactly(countDocuments, {
 					status: { $eq: 'active' }
-				});
+				}, { comment });
 
 				sinon.assert.notCalled(estimatedDocumentCount);
 			});
@@ -2567,7 +2588,7 @@ describe('MongoDB', () => {
 				sinon.assert.calledTwice(collection);
 				sinon.assert.calledOnceWithExactly(countDocuments, {
 					status: { $eq: 'active' }
-				});
+				}, { comment });
 
 				sinon.assert.notCalled(estimatedDocumentCount);
 			});
@@ -2595,7 +2616,7 @@ describe('MongoDB', () => {
 				sinon.assert.calledOnce(collection);
 				sinon.assert.calledOnceWithExactly(countDocuments, {
 					status: { $eq: 'active' }
-				});
+				}, { comment });
 
 				sinon.assert.notCalled(estimatedDocumentCount);
 			});
@@ -2625,7 +2646,7 @@ describe('MongoDB', () => {
 
 				// Collection se llama una vez para el get
 				sinon.assert.calledTwice(collection);
-				sinon.assert.calledOnceWithExactly(estimatedDocumentCount);
+				sinon.assert.calledOnceWithExactly(estimatedDocumentCount, { comment });
 				sinon.assert.notCalled(countDocuments);
 			});
 
@@ -2656,7 +2677,7 @@ describe('MongoDB', () => {
 
 				// Collection se llama una vez para el get
 				sinon.assert.calledTwice(collection);
-				sinon.assert.calledOnceWithExactly(estimatedDocumentCount);
+				sinon.assert.calledOnceWithExactly(estimatedDocumentCount, { comment });
 				sinon.assert.notCalled(countDocuments);
 			});
 		});
@@ -2750,7 +2771,11 @@ describe('MongoDB', () => {
 							dateModified: sinon.match.date
 						},
 						$inc: incrementData
-					}, { upsert: false, returnNewDocument: true });
+					}, {
+						upsert: false,
+						returnNewDocument: true,
+						comment
+					});
 				});
 
 				it('Should use a unique index as filter if id is not passed', async () => {
@@ -2776,7 +2801,11 @@ describe('MongoDB', () => {
 							dateModified: sinon.match.date
 						},
 						$inc: incrementData
-					}, { upsert: false, returnNewDocument: true });
+					}, {
+						upsert: false,
+						returnNewDocument: true,
+						comment
+					});
 				});
 
 				it('Should use a multifield unique index as filter if id is not passed', async () => {
@@ -2807,7 +2836,11 @@ describe('MongoDB', () => {
 							dateModified: sinon.match.date
 						},
 						$inc: incrementData
-					}, { upsert: false, returnNewDocument: true });
+					}, {
+						upsert: false,
+						returnNewDocument: true,
+						comment
+					});
 				});
 
 				it('Should update only with increments and dateModified if no Set Data is passed', async () => {
@@ -2832,7 +2865,11 @@ describe('MongoDB', () => {
 							dateModified: sinon.match.date
 						},
 						$inc: incrementData
-					}, { upsert: false, returnNewDocument: true });
+					}, {
+						upsert: false,
+						returnNewDocument: true,
+						comment
+					});
 				});
 
 				it('Should throw if no unique indexes are defined', async () => {
@@ -2972,7 +3009,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(collectionStub, 'myCollection');
 
-			sinon.assert.calledOnceWithExactly(indexesStub);
+			sinon.assert.calledOnceWithExactly(indexesStub, { comment });
 		});
 	});
 
@@ -3086,7 +3123,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(collectionStub, 'myCollection');
 
-			sinon.assert.calledOnceWithExactly(createIndexesStub, indexes);
+			sinon.assert.calledOnceWithExactly(createIndexesStub, indexes, { comment });
 		});
 
 		it('Should return false if can\'t create the indexes into the model collection', async () => {
@@ -3103,7 +3140,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(collectionStub, 'myCollection');
 
-			sinon.assert.calledOnceWithExactly(createIndexesStub, indexes);
+			sinon.assert.calledOnceWithExactly(createIndexesStub, indexes, { comment });
 		});
 	});
 
@@ -3311,7 +3348,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(collectionStub, 'myCollection');
 
-			sinon.assert.calledOnceWithExactly(dropIndexStub, index);
+			sinon.assert.calledOnceWithExactly(dropIndexStub, index, { comment });
 		});
 
 		it('Should return false if can\'t drop the index from the model collection', async () => {
@@ -3328,7 +3365,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(collectionStub, 'myCollection');
 
-			sinon.assert.calledOnceWithExactly(dropIndexStub, index);
+			sinon.assert.calledOnceWithExactly(dropIndexStub, index, { comment });
 		});
 	});
 
@@ -3362,7 +3399,7 @@ describe('MongoDB', () => {
 			sinon.assert.calledTwice(dropIndexStub);
 
 			indexes.forEach((index, i) => {
-				sinon.assert.calledWithExactly(dropIndexStub.getCall(i), index);
+				sinon.assert.calledWithExactly(dropIndexStub.getCall(i), index, { comment });
 			});
 		});
 
@@ -3392,7 +3429,7 @@ describe('MongoDB', () => {
 			sinon.assert.calledTwice(dropIndexStub);
 
 			indexes.forEach((index, i) => {
-				sinon.assert.calledWithExactly(dropIndexStub.getCall(i), index);
+				sinon.assert.calledWithExactly(dropIndexStub.getCall(i), index, { comment });
 			});
 		});
 
@@ -3413,7 +3450,7 @@ describe('MongoDB', () => {
 			sinon.assert.calledTwice(dropIndexStub);
 
 			indexes.forEach((index, i) => {
-				sinon.assert.calledWithExactly(dropIndexStub.getCall(i), index);
+				sinon.assert.calledWithExactly(dropIndexStub.getCall(i), index, { comment });
 			});
 		});
 
@@ -3468,7 +3505,7 @@ describe('MongoDB', () => {
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
 
-			sinon.assert.calledOnceWithExactly(dropDatabaseStub);
+			sinon.assert.calledOnceWithExactly(dropDatabaseStub, { comment });
 		});
 
 		it('Should return true if can drop the database when dropDatabase is called', async () => {
@@ -3484,7 +3521,7 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, true);
 
-			sinon.assert.calledOnceWithExactly(dropDatabaseStub);
+			sinon.assert.calledOnceWithExactly(dropDatabaseStub, { comment });
 		});
 
 		it('Should return false if can\'t drop the database when dropDatabase is called', async () => {
@@ -3500,7 +3537,7 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, false);
 
-			sinon.assert.calledOnceWithExactly(dropDatabaseStub);
+			sinon.assert.calledOnceWithExactly(dropDatabaseStub, { comment });
 		});
 	});
 
@@ -3534,7 +3571,7 @@ describe('MongoDB', () => {
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
 
-			sinon.assert.calledOnceWithExactly(dropCollectionStub);
+			sinon.assert.calledOnceWithExactly(dropCollectionStub, { comment });
 		});
 
 		it('Should return true if can drop the collection when dropCollection is called', async () => {
@@ -3552,7 +3589,7 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, true);
 
-			sinon.assert.calledOnceWithExactly(dropCollectionStub);
+			sinon.assert.calledOnceWithExactly(dropCollectionStub, { comment });
 		});
 
 		it('Should return false if can\'t drop the collection when dropCollection is called', async () => {
@@ -3570,7 +3607,7 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, false);
 
-			sinon.assert.calledOnceWithExactly(dropCollectionStub);
+			sinon.assert.calledOnceWithExactly(dropCollectionStub, { comment });
 		});
 	});
 
@@ -3604,7 +3641,7 @@ describe('MongoDB', () => {
 				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
 			});
 
-			sinon.assert.calledOnceWithExactly(deleteAllDocumentsStub, {});
+			sinon.assert.calledOnceWithExactly(deleteAllDocumentsStub, {}, { comment });
 		});
 
 		it('Should return the count of deleted documents if can delete collection documents when deleteAllDocuments is called', async () => {
@@ -3622,7 +3659,7 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, 10);
 
-			sinon.assert.calledOnceWithExactly(deleteAllDocumentsStub, {});
+			sinon.assert.calledOnceWithExactly(deleteAllDocumentsStub, {}, { comment });
 		});
 
 		it('Should pass the filter for the deleteMany command when filter received', async () => {
@@ -3640,7 +3677,7 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, 10);
 
-			sinon.assert.calledOnceWithExactly(deleteAllDocumentsStub, { code: 2 });
+			sinon.assert.calledOnceWithExactly(deleteAllDocumentsStub, { code: 2 }, { comment });
 		});
 
 		it('Should return 0 if can\'t delete collection documents when deleteAllDocuments is called', async () => {
@@ -3658,7 +3695,7 @@ describe('MongoDB', () => {
 
 			assert.deepStrictEqual(result, 0);
 
-			sinon.assert.calledOnceWithExactly(deleteAllDocumentsStub, {});
+			sinon.assert.calledOnceWithExactly(deleteAllDocumentsStub, {}, { comment });
 		});
 	});
 
@@ -3755,7 +3792,7 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(aggregate, [
 				{ $match: { _id: ObjectId(itemId), referenceId: 'display-id' } },
 				{ $unset: 'category' }
-			]);
+			], { comment });
 
 			sinon.assert.calledOnce(toArray);
 		});
