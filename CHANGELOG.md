@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [3.7.0] - 2024-06-05
+### Added
+- Every query now includes the Lambda function name in a `$comment` to facilitate slow queries debugging
+
 ## [3.6.0] - 2024-05-09
 ### Added
 - Add *multiUpdate* method to update multiple documents with different filters and values.
