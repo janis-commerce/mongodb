@@ -2423,7 +2423,7 @@ describe('MongoDB', () => {
 					}
 				}
 			];
-			
+
 			sinon.assert.calledOnceWithExactly(bulkWrite, expectedItems, { comment });
 		});
 
