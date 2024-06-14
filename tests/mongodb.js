@@ -2052,13 +2052,22 @@ describe('MongoDB', () => {
 
 	describe('multiUpdate()', () => {
 
+		const fakeNow = new Date();
+
+		beforeEach(() => {
+			sinon.useFakeTimers({ now: fakeNow });
+		});
+
+		afterEach(() => {
+			sinon.restore();
+		});
+
 		const id = '5df0151dbc1d570011949d86';
 
 		const item1 = {
 			id,
 			otherId: '5df0151dbc1d570011949d87',
 			name: 'Some name',
-			dateCreated: new Date(),
 			status: 'active',
 			quantity: 100
 		};
@@ -2119,7 +2128,7 @@ describe('MongoDB', () => {
 			const item2 = {
 				otherId: '5df0151dbc1d570011949d88',
 				name: 'Some name',
-				dateModified: new Date()
+				dateModified: fakeNow
 			};
 
 			const bulkWrite = sinon.stub().resolves({ result: { ok: 2 } });
@@ -2145,12 +2154,13 @@ describe('MongoDB', () => {
 						},
 						update: {
 							$set: {
+								_id: new ObjectId(id),
 								otherId: '5df0151dbc1d570011949d87',
+								dateModified: fakeNow,
 								name: 'Some name',
 								status: 'active',
 								quantity: 100
-							},
-							$currentDate: { dateModified: true }
+							}
 						}
 					}
 				},
@@ -2162,14 +2172,258 @@ describe('MongoDB', () => {
 						update: {
 							$set: {
 								otherId: '5df0151dbc1d570011949d88',
-								name: 'Some name'
-							},
-							$currentDate: { dateModified: true }
+								name: 'Some name',
+								dateModified: fakeNow
+							}
 						}
 					}
 				}
 			];
 
+			sinon.assert.calledOnceWithExactly(bulkWrite, expectedItems, { comment });
+		});
+
+		it('Should NOT add Default modified Values if skipAutomaticSetModifiedData is received', async () => {
+
+			const bulkWrite = sinon.stub().resolves({ result: { ok: 2 } });
+
+			const collection = stubMongo(true, { bulkWrite });
+
+			const mongodb = new MongoDB(config);
+
+			const result = await mongodb.multiUpdate(getModel(), [
+				{
+					filter: { name: 'itemName' },
+					data: [{
+						$set: {
+							id,
+							values: {
+								$concatArrays: ['$values', [8, 6]]
+							}
+						}
+					}],
+					options: { skipAutomaticSetModifiedData: true }
+				}
+			]);
+
+			assert.deepStrictEqual(result, true);
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+
+			const expectedItems = [
+				{
+					updateMany: {
+						filter: {
+							name: { $eq: 'itemName' }
+						},
+						update: [
+							{
+								$set: {
+									_id: new ObjectId(id),
+									values: {
+										$concatArrays: ['$values', [8, 6]]
+									}
+								}
+							}]
+					}
+				}
+			];
+
+			sinon.assert.calledOnceWithExactly(bulkWrite, expectedItems, { comment });
+		});
+
+		it('Should successfully format pipeline operations', async () => {
+
+			const bulkWrite = sinon.stub().resolves({ result: { ok: 2 } });
+
+			const collection = stubMongo(true, { bulkWrite });
+
+			const mongodb = new MongoDB(config);
+
+			const result = await mongodb.multiUpdate(getModel(), [
+				{
+					filter: { name: 'itemName' },
+					data: [{
+						$set: {
+							id,
+							values: {
+								$concatArrays: ['$values', [8, 6]]
+							}
+						}
+					}]
+				},
+				{
+					filter: { customField: ['sampleValue', 'sampleValue2'] },
+					data: [
+						{
+							$addFields: {
+								tempsF: {
+									$map: {
+										input: '$temperature',
+										as: 'celsius',
+										in: { $add: [{ $multiply: ['$$celsius', 10 / 5] }, 32] }
+									}
+								}
+							}
+						}
+					]
+				}
+			]);
+
+			assert.deepStrictEqual(result, true);
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+
+			const expectedItems = [
+				{
+					updateMany: {
+						filter: {
+							name: { $eq: 'itemName' }
+						},
+						update: [
+							{
+								$set: {
+									_id: new ObjectId(id),
+									values: {
+										$concatArrays: ['$values', [8, 6]]
+									}
+								}
+							},
+							{
+								$set: {
+									dateModified: fakeNow
+								}
+							}]
+					}
+				},
+				{
+					updateMany: {
+						filter: {
+							customField: { $in: ['sampleValue', 'sampleValue2'] }
+						},
+						update: [
+							{
+								$addFields: {
+									tempsF: {
+										$map: {
+											input: '$temperature',
+											as: 'celsius',
+											in: {
+												$add: [
+													{ $multiply: ['$$celsius', 2] }, 32]
+											}
+										}
+									}
+								}
+							},
+							{
+								$set: {
+									dateModified: fakeNow
+								}
+							}
+						]
+					}
+				}
+			];
+
+			sinon.assert.calledOnceWithExactly(bulkWrite, expectedItems, { comment });
+		});
+
+		it('Should use the correct update method for each operation', async () => {
+
+			const bulkWrite = sinon.stub().resolves({ result: { ok: 2 } });
+
+			const collection = stubMongo(true, { bulkWrite });
+
+			const mongodb = new MongoDB(config);
+
+			const result = await mongodb.multiUpdate(getModel(), [
+				{
+					filter: { name: 'itemName' },
+					data: [{
+						$set: {
+							id,
+							values: {
+								$concatArrays: ['$values', [8, 6]]
+							}
+						}
+					}]
+				},
+				{
+					filter: { customField: ['sampleValue', 'sampleValue2'] },
+					data: [
+						{
+							$addFields: {
+								tempsF: {
+									$map: {
+										input: '$temperature',
+										as: 'celsius',
+										in: { $add: [{ $multiply: ['$$celsius', 10 / 5] }, 32] }
+									}
+								}
+							}
+						}
+					],
+					options: { updateOne: true }
+				}
+			]);
+
+			assert.deepStrictEqual(result, true);
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+
+			const expectedItems = [
+				{
+					updateMany: {
+						filter: {
+							name: { $eq: 'itemName' }
+						},
+						update: [
+							{
+								$set: {
+									_id: new ObjectId(id),
+									values: {
+										$concatArrays: ['$values', [8, 6]]
+									}
+								}
+							},
+							{
+								$set: {
+									dateModified: fakeNow
+								}
+							}]
+					}
+				},
+				{
+					updateOne: {
+						filter: {
+							customField: { $in: ['sampleValue', 'sampleValue2'] }
+						},
+						update: [
+							{
+								$addFields: {
+									tempsF: {
+										$map: {
+											input: '$temperature',
+											as: 'celsius',
+											in: {
+												$add: [
+													{ $multiply: ['$$celsius', 2] }, 32]
+											}
+										}
+									}
+								}
+							},
+							{
+								$set: {
+									dateModified: fakeNow
+								}
+							}
+						]
+					}
+				}
+			];
+			
 			sinon.assert.calledOnceWithExactly(bulkWrite, expectedItems, { comment });
 		});
 
