@@ -1,0 +1,41 @@
+networks:
+  mongodb-integration-tests:
+    external: false
+    name: mongodb-integration-tests
+
+services:
+
+  mongodb:
+    container_name: mongodb-integration-tests-db
+    image: mongo:${MONGODB_VERSION:-6}
+    ports:
+      - "33333:27017"
+    networks:
+      mongodb-integration-tests:
+        aliases:
+          - mongodb-integration-tests-db.localhost
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | ${MONGO_CLI_TOOL:-mongosh} mongodb-integration-tests-db.localhost:27017/test --quiet
+      # It is expected to start in no mre than 15s.
+      start_period: 15s
+      # During start period, healthcheck will be repeated every 2s
+      start_interval: 2s
+      # After start period, healthcheck will be repeated every 1m
+      interval: 1m
+
+  test-runner:
+    container_name: mongodb-integration-tests-runner
+    image: node:18-alpine
+    working_dir: /mongodb/integration-tests
+    volumes:
+      - ..:/mongodb
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      - AWS_LAMBDA_FUNCTION_NAME=TestLambdaFunction
+    networks:
+      mongodb-integration-tests:
+        aliases:
+          - mongodb-integration-tests-runner.localhost
+    command: "node index.js"

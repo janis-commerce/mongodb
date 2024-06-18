@@ -33,7 +33,7 @@ module.exports = {
 		'consistent-return': 0,
 		'prefer-template': 0,
 		'import/no-unresolved': 0,
-		'import/no-extraneous-dependencies': ['error', { devDependencies: ['**/tests/**/*.js'] }],
+		'import/no-extraneous-dependencies': ['error', { devDependencies: ['**/tests/**/*.js', '**/integration-tests/**/*.js'] }],
 
 		'no-bitwise': 0,
 
