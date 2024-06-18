@@ -26,7 +26,7 @@
   "dependencies": {
     "@janiscommerce/events": "^0.2.0",
     "@janiscommerce/superstruct": "^1.2.1",
-    "mongodb": "^5.9.2"
+    "mongodb": "^6.7.0"
   },
   "devDependencies": {
     "@janiscommerce/model": "^8.5.0",
