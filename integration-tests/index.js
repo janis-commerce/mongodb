@@ -16,12 +16,11 @@ const mocha = new Mocha();
 		mocha.addFile(`./fixtures/${fixture}`);
 	});
 
-	mocha.loadFilesAsync()
-		.then(() => mocha.run(failures => {
-			process.exit(failures ? 1 : 0);
-		}))
-		.catch(error => {
-			console.error(error);
-			process.exit(1);
-		});
+	// Set to false to avoid mixing tests DB data
+	mocha.parallelMode(false);
+
+	mocha.run(failures => {
+		process.exit(failures ? 1 : 0);
+	});
+
 })();
