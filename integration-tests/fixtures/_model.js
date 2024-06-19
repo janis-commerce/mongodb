@@ -6,10 +6,6 @@ module.exports = class TestModel {
 		return 'integration-tests';
 	}
 
-	get database() {
-		return 'test';
-	}
-
 	static get indexes() {
 		return [
 			{
