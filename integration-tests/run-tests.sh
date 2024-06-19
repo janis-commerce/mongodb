@@ -17,6 +17,9 @@ runTest() {
 	docker compose --project-directory $DIR down
 }
 
+runTest 7
+echo ''
+
 runTest 6
 echo ''
 
