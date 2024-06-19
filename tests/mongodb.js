@@ -1,3 +1,5 @@
+/* eslint-disable max-classes-per-file */
+
 'use strict';
 
 const assert = require('assert');
@@ -70,7 +72,7 @@ describe('MongoDB', () => {
 		return collection;
 	};
 
-	const mockChain = (getDbIsSuccessful = true, response = [], collectionExtraData) => {
+	const mockChain = (getDbIsSuccessful = true, response = [], collectionExtraData = {}) => {
 
 		const toArray = response instanceof Error ? sinon.stub().rejects(response) : sinon.stub().resolves(response);
 		const limit = sinon.stub();
@@ -89,7 +91,7 @@ describe('MongoDB', () => {
 			project,
 			sort,
 			find,
-			collection: stubMongo(getDbIsSuccessful, { find, ...(collectionExtraData || {}) })
+			collection: stubMongo(getDbIsSuccessful, { find, ...collectionExtraData })
 		};
 	};
 
@@ -1584,7 +1586,6 @@ describe('MongoDB', () => {
 					isID: true
 				}
 			}), [item, item2], { id }, options));
-
 
 			sinon.assert.notCalled(collection);
 			sinon.assert.notCalled(updateMany);
