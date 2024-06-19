@@ -2,6 +2,7 @@
 
 DIR=`dirname $(readlink -f $0)`
 
+# Usage: runTest <mongodb version> <mongo cli tool = 'mongo' | 'mongosh'>
 runTest() {
 
 	echo "Running integration tests with mongodb server v$1..."
