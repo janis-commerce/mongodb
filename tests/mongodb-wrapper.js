@@ -172,7 +172,6 @@ describe('MongoWrapper', () => {
 			const mongoWrapper = new MongoWrapper(config);
 			await mongoWrapper.makeQuery(model, callback);
 
-
 			sinon.assert.calledOnceWithExactly(RealMongoClient.prototype.connect);
 
 			await Events.emit('janiscommerce.ended');
@@ -205,7 +204,6 @@ describe('MongoWrapper', () => {
 
 			sinon.assert.calledOnceWithExactly(closeStub, true);
 		});
-
 
 		it('Should call the callback, passing the collection defined by the model', async () => {
 

@@ -195,7 +195,7 @@ await mongo.update(
 // Updating certain elements of an array
 /* Sample document to match
 {
-	_id: ObjectID('5df0151dbc1d570011949d86'),
+	_id: new ObjectID('5df0151dbc1d570011949d86'),
 	items: [{ name: 'foo', price: 90 },{ name: 'bar', price: 45 }]
 }
 */
@@ -208,7 +208,7 @@ await mongo.update(
 // > Number
 /* Output
 {
-	_id: ObjectID('5df0151dbc1d570011949d86'),
+	_id: new ObjectID('5df0151dbc1d570011949d86'),
 	items: [{ name: 'foo', price: 100 },{ name: 'bar', price: 45 }]
 }
 */
@@ -427,10 +427,10 @@ mongodb.get(myModel, {
 // This is converted to the following mongo filter:
 {
 	id: {
-		$eq: ObjectId('5df0151dbc1d570011949d86') // Automatically converted to ObjectId, default $eq type
+		$eq: new ObjectId('5df0151dbc1d570011949d86') // Automatically converted to ObjectId, default $eq type
 	},
 	otherIdField: {
-		$in: [ObjectId('5df0151dbc1d570011949d87'), ObjectId('5df0151dbc1d570011949d88')] // Converted to ObjectId by model, default $in type
+		$in: [new ObjectId('5df0151dbc1d570011949d87'), new ObjectId('5df0151dbc1d570011949d88')] // Converted to ObjectId by model, default $in type
 	},
 	greaterField: {
 		$gte: 15 // $gte type defined by model
@@ -454,7 +454,7 @@ If you want to filter by fields inside objects, you can use nested filters. For 
 
 /* Sample document to match
 {
-	_id: ObjectID('5df0151dbc1d570011949d86'),
+	_id: new ObjectID('5df0151dbc1d570011949d86'),
 	someField: {
 		foo: 'bar'
 	}
@@ -734,7 +734,7 @@ await mongo.multiRemove(model, { name: { type: 'search', value: 'test' } });
 await mongo.increment(model, { status: 'pending' }, { pendingDaysQuantity: 1 }, { updatedDate: new Date() });
 /* Output:
 {
-   _id: ObjectID('5df0151dbc1d570011949d86'),
+   _id: new ObjectID('5df0151dbc1d570011949d86'),
    status: 'pending',
    pendingDaysQuantity: 4
    updatedDate:ISODate("2020-11-09T14:01:29.170Z")
