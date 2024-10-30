@@ -17,27 +17,6 @@ npm install --save @janiscommerce/mongodb
 
 Now we are using [mongodb](https://www.npmjs.com/package/mongodb) `^4.x.x` version of the driver (upgraded from v3)
 
-### Events and closing connections
-
-<details>
-
-<summary>Closing (or not) connections after ending execution</summary>
-
-To close connections, it is optional to define the environment variable `CLOSE_MONGODB_CONNECTIONS`.
-The possible scenarios are:
-
-| Value of env | Close connection |
-|--------------|------------------|
-| `undefined` (no value set) | :white_check_mark: |
-| `1`, `'true'`, etc (any value set) | :white_check_mark: |
-| `'false'` or `false` | :x: |
-
-Connection will be closed by emitting a `janiscommerce.ended` event. The event will be emitted in the end of `janiscommerce` functions.
-
-For more information see [@janiscommerce/events](https://www.npmjs.com/package/@janiscommerce/events).
-
-</details>
-
 ## Models
 Whenever the `Model` type is mentioned in this document, it refers to an instance of [@janiscommerce/model](https://www.npmjs.com/package/@janiscommerce/model).
 
@@ -53,6 +32,7 @@ This is used to configure which collection should be used, which unique indexes 
 
 **Properties:**
 
+- connectionString `String` (optional): Full connectionString to connect, default: `localhost`. _Since 3.9.0_
 - host `String` (optional): MongoDB host, default: `localhost`
 - protocol `String` (optional): host protocol, default: `mongodb://`
 - port `Number` (optional): host port, default none
