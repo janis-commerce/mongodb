@@ -9,15 +9,6 @@ module.exports = {
 		mocha: true
 	},
 
-	globals: {
-		__rootpath: true,
-		coreRequire: true,
-		mainRequire: true,
-		JANIS_CORE: true,
-		JANIS_ENV: true,
-		JANIS_ENV_ALIAS: true
-	},
-
 	parserOptions: {
 		sourceType: 'script',
 		ecmaVersion: 2024
@@ -114,6 +105,7 @@ module.exports = {
 			ObjectExpression: { minProperties: 5, multiline: true, consistent: true },
 			ObjectPattern: { minProperties: 5, multiline: true, consistent: true }
 		}],
-		'nonblock-statement-body-position': ['error', 'below', { overrides: { else: 'any' } }]
+		'nonblock-statement-body-position': ['error', 'below', { overrides: { else: 'any' } }],
+		strict: ['error', 'global']
 	}
 };
