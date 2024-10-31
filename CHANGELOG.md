@@ -7,13 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [3.9.0-beta.4] - 2024-10-31
+### Changed
+- _Internal_ GitHub actions improved
+
 ## [3.9.0-beta.3] - 2024-10-31
 ### Changed
 - Linter error fixed
 
 ## [3.9.0-beta.2] - 2024-10-31
 ### Changed
-- _Internal_ updated GitHub actions
+- _Internal_ GitHub actions improved
 
 ## [3.9.0-beta.1] - 2024-10-31
 ### Changed

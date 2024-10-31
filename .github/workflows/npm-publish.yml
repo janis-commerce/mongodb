@@ -2,31 +2,33 @@ name: NPM Publish
 
 on:
   push:
-    tags:
-      - '**'
+    tags: [ '*' ]
 
 jobs:
-  publish-npm:
-
-    name: Publish to npm
+  build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v2
-      - name: Use Node.js 18.x
-        uses: actions/setup-node@v1
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 18.x
+      - run: npm i
+      - run: npm test
+
+  publish-npm:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
         with:
           node-version: 18.x
           registry-url: https://registry.npmjs.org/
-      - name: Install dependencies
-        run: npm install
-      - name: Run tests
-        run: npm run test
-      - name: Lint code
-        run: npm run lint
-      - name: Build types
-        run: npm run build-types
-      - run: npm publish --access public
+      - run: npm i
+      - run: npm run build-types
+      - run: |
+          TAG=$(echo $GITHUB_REF_NAME | grep -oP '^v\d+\.\d+\.\d+-?\K(\w+)?')
+          npm publish --tag ${TAG:-latest} --access public
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
           SLACK_WEBHOOK: ${{secrets.slack_webhook}}
