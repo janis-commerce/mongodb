@@ -5,8 +5,6 @@ const sinon = require('sinon');
 
 const { MongoClient: RealMongoClient, ObjectId: RealObjectId } = require('mongodb');
 
-const Events = require('@janiscommerce/events');
-
 const { MongoWrapper, ObjectId } = require('../lib/mongodb-wrapper');
 
 describe('ObjectId', () => {
@@ -33,15 +31,10 @@ describe('MongoWrapper', () => {
 	beforeEach(() => {
 		sinon.stub(RealMongoClient.prototype, 'connect');
 		config.host = `${Date.now()}.localhost`;
-		process.env.CLOSE_MONGODB_CONNECTIONS = false;
 	});
 
 	afterEach(() => {
 		sinon.restore();
-		delete process.env.CLOSE_MONGODB_CONNECTIONS;
-
-		// eslint-disable-next-line no-underscore-dangle
-		MongoWrapper._cleanCloseFlag();
 	});
 
 	describe('Connection params', () => {
@@ -90,6 +83,23 @@ describe('MongoWrapper', () => {
 
 		});
 
+		it('Should choose connectionString param when received in config instead of full params', () => {
+
+			const mongoWrapper = new MongoWrapper({
+				connectionString: 'mongodb://test.foo.mongodb.net/test?authSource=%24external&authMechanism=MONGODB-AWS&retryWrites=true&w=majority',
+				protocol: 'mongodb+srv://',
+				host: 'test.foo.mongodb.net/test?retryWrites=true&w=majority',
+				database: 'myDatabase',
+				user: 'john.doe',
+				password: 'Str0ngP4ss',
+				port: 5646
+			});
+
+			assert.strictEqual(
+				mongoWrapper.connectionString,
+				'mongodb://test.foo.mongodb.net/test?authSource=%24external&authMechanism=MONGODB-AWS&retryWrites=true&w=majority'
+			);
+		});
 	});
 
 	describe('makeQuery()', () => {
@@ -152,60 +162,6 @@ describe('MongoWrapper', () => {
 
 			sinon.assert.calledOnceWithExactly(RealMongoClient.prototype.connect);
 		});
-
-		it('Should close the connection when janiscommerce.ended event was emitted', async () => {
-
-			const closeStub = sinon.stub();
-
-			process.env.CLOSE_MONGODB_CONNECTIONS = true;
-
-			RealMongoClient.prototype.connect.resolves({
-				isConnected: sinon.stub().returns(false),
-				db: sinon.stub().returns({
-					collection: sinon.stub()
-				}),
-				close: closeStub
-			});
-
-			const callback = sinon.stub();
-
-			const mongoWrapper = new MongoWrapper(config);
-			await mongoWrapper.makeQuery(model, callback);
-
-
-			sinon.assert.calledOnceWithExactly(RealMongoClient.prototype.connect);
-
-			await Events.emit('janiscommerce.ended');
-
-			sinon.assert.calledOnceWithExactly(closeStub, true);
-		});
-
-		it('Should close the connection when CLOSE_MONGODB_CONNECTIONS does not exist', async () => {
-
-			const closeStub = sinon.stub();
-
-			delete process.env.CLOSE_MONGODB_CONNECTIONS;
-
-			RealMongoClient.prototype.connect.resolves({
-				isConnected: sinon.stub().returns(false),
-				db: sinon.stub().returns({
-					collection: sinon.stub()
-				}),
-				close: closeStub
-			});
-
-			const callback = sinon.stub();
-
-			const mongoWrapper = new MongoWrapper(config);
-			await mongoWrapper.makeQuery(model, callback);
-
-			sinon.assert.calledOnceWithExactly(RealMongoClient.prototype.connect);
-
-			await Events.emit('janiscommerce.ended');
-
-			sinon.assert.calledOnceWithExactly(closeStub, true);
-		});
-
 
 		it('Should call the callback, passing the collection defined by the model', async () => {
 

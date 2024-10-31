@@ -26,11 +26,6 @@ describe('ConfigValidator - validate()', () => {
 		assert.throws(() => ConfigValidator.validate([]));
 	});
 
-	it('Should throw if database config is not defined', () => {
-		const { database, ...config } = validConfig;
-		assert.throws(() => ConfigValidator.validate(config));
-	});
-
 	it('Should throw if protocol config is not a string', () => {
 		assert.throws(() => ConfigValidator.validate({
 			...validConfig,
@@ -105,7 +100,7 @@ describe('ConfigValidator - validate()', () => {
 		assert.deepStrictEqual(finalConfig, fullConfig);
 	});
 
-	it('should avoid protocol duplication', () => {
+	it('Should avoid protocol duplication', () => {
 
 		const fullConfig = {
 			...validConfig,
@@ -118,7 +113,7 @@ describe('ConfigValidator - validate()', () => {
 		assert.deepStrictEqual(finalConfig.host, 'some.host');
 	});
 
-	it('should avoid writeConcern duplication when received as only parameter', () => {
+	it('Should avoid writeConcern duplication when received as only parameter', () => {
 
 		const fullConfig = {
 			...validConfig,
@@ -130,7 +125,7 @@ describe('ConfigValidator - validate()', () => {
 		assert.deepStrictEqual(finalConfig.host, 'some.host');
 	});
 
-	it('should avoid writeConcern duplication when received as first parameter', () => {
+	it('Should avoid writeConcern duplication when received as first parameter', () => {
 
 		const fullConfig = {
 			...validConfig,
@@ -142,7 +137,7 @@ describe('ConfigValidator - validate()', () => {
 		assert.deepStrictEqual(finalConfig.host, 'some.host?retryWrites=true');
 	});
 
-	it('should avoid writeConcern duplication when received as last parameter', () => {
+	it('Should avoid writeConcern duplication when received as last parameter', () => {
 
 		const fullConfig = {
 			...validConfig,
@@ -154,4 +149,10 @@ describe('ConfigValidator - validate()', () => {
 		assert.deepStrictEqual(finalConfig.host, 'some.host?retryWrites=true');
 	});
 
+	it('Should allow to config with connectionString instead of all parameters', () => {
+
+		assert.doesNotThrow(() => ConfigValidator.validate({
+			connectionString: 'mongodb://the-host.bv8jk.mongodb.net/?authSource=%24external&authMechanism=MONGODB-AWS&retryWrites=true&w=majority'
+		}));
+	});
 });

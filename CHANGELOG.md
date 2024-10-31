@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [3.9.0-beta.0] - 2024-10-31
+### Added
+- Config field `connectionString` to connect using that unique field
+
+### Changed
+- Config validation is performed with `fastest-validator`
+
+### Removed
+- "Close Connections" feature was removed because it was unhelpful and not working anyway.
+- Useless cache of `db()` method result
+
 ## [3.8.0] - 2024-06-27
 ## Changed
 - `MultiUpdate` method now accepts operations with pipeline aggregations
