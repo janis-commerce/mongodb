@@ -2,22 +2,31 @@ name: Build Status
 
 on:
   push:
-    branches: [ '*' ]
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
 
 jobs:
   build:
 
+    name: Build
     runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{matrix.node-version}}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{matrix.node-version}}
+      - name: Install dependencies
+        run: npm install
+      - name: Run tests
+        run: npm run test
+      - name: Lint code
+        run: npm run lint
 
     strategy:
       matrix:
-        node-version: [14.x]
-
-    steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: npm i
-    - run: npm test
+        node-version: [18.x]

@@ -2,30 +2,30 @@ name: NPM Publish
 
 on:
   push:
-    tags: [ '*' ]
+    tags:
+      - '**'
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
-        with:
-          node-version: 14.x
-      - run: npm i
-      - run: npm test
-
   publish-npm:
-    needs: build
+
+    name: Publish to npm
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v1
         with:
-          node-version: 14.x
+          node-version: 18.x
           registry-url: https://registry.npmjs.org/
-      - run: npm i
-      - run: npm run build-types
+      - name: Install dependencies
+        run: npm install
+      - name: Run tests
+        run: npm run test
+      - name: Lint code
+        run: npm run lint
+      - name: Build types
+        run: npm run build-types
       - run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
