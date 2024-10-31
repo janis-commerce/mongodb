@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [3.9.0-beta.1] - 2024-10-31
+### Changed
+- **Node** version updated to 18
+- **ESLint** ECMAScript version updated to 2024
+
 ## [3.9.0-beta.0] - 2024-10-31
 ### Added
 - Config field `connectionString` to connect using that unique field
