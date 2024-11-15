@@ -24,7 +24,7 @@
   },
   "homepage": "https://github.com/janis-commerce/mongodb#readme",
   "dependencies": {
-    "@janiscommerce/model": "^8.8.0-beta.1",
+    "@janiscommerce/model": "^8.8.0",
     "@janiscommerce/superstruct": "^1.2.1",
     "aws4": "^1.13.2",
     "fastest-validator": "^1.19.0",

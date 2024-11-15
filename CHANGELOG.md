@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [3.9.0] - 2024-11-15
+### Added
+- Config field `connectionString` to connect using that unique field
+
+### Changed
+- Config validation is performed with `fastest-validator`
+- _Internal_ **Node** version updated to 18 and **ESLint** ECMAScript version updated to 2024
+- _Internal_ GitHub actions improved
+
+### Removed
+- "Close Connections" feature was removed because it was unhelpful and not working anyway.
+- Useless cache of `db()` method result
+
 ## [3.9.0-beta.4] - 2024-10-31
 ### Changed
 - _Internal_ GitHub actions improved
