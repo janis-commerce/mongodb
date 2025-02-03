@@ -341,5 +341,20 @@ describe('MongoDBFilters', () => {
 			});
 		});
 
+		it('Should return value without modification when received raw prop as true', () => {
+
+			const parsedFilters = MongoDBFilters.parseFilters({
+				products: {
+					raw: true,
+					value: { $exists: true, $ne: null, $not: { $size: 0 } }
+				},
+				status: 'active'
+			}, getModel());
+
+			assert.deepStrictEqual(parsedFilters, {
+				products: { $exists: true, $ne: null, $not: { $size: 0 } },
+				status: { $eq: 'active' }
+			});
+		});
 	});
 });

@@ -28,6 +28,7 @@
     "@janiscommerce/superstruct": "^1.2.1",
     "aws4": "^1.13.2",
     "fastest-validator": "^1.19.0",
+    "lllog": "^1.1.2",
     "mongodb": "^4.17.2"
   },
   "devDependencies": {
