@@ -4051,6 +4051,38 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnce(toArray);
 		});
+
+		it('Should execute every pipe stage adding additional options when received', async () => {
+
+			const item = {
+				_id: itemId,
+				name: 'Some name',
+				referenceId: 'display-id'
+			};
+
+			const toArray = sinon.stub().resolves([item]);
+			const aggregate = sinon.stub().returns({ toArray });
+
+			const collection = stubMongo(true, { aggregate, toArray });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.aggregate(getModel(), stages, { allowDiskUse: true });
+
+			assert.deepStrictEqual(result, [{
+				id: itemId,
+				name: 'Some name',
+				referenceId: 'display-id'
+			}]);
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+
+			sinon.assert.calledOnceWithExactly(aggregate, [
+				{ $match: { _id: ObjectId(itemId), referenceId: 'display-id' } },
+				{ $unset: 'category' }
+			], { comment, allowDiskUse: true });
+
+			sinon.assert.calledOnce(toArray);
+		});
 	});
 
 	describe('idStruct()', () => {

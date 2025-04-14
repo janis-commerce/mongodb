@@ -894,13 +894,14 @@ await mongo.deleteAllDocuments('my-collection');
 
 </details>
 
-### ***async*** `aggregate(model, stages)`
+### ***async*** `aggregate(model, stages, options)`
 
 <details>
 <summary>Execute Aggregation operations to obtain computed results</summary>
 
 - model: `Model`: A model instance used for the query.
 - stages: `[Object]`: An array with the aggregation stages. See [Pipelines Stages - MongoDB documentation](https://www.mongodb.com/docs/manual/aggregation/#std-label-aggregation-pipeline-intro) for more information.
+- options: `[Object]`: An object with additional options. See [Aggregate Options](https://mongodb.github.io/node-mongodb-native/Next/interfaces/AggregateOptions.html) for more information.
 
 - Resolves `[Object]`: The results of executing the stages. The array may contain one document or multiple documents.
 - Rejects `Error` When something bad occurs
@@ -920,6 +921,20 @@ await mongo.aggregate(model, [
 		description: 'Product 1 description'
 	}
 ]
+*/
+```
+```js
+await mongo.aggregate(model, [
+	{ $group: { _id: '$status', count: { $sum: 1 } } }, // agrupa por status distintos y cuenta
+], {
+	allowDiskUse: true, // usa espacio en disco para optimizar la query
+	hint: { status: 1 } // hace que mongodb use el indice para optimizar la query
+});
+/* >
+	{
+		active: 2342,
+		inactive: 992
+	}
 */
 ```
 
@@ -971,3 +986,19 @@ The codes are the following:
 | 8    | Filter type not recognized         |
 | 9    | Invalid Increment Data             |
 | 10   | Invalid index structure            |
+
+## 🐛 Debugging
+
+If the environment variable `MONGODB_DEBUG` is set (to any truthy value), the following methods will log debug information before executing the query:
+
+* `distinct()`
+* `get()`
+* `getPaged()`
+* `getTotals()`
+* `aggregate()`
+
+The logger will output details like:
+
+* filters
+* sort
+* options

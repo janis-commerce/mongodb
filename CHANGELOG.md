@@ -7,12 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-## [3.10.0] - 2024-02-03
+## [3.11.0] - 2025-04-14
+### Added
+- `aggregate()` command now receives `options{}`
+
+## [3.10.0] - 2025-02-03
 ### Added
 - Added `raw` option to filters, allowing values to be passed without modification.
 - Added `MONGODB_DEBUG` env var to debug connection and queries
 
-## [3.9.0] - 2024-11-15
+## [3.9.0] - 2025-11-15
 ### Added
 - Config field `connectionString` to connect using that unique field
 
