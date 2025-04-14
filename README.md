@@ -925,10 +925,10 @@ await mongo.aggregate(model, [
 ```
 ```js
 await mongo.aggregate(model, [
-	{ $group: { _id: '$status', count: { $sum: 1 } } }, // agrupa por status distintos y cuenta
+	{ $group: { _id: '$status', count: { $sum: 1 } } },
 ], {
-	allowDiskUse: true, // usa espacio en disco para optimizar la query
-	hint: { status: 1 } // hace que mongodb use el indice para optimizar la query
+	allowDiskUse: true,
+	hint: { status: 1 }
 });
 /* >
 	{
