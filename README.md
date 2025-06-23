@@ -1,4 +1,3 @@
-
 # MongoDB
 
 ![Build Status](https://github.com/janis-commerce/mongodb/workflows/Build%20Status/badge.svg)
@@ -632,26 +631,94 @@ await mongo.multiSave(model, [
 
 </details>
 
-### ***async*** `multiUpdate(model, operations)`
+### ***async*** `multiUpdate(model, operations, options)`
 
 <details>
 <summary>Updates multiple documents in a collection.</summary>
 
 - model: `Model`: A model instance used for the query.
-- operations: `Array<Object>`: Array of objects, each defining a filter and the data to update in the documents that match the filter. Each object represents an individual `updateMany` operation on the database.
-- operations.filter: `Object`: Filters used to select the documents to be updated.
-- operations.data: `Object`: Key-value pairs representing the fields to update and their new values in the documents that match the corresponding filter.
+- operations: `Array<Object>`: Array of objects, each one defines a filter and the data to update in the documents that match. Each object represents an individual update operation in the database.
+- operations.filter: `Object`: Filters used to select the documents to update.
+- operations.data: `Object`: Fields and values to update in the documents that match the corresponding filter.
+- operations.options: `Object` (optional): Options for each individual operation:
+  - `updateOne: boolean` If `true`, uses `updateOne()` operation (updates only the first matching document). If `false` or not provided, uses `updateMany()` operation (updates all matching documents).
+  - `skipAutomaticSetModifiedData: boolean` If `true`, the `dateModified` field is not automatically updated.
+- options: `Object` (optional): Global options for the entire multiUpdate operation:
+  - `rawResponse: boolean` If `true`, returns an object with detailed information about the bulkWrite operation result (number of modified documents, errors, etc). By default, returns `true` for backward compatibility.
 
-- Resolves `Boolean`: `true` if items can be upserted
+- Resolves `Boolean|Object`: `true` if the operation was successful, or an object with details if `rawResponse: true` is used.
 - Rejects `Error` When something bad occurs
 
-**Usage:**
+**Basic usage (updateMany by default):**
 ```js
 await mongo.multiUpdate(model, [
    { filter: { id: [1,2,3] }, data: { name: 'test 1' } },
    { filter: { otherId: 4 }, data: { name: 'test 2' } }
 ]);
 // > true
+```
+
+**Usage with updateOne operations:**
+```js
+await mongo.multiUpdate(model, [
+   {
+     filter: { status: 'pending' },
+     data: { status: 'processing' },
+     options: { updateOne: true } // Only updates the first document found
+   },
+   {
+     filter: { category: 'electronics' },
+     data: { price: 100 },
+     options: { updateOne: false } // Updates all matching documents (same as default)
+   }
+]);
+// > true
+```
+
+**Advanced usage with rawResponse:**
+```js
+const result = await mongo.multiUpdate(model, [
+   { filter: { id: [1,2,3] }, data: { name: 'test 1' } },
+   { filter: { otherId: 4 }, data: { name: 'test 2' } }
+], { rawResponse: true });
+
+/* result:
+{
+  success: true,
+  modifiedCount: 2, // number of documents modified
+  matchedCount: 2,  // number of documents matched by the filters
+  upsertedCount: 0,
+  insertedCount: 0,
+  deletedCount: 0,
+  writeErrors: [],
+  writeConcernErrors: [],
+  operations: [     // detailed information for each operation
+    {
+      index: 0,
+      filter: { id: [1,2,3] },
+      data: { name: 'test 1' },
+      options: undefined,
+      success: true,
+      errors: []
+    },
+    {
+      index: 1,
+      filter: { otherId: 4 },
+      data: { name: 'test 2' },
+      options: undefined,
+      success: true,
+      errors: []
+    }
+  ]
+}
+*/
+
+// You can easily identify which operations succeeded and which failed:
+const successful = result.operations.filter(op => op.success);
+const failed = result.operations.filter(op => !op.success);
+
+console.log(`Successful operations: ${successful.length}`);
+console.log(`Failed operations: ${failed.length}`);
 ```
 
 </details>
@@ -776,229 +843,4 @@ await mongo.createIndex(model, {
 <summary>Creates multiple indexes into the collection.</summary>
 
 - model `Model`: A model instance
-- indexes `Array<object>`: An array with the indexes to create (index object structure defined in `createIndex` method)
-
-- Resolves `Boolean`: `true` if the indexes was successfully created
-- Rejects `Error`: When something bad occurs
-
-**Usage:**
-```js
-await mongo.createIndexes(model, [
-   {
-      name: 'some-index',
-      key: { field: 1 },
-      unique: true
-   },
-   {
-      name: 'other-index',
-      key: { otherField: 1 }
-   }
-]);
-// > true
-```
-
-</details>
-
-### ***async*** `dropIndex(model, indexName)`
-
-<details>
-<summary>Drops an index from the collection.</summary>
-
-- model `Model`: A model instance
-- indexName: `String`: The name of the index to drop
-
-- Resolves `Boolean`: `true` if the index was successfully dropped
-- Rejects `Error`: When something bad occurs
-
-**Usage:**
-```js
-await mongo.dropIndex(model, 'some-index');
-// > true
-```
-
-</details>
-
-### ***async*** `dropIndexes(model, indexNames)`
-
-<details>
-<summary>Drops multiple indexes from the collection.</summary>
-
-- model `Model`: A model instance
-- indexNames: `Array<string>`: The names of the indexs to drop
-
-- Resolves `Boolean`: `true` if the index was successfully dropped
-- Rejects `Error`: When something bad occurs
-
-**Usage:**
-```js
-await mongo.dropIndexes(model, ['some-index', 'other-index'])
-// > true
-```
-
-</details>
-
-### ***async*** `dropDatabase()`
-
-<details>
-<summary>Drops the database for the current config.</summary>
-
-- Resolves `Boolean`: `true` if the database was successfully dropped, false otherwise.
-- Rejects `Error`: When something bad occurs
-
-**Usage:**
-```js
-await mongo.dropDatabase();
-// > true|false
-```
-
-</details>
-
-</details>
-
-### ***async*** `dropCollection(collection)`
-
-<details>
-<summary>Drops a collection from the database for the current config.</summary>
-
-- collection: `String`: The collection name.
-
-- Resolves `Boolean`: `true` if the collection was successfully dropped, false otherwise.
-- Rejects `Error`: When something bad occurs
-
-**Usage:**
-```js
-await mongo.dropCollection('my-collection');
-// > true|false
-```
-
-</details>
-
-</details>
-
-### ***async*** `deleteAllDocuments(collection, filter)`
-
-<details>
-<summary>Deletes all documents from a collection of the database for the current config.</summary>
-
-- collection: `String`: The collection name.
-- filter: `Object`: Filter criteria to match documents
-
-- Resolves `Integer`: With the count of deleted documents.
-- Rejects `Error`: When something bad occurs
-
-**Usage:**
-```js
-await mongo.deleteAllDocuments('my-collection');
-// > 49
-```
-
-</details>
-
-### ***async*** `aggregate(model, stages, options)`
-
-<details>
-<summary>Execute Aggregation operations to obtain computed results</summary>
-
-- model: `Model`: A model instance used for the query.
-- stages: `[Object]`: An array with the aggregation stages. See [Pipelines Stages - MongoDB documentation](https://www.mongodb.com/docs/manual/aggregation/#std-label-aggregation-pipeline-intro) for more information.
-- options: `[Object]`: An object with additional options. See [Aggregate Options](https://mongodb.github.io/node-mongodb-native/Next/interfaces/AggregateOptions.html) for more information.
-
-- Resolves `[Object]`: The results of executing the stages. The array may contain one document or multiple documents.
-- Rejects `Error` When something bad occurs
-
-To learn more about aggregation, see [MongoDB documentation](https://www.mongodb.com/docs/manual/aggregation/#std-label-aggregation-pipeline-intro)
-
-**Usage:**
-```js
-await mongo.aggregate(model, [
-	{ $match: { id: '0000000055f2255a1a8e0c54' } }, // find the document with that id
-	{ $unset: 'category' }, // Removes the category field
-]);
-/* > [
-	{
-		id: '0000000055f2255a1a8e0c54',
-		name: 'Product 1',
-		description: 'Product 1 description'
-	}
-]
-*/
-```
-```js
-await mongo.aggregate(model, [
-	{ $group: { _id: '$status', count: { $sum: 1 } } },
-], {
-	allowDiskUse: true,
-	hint: { status: 1 }
-});
-/* >
-	{
-		active: 2342,
-		inactive: 992
-	}
-*/
-```
-
-</details>
-
-### `get idStruct()`
-
-<details>
-<summary>Returns valid id struct function.</summary>
-
-- Returns `Function`: struct function to validate ids.
-- Rejects `Error`: When received id is not of type `objectId`.
-
-**Usage:**
-```js
-	mongo.idStruct('6282c2484f64bffff55bcd7c');
-```
-
-</details>
-
-## Configurations
-
-### `static get hasCustomId()`
-
-<details>
-<summary>Using a custom id instead of ObjectId.</summary>
-
-This configuration allows you to have a custom `id` and not to convert it to **ObjectId** before making write queries.
-
-> :warning: This _getter_ must be present in the **Model**
-
-</details>
-
-## Errors
-
-The errors are informed with a `MongoDBError`.
-This object has a code that can be useful for a debugging or error handling.
-The codes are the following:
-
-| Code | Description                        |
-|------|----------------------------------- |
-| 1    | Model with empty unique indexes    |
-| 2    | No unique indexes could be matched |
-| 3    | Invalid or empty model             |
-| 4    | Internal mongodb error             |
-| 5    | Invalid connection config          |
-| 6    | Invalid item format received       |
-| 7    | Invalid distinct key received      |
-| 8    | Filter type not recognized         |
-| 9    | Invalid Increment Data             |
-| 10   | Invalid index structure            |
-
-## 🐛 Debugging
-
-If the environment variable `MONGODB_DEBUG` is set (to any truthy value), the following methods will log debug information before executing the query:
-
-* `distinct()`
-* `get()`
-* `getPaged()`
-* `getTotals()`
-* `aggregate()`
-
-The logger will output details like:
-
-* filters
-* sort
-* options
+- indexes `

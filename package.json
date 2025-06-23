@@ -1,7 +1,7 @@
 {
   "name": "@janiscommerce/mongodb",
   "version": "3.11.0",
-  "description": "",
+  "description": "MongoDB driver for Janis Commerce with advanced querying and bulk operations support",
   "main": "lib/mongodb.js",
   "scripts": {
     "test": "export TEST_ENV=true; mocha --exit -R nyan --recursive tests/",
@@ -24,10 +24,10 @@
   },
   "homepage": "https://github.com/janis-commerce/mongodb#readme",
   "dependencies": {
-    "@janiscommerce/model": "^8.8.0",
-    "@janiscommerce/superstruct": "^1.2.1",
+    "@janiscommerce/model": "^8.8.3",
+    "@janiscommerce/superstruct": "^1.2.2",
     "aws4": "^1.13.2",
-    "fastest-validator": "^1.19.0",
+    "fastest-validator": "^1.19.1",
     "lllog": "^1.1.2",
     "mongodb": "^4.17.2"
   },
