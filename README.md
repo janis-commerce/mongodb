@@ -497,16 +497,20 @@ const { total, batchSize, pages } = await myModel.getPaged(model, { filters: { s
 
 </details>
 
-### ***async*** `getTotals(model, filter)`
+### ***async*** `getTotals(model, filter, params)`
 
 <details>
 <summary>Gets information about the quantity of documents matched by filters if present or the last call to the `get()` method.</summary>
 
 - model: `Model`: A model instance used for the query. **IMPORTANT**: This must be the same instance.
 - filter `Object|Array<Object>`: Sets the criteria to match documents. An object means AND operation between multiple filters. An array mean an OR operation. See examples [above](#filters).
+- params `Object`: Sets the parameters to match documents.
 
 - Resolves `Object`: An object containing the totalizers
 - Rejects `Error` When something bad occurs
+
+**Available parameters: (all of them are optional)**
+- limit `Number`: Sets the max amount of matching documents to count. Defaults to count all matching documents. This will be ignored if no filter is provided, using `db.collection.estimatedDocumentCount()` light operation.
 
 Return example:
 ```js
@@ -528,15 +532,26 @@ If the last query response was empty, it will just return the `total` and `pages
 **Since *2.5.8*:**
 - If no query was executed before, it will return the totals of the whole collection without filters.
 
+**Since *3.13.0*:**
+- `params.limit` can now be used to cap the total amount of documents to count.
+
 **Usage:**
 ```js
 // getTotals
 result = await mongo.getTotals(model);
-// > { page: 1, limit: 500, pages: 1, total: 4 }
+// > { page: 1, pageSize: 500, pages: 1, total: 4 }
 
 // with filter
 result = await mongo.getTotals(model, { name: 'foo' });
-// > { page: 1, limit: 500, pages: 1, total: 1 }
+// > { page: 1, pageSize: 500, pages: 1, total: 1 }
+
+// with limit
+result = await mongo.getTotals(model, {}, { limit: 100 });
+// > { page: 1, pageSize: 500, pages: 1, total: 5456 } -> 5456 is the total of documents in the collection, ignoring the limit because estimatedDocumentCount is used.
+
+// with limit and filter
+result = await mongo.getTotals(model, { status: 'active' }, { limit: 6000 });
+// > { page: 1, pageSize: 500, pages: 12, total: 6000 } -> limit is capped to 100 even if the filter matches more documents.
 ```
 
 </details>

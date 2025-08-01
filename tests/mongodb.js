@@ -3138,6 +3138,31 @@ describe('MongoDB', () => {
 				sinon.assert.notCalled(countDocuments);
 				sinon.assert.calledOnce(estimatedDocumentCount);
 			});
+
+			it('Should calculate the totals using estimatedDocumentCount() ignoring the limit parameter', async () => {
+
+				const mongodb = new MongoDB(config);
+
+				const countDocuments = sinon.spy();
+				const estimatedDocumentCount = sinon.stub().resolves(1);
+
+				const collection = stubMongo(true, { countDocuments, estimatedDocumentCount });
+
+				const model = getModel();
+
+				const result = await mongodb.getTotals(model, {}, { limit: 100 });
+
+				assert.deepStrictEqual(result, {
+					total: 1,
+					pageSize: 500,
+					pages: 1,
+					page: 0
+				});
+
+				sinon.assert.calledOnce(collection);
+				sinon.assert.notCalled(countDocuments);
+				sinon.assert.calledOnce(estimatedDocumentCount);
+			});
 		});
 
 		context('When using filters', () => {
@@ -3235,6 +3260,42 @@ describe('MongoDB', () => {
 
 				sinon.assert.notCalled(estimatedDocumentCount);
 			});
+
+			it('Should cap the total amount of documents to the limit parameter value when passed', async () => {
+
+				const mongodb = new MongoDB(config);
+
+				const estimatedDocumentCount = sinon.stub();
+				const countDocuments = sinon.stub().resolves(10);
+
+				const { collection } = mockChain(true, [{ a: 3 }, { a: 4 }], { countDocuments, estimatedDocumentCount });
+
+				const model = getModel();
+
+				// Get to populate internal properties
+				await mongodb.get(model, {
+					filters: { status: 'active' },
+					page: 2,
+					limit: 2
+				});
+
+				const result = await mongodb.getTotals(model, {}, { limit: 10 });
+
+				assert.deepStrictEqual(result, {
+					total: 10,
+					pageSize: 2,
+					pages: 5,
+					page: 2
+				});
+
+				// Collection se llama una vez para el get
+				sinon.assert.calledTwice(collection);
+				sinon.assert.calledOnceWithExactly(countDocuments, {
+					status: { $eq: 'active' }
+				}, { comment, limit: 10 });
+
+				sinon.assert.notCalled(estimatedDocumentCount);
+			});
 		});
 
 		context('When not using filters', () => {
@@ -3287,6 +3348,37 @@ describe('MongoDB', () => {
 					total: 2,
 					pageSize: 2,
 					pages: 1,
+					page: 1
+				});
+
+				// Collection se llama una vez para el get
+				sinon.assert.calledTwice(collection);
+				sinon.assert.calledOnceWithExactly(estimatedDocumentCount, { comment });
+				sinon.assert.notCalled(countDocuments);
+			});
+
+			it('Should return the totals object for one item using estimatedDocumentCount() ignoring the limit parameter', async () => {
+
+				const mongodb = new MongoDB(config);
+
+				const estimatedDocumentCount = sinon.stub().resolves(40);
+				const countDocuments = sinon.stub();
+
+				const { collection } = mockChain(true, [{ a: 1 }, { b: 2 }], { countDocuments, estimatedDocumentCount });
+
+				const model = getModel();
+
+				// Get to populate internal properties
+				await mongodb.get(model, {
+					limit: 2
+				});
+
+				const result = await mongodb.getTotals(model, {}, { limit: 100 });
+
+				assert.deepStrictEqual(result, {
+					total: 40,
+					pageSize: 2,
+					pages: 20,
 					page: 1
 				});
 
