@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [3.13.0] - 2024-08-04
+### Added
+- `getTotals()` method now accepts a `limit` parameter to limit the number of documents to count
+
 ## [3.12.0] - 2024-07-09
 ### Added
 - The `multiUpdate()` method now accepts an `options` parameter with the property `rawResponse: boolean`. If set to `true`, it returns an object with detailed information about the bulkWrite operation result
