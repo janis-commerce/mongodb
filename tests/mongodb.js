@@ -485,6 +485,18 @@ describe('MongoDB', () => {
 			assertChain(stubs, 'myCollection', {}, undefined, 60, 30);
 		});
 
+		it('Should return the cursor when return type is cursor', async () => {
+
+			const stubs = mockChain(true);
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.get(getModel(), {
+				returnType: 'cursor'
+			});
+
+			assert.strictEqual(result, stubs.find.returnValues[0]);
+		});
+
 		describe('projection', () => {
 
 			it('Should pass the project param to select fields to the find-method-chain when received fields', async () => {

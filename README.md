@@ -223,7 +223,7 @@ await mongo.distinct(model, { key: 'color', filters: { status: 'active' } });
 - model: `Model`: A model instance
 - parameters: `Object` (optional): The query parameters. Default: `{}`
 
-- Resolves `Array<Object>`: An array of documents
+- Resolves `Array<Object>|Cursor`: An array of documents (default) or MongoDB cursor when `returnType: 'cursor'` is specified
 - Rejects `Error` When something bad occurs
 
 **Available parameters: (all of them are optional)**
@@ -234,6 +234,7 @@ await mongo.distinct(model, { key: 'color', filters: { status: 'active' } });
 - filters `Object|Array<Object>`: Sets the criteria to match documents. An object means AND operation between multiple filters. An array mean an OR operation. See examples [below](#filters).
 - fields `Array<String>`: **Since 2.7.0**. Specific fields to be returned in the query for every document. This feature uses MongoDB projections. See more: https://www.mongodb.com/docs/manual/tutorial/project-fields-from-query-results/
 - excludeFields `Array<String>`: **Since 2.7.0**. Specific fields to exclude in the query for every document. Available when `fields` was not received. This feature also uses MongoDB projections.
+- returnType `String`: When set to `'cursor'`, returns the MongoDB cursor directly instead of converting it to an array. This allows for advanced cursor operations and streaming of large datasets.
 
 Parameters example:
 ```js
@@ -250,7 +251,8 @@ Parameters example:
          'type' : 'in'
       }
    },
-	fields: ['itemField', 'otherItemField']
+	fields: ['itemField', 'otherItemField'],
+	returnType: 'cursor' // Returns MongoDB cursor directly
 }
 ```
 
@@ -462,6 +464,10 @@ await mongo.get(model, { limit: 10, page: 2 filters: { name: 'foo' } })
 // finding all entries ordered descendently by id
 await mongo.get(model, { order: { id: 'desc' } });
 // > [ ... ] // Every document in the collection, ordered by descending id, up to 500 documents.
+
+// returning MongoDB cursor directly for advanced operations
+const cursor = await mongo.get(model, { returnType: 'cursor' });
+// > MongoDB Cursor object // Allows for streaming, custom iteration, etc.
 ```
 
 </details>
