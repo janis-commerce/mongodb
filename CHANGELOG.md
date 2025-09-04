@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [3.14.0] - 2025-09-04
+### Added
+- `returnType: 'cursor'` option to `get()` method to return the raw MongoDB cursor instead of the results array
+
 ## [3.13.0] - 2024-08-04
 ### Added
 - `getTotals()` method now accepts a `limit` parameter to limit the number of documents to count
