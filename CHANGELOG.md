@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [3.14.1] - 2025-11-10
+### Fixed
+- Duplicate key error handling in `multiInsert()` method
+
 ## [3.14.0] - 2025-09-04
 ### Added
 - `returnType: 'cursor'` option to `get()` method to return the raw MongoDB cursor instead of the results array
