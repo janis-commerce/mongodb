@@ -319,7 +319,8 @@ The following table shows all the supported filter types, and it's equivalence:
 | lesserOrEqual  | $lte              |
 | in             | $in               |
 | notIn          | $nin              |
-| search         | $regex            |
+| search              | $regex            |
+| caseSensitiveSearch | $regex            |
 | all            | $all              |
 | exists         | $exists           |
 | text           | $text             |
@@ -330,6 +331,12 @@ The following table shows all the supported filter types, and it's equivalence:
 If the type isn't defined in the model nor in the query, it defaults to `equal` for single valued filters or `in` for multivalued filter.
 
 You can also pass an _unsupported_ mongodb `type` (it must start with the `$` character, for example: `$mod`).
+
+**Search filters**
+
+The `search` filter type generates a `$regex` query. The case insensitive flag (`i`) is automatically set based on the filter value: if the value contains any letter characters (including accented letters like `é`, `ñ`, `Ö`, etc.), the `i` flag is added. If the value contains only non-letter characters (digits, symbols, etc.), the `i` flag is omitted, allowing MongoDB to use indexes for better performance.
+
+The `caseSensitiveSearch` filter type also generates a `$regex` query but never adds the `i` flag, regardless of the filter value. Use this when you need an exact case-sensitive regex match or if you know the value will not contain any letter characters.
 
 **Internal field names**
 

@@ -234,6 +234,73 @@ describe('MongoDBFilters', () => {
 			});
 		});
 
+		it('Should use the caseSensitiveSearch filter type to produce a regex without the case insensitive flag', () => {
+
+			const parsedFilters = MongoDBFilters.parseFilters({
+				foo: 'Bar'
+			}, getModel({
+				foo: {
+					type: 'caseSensitiveSearch'
+				}
+			}));
+
+			assert.deepStrictEqual(parsedFilters, {
+				foo: {
+					$regex: /Bar/
+				}
+			});
+		});
+
+		it('Should use the case insensitive flag for the search filter when the value contains letters', () => {
+
+			const parsedFilters = MongoDBFilters.parseFilters({
+				foo: 'bar',
+				baz: '100.é',
+				qux: 'Ñoño'
+			}, getModel({
+				foo: { type: 'search' },
+				baz: { type: 'search' },
+				qux: { type: 'search' }
+			}));
+
+			assert.deepStrictEqual(parsedFilters, {
+				foo: {
+					$regex: /bar/i
+				},
+				baz: {
+					$regex: /100.é/i
+				},
+				qux: {
+					$regex: /Ñoño/i
+				}
+			});
+		});
+
+		it('Should not use the case insensitive flag for the search filter when the value has no letters', () => {
+
+			const parsedFilters = MongoDBFilters.parseFilters({
+				foo: '12345',
+				baz: '100-200',
+				qux: '12.50'
+			}, getModel({
+				foo: { type: 'search' },
+				baz: { type: 'search' },
+				qux: { type: 'search' }
+			}));
+
+			assert.deepStrictEqual(parsedFilters, {
+				foo: {
+					$regex: /12345/
+				},
+				baz: {
+					$regex: /100-200/
+				},
+				qux: {
+					$regex: /12.50/
+				}
+			});
+		});
+
 		it('Should return the filters as \'equal\' (not \'in\') filters if type is explicitly is set or passed', () => {
 
 			const parsedFilters = MongoDBFilters.parseFilters({
