@@ -95,11 +95,11 @@ describe('MongoDB', () => {
 		};
 	};
 
-	const assertChain = (stubs, collectionName, filters, order, skip, limit, project) => {
+	const assertChain = (stubs, collectionName, filters, order, skip, limit, project, hint) => {
 
 		sinon.assert.calledOnceWithExactly(stubs.collection, collectionName);
 
-		sinon.assert.calledOnceWithExactly(stubs.find, filters, { comment });
+		sinon.assert.calledOnceWithExactly(stubs.find, filters, { comment, ...hint && { hint } });
 
 		if(order)
 			sinon.assert.calledOnceWithExactly(stubs.sort, order);
@@ -535,6 +535,26 @@ describe('MongoDB', () => {
 
 				assertChain(stubs, 'myCollection', {}, undefined, 0, 500, { foo: true });
 			});
+
+			it('Should pass the hint param as object to the find-method-chain', async () => {
+
+				const stubs = mockChain();
+
+				const mongodb = new MongoDB(config);
+				await mongodb.get(getModel(), { hint: { status: 1 } });
+
+				assertChain(stubs, 'myCollection', {}, undefined, 0, 500, undefined, { status: 1 });
+			});
+
+			it('Should pass the hint param as string to the find-method-chain', async () => {
+
+				const stubs = mockChain();
+
+				const mongodb = new MongoDB(config);
+				await mongodb.get(getModel(), { hint: 'status' });
+
+				assertChain(stubs, 'myCollection', {}, undefined, 0, 500, undefined, 'status');
+			});
 		});
 	});
 
@@ -674,6 +694,44 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(cursorStub.project, { key: true });
 
 			assert.deepStrictEqual(result, { total: 3, batchSize, pages: 2 });
+		});
+
+		it('Should pass the hint param as string to the query', async () => {
+
+			const batchSize = 500;
+
+			const { find, cursorStub } = asyncIteratorMockChain(true, []);
+
+			const callbackStub = sinon.stub().resolves();
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.getPaged(getModel(), { hint: 'name' }, callbackStub);
+
+			sinon.assert.calledOnceWithExactly(find, {}, { comment, hint: 'name' });
+			sinon.assert.calledOnceWithExactly(cursorStub.batchSize, batchSize);
+			sinon.assert.notCalled(cursorStub.sort);
+			sinon.assert.notCalled(cursorStub.project);
+
+			assert.deepStrictEqual(result, { total: 0, batchSize, pages: 0 });
+		});
+
+		it('Should pass the hint param as object to the query', async () => {
+
+			const batchSize = 500;
+
+			const { find, cursorStub } = asyncIteratorMockChain(true, []);
+
+			const callbackStub = sinon.stub().resolves();
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.getPaged(getModel(), { hint: { name: 1 } }, callbackStub);
+
+			sinon.assert.calledOnceWithExactly(find, {}, { comment, hint: { name: 1 } });
+			sinon.assert.calledOnceWithExactly(cursorStub.batchSize, batchSize);
+			sinon.assert.notCalled(cursorStub.sort);
+			sinon.assert.notCalled(cursorStub.project);
+
+			assert.deepStrictEqual(result, { total: 0, batchSize, pages: 0 });
 		});
 	});
 
@@ -3175,6 +3233,35 @@ describe('MongoDB', () => {
 				sinon.assert.notCalled(countDocuments);
 				sinon.assert.calledOnce(estimatedDocumentCount);
 			});
+
+			it('Should calculate the totals using countDocuments() when filters received and hint is used', async () => {
+
+				const mongodb = new MongoDB(config);
+
+				const countDocuments = sinon.stub().resolves(1);
+				const estimatedDocumentCount = sinon.spy();
+
+				const collection = stubMongo(true, { countDocuments, estimatedDocumentCount });
+
+				const model = getModel();
+
+				const result = await mongodb.getTotals(model, {
+					status: 'active'
+				}, {
+					hint: 'status'
+				});
+
+				assert.deepStrictEqual(result, {
+					total: 1,
+					pageSize: 500,
+					pages: 1,
+					page: 0
+				});
+
+				sinon.assert.calledOnce(collection);
+				sinon.assert.notCalled(estimatedDocumentCount);
+				sinon.assert.calledOnceWithExactly(countDocuments, { status: { $eq: 'active' } }, { comment, hint: 'status' });
+			});
 		});
 
 		context('When using filters', () => {
@@ -3222,9 +3309,10 @@ describe('MongoDB', () => {
 
 				// Get to populate internal properties
 				await mongodb.get(model, {
-					filters: { status: 'active' },
 					page: 2,
-					limit: 2
+					limit: 2,
+					filters: { status: 'active', name: 'test' },
+					hint: { name: 1 }
 				});
 
 				const result = await mongodb.getTotals(model);
@@ -3239,8 +3327,12 @@ describe('MongoDB', () => {
 				// Collection se llama una vez para el get
 				sinon.assert.calledTwice(collection);
 				sinon.assert.calledOnceWithExactly(countDocuments, {
-					status: { $eq: 'active' }
-				}, { comment });
+					status: { $eq: 'active' },
+					name: { $eq: 'test' }
+				}, {
+					comment,
+					hint: { name: 1 }
+				});
 
 				sinon.assert.notCalled(estimatedDocumentCount);
 			});

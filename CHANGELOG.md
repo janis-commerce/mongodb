@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+- `hint` parameter to `get()`, `getPaged()` and `getTotals()` methods to optionally specify a hint for the query
+
 ## [3.14.1] - 2025-11-10
 ### Fixed
 - Duplicate key error handling in `multiInsert()` method

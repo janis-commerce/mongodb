@@ -235,6 +235,7 @@ await mongo.distinct(model, { key: 'color', filters: { status: 'active' } });
 - fields `Array<String>`: **Since 2.7.0**. Specific fields to be returned in the query for every document. This feature uses MongoDB projections. See more: https://www.mongodb.com/docs/manual/tutorial/project-fields-from-query-results/
 - excludeFields `Array<String>`: **Since 2.7.0**. Specific fields to exclude in the query for every document. Available when `fields` was not received. This feature also uses MongoDB projections.
 - returnType `String`: When set to `'cursor'`, returns the MongoDB cursor directly instead of converting it to an array. This allows for advanced cursor operations and streaming of large datasets.
+- hint `String|Object`: Sets the hint for the query. **Since 3.15.0**.
 
 Parameters example:
 ```js
@@ -517,6 +518,7 @@ const { total, batchSize, pages } = await myModel.getPaged(model, { filters: { s
 
 **Available parameters: (all of them are optional)**
 - limit `Number`: Sets the max amount of matching documents to count. Defaults to count all matching documents. This will be ignored if no filter is provided, using `db.collection.estimatedDocumentCount()` light operation.
+- hint `String|Object`: Sets the hint for the query. **Since 3.15.0**.
 
 Return example:
 ```js
