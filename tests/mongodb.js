@@ -215,7 +215,7 @@ describe('MongoDB', () => {
 		});
 	});
 
-	describe('get()', () => {
+	describe.only('get()', () => {
 
 		it('Should throw if no model is passed', async () => {
 			const mongodb = new MongoDB(config);
@@ -322,6 +322,35 @@ describe('MongoDB', () => {
 				},
 				otherId: {
 					$eq: ObjectId('5df0151dbc1d570011949d87')
+				}
+			}, undefined, 0, 500);
+		});
+
+		it('Should pass the parsed filters mapping ObjectId to the find-method-chain when complex filters received', async () => {
+
+			const stubs = mockChain();
+
+			const mongodb = new MongoDB(config);
+			await mongodb.get(getModel({
+				idField: { isID: true },
+				otherIdField: { isID: true }
+			}), {
+				filters: {
+					id: { type: 'greater', value: '5df0151dbc1d570011949d86' },
+					idField: { type: 'notEqual', value: ['69b2e2ba6d0ffde88ca5d102', '69b2e2bd6d0ffde88ca5d103'] },
+					otherIdField: ['69b2e24e6d0ffde88ca5d100', '69b2e2536d0ffde88ca5d101']
+				}
+			});
+
+			assertChain(stubs, 'myCollection', {
+				_id: {
+					$gt: ObjectId('5df0151dbc1d570011949d86')
+				},
+				idField: {
+					$ne: [ObjectId('69b2e2ba6d0ffde88ca5d102'), ObjectId('69b2e2bd6d0ffde88ca5d103')]
+				},
+				otherIdField: {
+					$in: [ObjectId('69b2e24e6d0ffde88ca5d100'), ObjectId('69b2e2536d0ffde88ca5d101')]
 				}
 			}, undefined, 0, 500);
 		});

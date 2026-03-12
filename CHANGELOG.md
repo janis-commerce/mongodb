@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [3.15.1] - 2026-03-12
+### Fixed
+- **ObjectId** mapping in complex filters (objects with type and value)
+
+## [3.15.0] - 2026-03-12
 ### Added
 - `hint` parameter to `get()`, `getPaged()` and `getTotals()` methods to optionally specify a hint for the query
 
