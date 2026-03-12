@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [3.15.2] - 2026-03-12
+### Fixed
+- **ObjectId** mapping when null values received
+
 ## [3.15.1] - 2026-03-12
 ### Fixed
 - **ObjectId** mapping in complex filters (objects with type and value)
