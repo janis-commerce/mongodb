@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [3.16.0] - 2026-03-12
+### Added
+- **Filters** New `caseSensitiveSearch` filter type to search using regexp without the `i` flag
+
+### Changed
+- **Filters** The `search` filter type now sets the `i` flag only when the value has at least one alpha character
+
 ## [3.15.2] - 2026-03-12
 ### Fixed
 - **ObjectId** mapping when null values received
