@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [3.16.1] - 2026-03-26
+### Fixed
+- Duplicate key error logging in `multiInsert()` method
+
 ## [3.16.0] - 2026-03-18
 ### Added
 - **Filters** New `caseSensitiveSearch` filter type to search using regexp without the `i` flag
