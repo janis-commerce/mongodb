@@ -201,7 +201,7 @@ await mongo.update(
 <summary>Searches distinct values of a property in a collection</summary>
 
 - model: `Model`: A model instance
-- parameters: `Object` (optional): The query parameters. Default: `{}`. It only accepts `key` (the field name to get distinct values from, and `filters` -- described below in `get()` method)
+- parameters: `Object` (optional): The query parameters. Default: `{}`. It accepts `key` (the field name to get distinct values from), `filters` (described below in `get()` method) and `readPreference` (described below in `get()` method)
 
 - Resolves `Array<Object>`: An array of documents
 - Rejects `Error` When something bad occurs
@@ -236,6 +236,7 @@ await mongo.distinct(model, { key: 'color', filters: { status: 'active' } });
 - excludeFields `Array<String>`: **Since 2.7.0**. Specific fields to exclude in the query for every document. Available when `fields` was not received. This feature also uses MongoDB projections.
 - returnType `String`: When set to `'cursor'`, returns the MongoDB cursor directly instead of converting it to an array. This allows for advanced cursor operations and streaming of large datasets.
 - hint `String|Object`: Sets the hint for the query. **Since 3.15.0**.
+- readPreference `String`: Sets the read preference for the query. Valid values: `'primary'`, `'primaryPreferred'`, `'secondary'`, `'secondaryPreferred'`, `'nearest'`. **Since 3.17.0**.
 
 Parameters example:
 ```js
@@ -526,6 +527,7 @@ const { total, batchSize, pages } = await myModel.getPaged(model, { filters: { s
 **Available parameters: (all of them are optional)**
 - limit `Number`: Sets the max amount of matching documents to count. Defaults to count all matching documents. This will be ignored if no filter is provided, using `db.collection.estimatedDocumentCount()` light operation.
 - hint `String|Object`: Sets the hint for the query. **Since 3.15.0**.
+- readPreference `String`: Sets the read preference for the query. Valid values: `'primary'`, `'primaryPreferred'`, `'secondary'`, `'secondaryPreferred'`, `'nearest'`. **Since 3.17.0**.
 
 Return example:
 ```js

@@ -95,11 +95,15 @@ describe('MongoDB', () => {
 		};
 	};
 
-	const assertChain = (stubs, collectionName, filters, order, skip, limit, project, hint) => {
+	const assertChain = (stubs, collectionName, filters, order, skip, limit, project, hint, readPreference) => {
 
 		sinon.assert.calledOnceWithExactly(stubs.collection, collectionName);
 
-		sinon.assert.calledOnceWithExactly(stubs.find, filters, { comment, ...hint && { hint } });
+		sinon.assert.calledOnceWithExactly(stubs.find, filters, {
+			...hint && { hint },
+			...readPreference && { readPreference },
+			comment
+		});
 
 		if(order)
 			sinon.assert.calledOnceWithExactly(stubs.sort, order);
@@ -213,9 +217,28 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(mongoDistinctStub, 'foo', { field1: { $eq: 'value1' } }, { comment });
 		});
+
+		it('Should pass the readPreference param to the mongodb distinct method', async () => {
+
+			const mongoDistinctStub = sinon.stub().resolves(['bar', 'baz']);
+
+			const collectionStub = stubMongo(true, { distinct: mongoDistinctStub });
+
+			const mongodb = new MongoDB(config);
+			const distinctValues = await mongodb.distinct(getModel(), {
+				key: 'foo',
+				readPreference: 'secondaryPreferred'
+			});
+
+			assert.deepStrictEqual(distinctValues, ['bar', 'baz']);
+
+			sinon.assert.calledOnceWithExactly(collectionStub, 'myCollection');
+
+			sinon.assert.calledOnceWithExactly(mongoDistinctStub, 'foo', {}, { readPreference: 'secondaryPreferred', comment });
+		});
 	});
 
-	describe.only('get()', () => {
+	describe('get()', () => {
 
 		it('Should throw if no model is passed', async () => {
 			const mongodb = new MongoDB(config);
@@ -585,6 +608,16 @@ describe('MongoDB', () => {
 				assertChain(stubs, 'myCollection', {}, undefined, 0, 500, undefined, 'status');
 			});
 		});
+
+		it('Should pass the readPreference param to the find-method-chain', async () => {
+
+			const stubs = mockChain();
+
+			const mongodb = new MongoDB(config);
+			await mongodb.get(getModel(), { readPreference: 'secondaryPreferred' });
+
+			assertChain(stubs, 'myCollection', {}, undefined, 0, 500, undefined, undefined, 'secondaryPreferred');
+		});
 	});
 
 	describe('getPaged()', () => {
@@ -756,6 +789,25 @@ describe('MongoDB', () => {
 			const result = await mongodb.getPaged(getModel(), { hint: { name: 1 } }, callbackStub);
 
 			sinon.assert.calledOnceWithExactly(find, {}, { comment, hint: { name: 1 } });
+			sinon.assert.calledOnceWithExactly(cursorStub.batchSize, batchSize);
+			sinon.assert.notCalled(cursorStub.sort);
+			sinon.assert.notCalled(cursorStub.project);
+
+			assert.deepStrictEqual(result, { total: 0, batchSize, pages: 0 });
+		});
+
+		it('Should pass the readPreference param to the query', async () => {
+
+			const batchSize = 500;
+
+			const { find, cursorStub } = asyncIteratorMockChain(true, []);
+
+			const callbackStub = sinon.stub().resolves();
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.getPaged(getModel(), { readPreference: 'secondaryPreferred' }, callbackStub);
+
+			sinon.assert.calledOnceWithExactly(find, {}, { readPreference: 'secondaryPreferred', comment });
 			sinon.assert.calledOnceWithExactly(cursorStub.batchSize, batchSize);
 			sinon.assert.notCalled(cursorStub.sort);
 			sinon.assert.notCalled(cursorStub.project);
@@ -3291,6 +3343,35 @@ describe('MongoDB', () => {
 				sinon.assert.notCalled(estimatedDocumentCount);
 				sinon.assert.calledOnceWithExactly(countDocuments, { status: { $eq: 'active' } }, { comment, hint: 'status' });
 			});
+
+			it('Should pass the readPreference param to countDocuments() when filters received', async () => {
+
+				const mongodb = new MongoDB(config);
+
+				const countDocuments = sinon.stub().resolves(1);
+				const estimatedDocumentCount = sinon.spy();
+
+				const collection = stubMongo(true, { countDocuments, estimatedDocumentCount });
+
+				const model = getModel();
+
+				const result = await mongodb.getTotals(model, {
+					status: 'active'
+				}, {
+					readPreference: 'secondaryPreferred'
+				});
+
+				assert.deepStrictEqual(result, {
+					total: 1,
+					pageSize: 500,
+					pages: 1,
+					page: 0
+				});
+
+				sinon.assert.calledOnce(collection);
+				sinon.assert.notCalled(estimatedDocumentCount);
+				sinon.assert.calledOnceWithExactly(countDocuments, { status: { $eq: 'active' } }, { comment, readPreference: 'secondaryPreferred' });
+			});
 		});
 
 		context('When using filters', () => {
@@ -4665,6 +4746,38 @@ describe('MongoDB', () => {
 				{ $match: { _id: ObjectId(itemId), referenceId: 'display-id' } },
 				{ $unset: 'category' }
 			], { comment, allowDiskUse: true });
+
+			sinon.assert.calledOnce(toArray);
+		});
+
+		it('Should pass the readPreference option to the aggregate method', async () => {
+
+			const item = {
+				_id: itemId,
+				name: 'Some name',
+				referenceId: 'display-id'
+			};
+
+			const toArray = sinon.stub().resolves([item]);
+			const aggregate = sinon.stub().returns({ toArray });
+
+			const collection = stubMongo(true, { aggregate, toArray });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.aggregate(getModel(), stages, { readPreference: 'secondaryPreferred' });
+
+			assert.deepStrictEqual(result, [{
+				id: itemId,
+				name: 'Some name',
+				referenceId: 'display-id'
+			}]);
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+
+			sinon.assert.calledOnceWithExactly(aggregate, [
+				{ $match: { _id: ObjectId(itemId), referenceId: 'display-id' } },
+				{ $unset: 'category' }
+			], { comment, readPreference: 'secondaryPreferred' });
 
 			sinon.assert.calledOnce(toArray);
 		});
