@@ -29,7 +29,7 @@
     "aws4": "^1.13.2",
     "fastest-validator": "^1.19.1",
     "lllog": "^1.1.2",
-    "mongodb": "^4.17.2"
+    "mongodb": "^5.9.2"
   },
   "devDependencies": {
     "@types/node": "22.8.4",
