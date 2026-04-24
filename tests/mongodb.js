@@ -2630,8 +2630,8 @@ describe('MongoDB', () => {
 				upsertedCount: 0,
 				insertedCount: 0,
 				deletedCount: 0,
-				writeErrors: [],
-				writeConcernErrors: []
+				getWriteErrors: () => [],
+				getWriteConcernError: () => undefined
 			};
 
 			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
@@ -2650,7 +2650,7 @@ describe('MongoDB', () => {
 				insertedCount: 0,
 				deletedCount: 0,
 				writeErrors: [],
-				writeConcernErrors: [],
+				writeConcernError: undefined,
 				operations: [{
 					index: 0,
 					filter: sampleOperation.filter,
@@ -2721,10 +2721,10 @@ describe('MongoDB', () => {
 				upsertedCount: 0,
 				insertedCount: 0,
 				deletedCount: 0,
-				writeErrors: [
+				getWriteErrors: () => [
 					{ index: 1, code: 11000, errmsg: 'Duplicate key error' }
 				],
-				writeConcernErrors: []
+				getWriteConcernError: () => undefined
 			};
 
 			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
@@ -2745,7 +2745,7 @@ describe('MongoDB', () => {
 				writeErrors: [
 					{ index: 1, code: 11000, errmsg: 'Duplicate key error' }
 				],
-				writeConcernErrors: [],
+				writeConcernError: undefined,
 				operations: [{
 					index: 0,
 					filter: sampleOperation.filter,
@@ -2768,10 +2768,10 @@ describe('MongoDB', () => {
 				upsertedCount: 0,
 				insertedCount: 0,
 				deletedCount: 0,
-				writeErrors: [
+				getWriteErrors: () => [
 					{ index: 1, code: 11000, errmsg: 'Duplicate key error' }
 				],
-				writeConcernErrors: []
+				getWriteConcernError: () => undefined
 			};
 
 			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
@@ -2792,7 +2792,7 @@ describe('MongoDB', () => {
 				writeErrors: [
 					{ index: 1, code: 11000, errmsg: 'Duplicate key error' }
 				],
-				writeConcernErrors: [],
+				writeConcernError: undefined,
 				operations: [{
 					index: 0,
 					filter: sampleOperation.filter,
@@ -2821,10 +2821,10 @@ describe('MongoDB', () => {
 				upsertedCount: 0,
 				insertedCount: 0,
 				deletedCount: 0,
-				writeErrors: [
+				getWriteErrors: () => [
 					{ index: 1, code: 11000, errmsg: 'Duplicate key error' }
 				],
-				writeConcernErrors: []
+				getWriteConcernError: () => undefined
 			};
 
 			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
@@ -2891,10 +2891,10 @@ describe('MongoDB', () => {
 				upsertedCount: 0,
 				insertedCount: 0,
 				deletedCount: 0,
-				writeErrors: [
+				getWriteErrors: () => [
 					{ index: 1, code: 11000, errmsg: 'Stock already updated' }
 				],
-				writeConcernErrors: []
+				getWriteConcernError: () => undefined
 			};
 
 			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
@@ -2912,35 +2912,7 @@ describe('MongoDB', () => {
 			assert.strictEqual(notModified[0].errors[0].errmsg, 'Stock already updated');
 		});
 
-		it('Should handle bulkWrite result with undefined writeErrors and writeConcernErrors', async () => {
-			const operations = [
-				{ filter: { id: 1 }, data: { name: 'test 1' } },
-				{ filter: { id: 2 }, data: { name: 'test 2' } }
-			];
-
-			const bulkWriteResult = {
-				modifiedCount: 2,
-				matchedCount: 2,
-				upsertedCount: 0,
-				insertedCount: 0,
-				deletedCount: 0
-				// writeErrors and writeConcernErrors are undefined
-			};
-
-			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
-			stubMongo(true, { bulkWrite });
-			const mongodb = new MongoDB(config);
-
-			const result = await mongodb.multiUpdate(getModel(), operations, { rawResponse: true });
-
-			assert.deepStrictEqual(result.writeErrors, []);
-			assert.deepStrictEqual(result.writeConcernErrors, []);
-			assert.strictEqual(result.operations.length, 2);
-			assert.strictEqual(result.operations[0].errors.length, 0);
-			assert.strictEqual(result.operations[1].errors.length, 0);
-		});
-
-		it('Should handle bulkWrite result with null writeErrors and writeConcernErrors', async () => {
+		it('Should handle bulkWrite result with empty writeErrors and undefined writeConcernError', async () => {
 			const operations = [
 				{ filter: { id: 1 }, data: { name: 'test 1' } }
 			];
@@ -2951,8 +2923,8 @@ describe('MongoDB', () => {
 				upsertedCount: 0,
 				insertedCount: 0,
 				deletedCount: 0,
-				writeErrors: null,
-				writeConcernErrors: null
+				getWriteErrors: () => [],
+				getWriteConcernError: () => undefined
 			};
 
 			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
@@ -2962,7 +2934,7 @@ describe('MongoDB', () => {
 			const result = await mongodb.multiUpdate(getModel(), operations, { rawResponse: true });
 
 			assert.deepStrictEqual(result.writeErrors, []);
-			assert.deepStrictEqual(result.writeConcernErrors, []);
+			assert.deepStrictEqual(result.writeConcernError, undefined);
 			assert.strictEqual(result.operations.length, 1);
 			assert.strictEqual(result.operations[0].errors.length, 0);
 		});

@@ -723,7 +723,7 @@ const result = await mongo.multiUpdate(model, [
   insertedCount: 0,
   deletedCount: 0,
   writeErrors: [],
-  writeConcernErrors: [],
+  writeConcernError: undefined,
   operations: [     // detailed information for each operation
     {
       index: 0,
