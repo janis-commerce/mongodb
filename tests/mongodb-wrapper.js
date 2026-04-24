@@ -28,9 +28,11 @@ describe('MongoWrapper', () => {
 		writeConcern: { w: 1 }
 	};
 
+	let hostCounter = 0;
 	beforeEach(() => {
 		sinon.stub(RealMongoClient.prototype, 'connect');
-		config.host = `${Date.now()}.localhost`;
+		hostCounter++;
+		config.host = `${Date.now()}-${hostCounter}.localhost`;
 	});
 
 	afterEach(() => {

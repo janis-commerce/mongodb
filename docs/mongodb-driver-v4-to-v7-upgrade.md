@@ -93,7 +93,8 @@ Esta superficie es la que se contrasta contra cada major.
 
 ### Cambios no retrocompatibles que debemos ajustar
 
-- **Node.js mínimo 20.19.0**. Salto grande — hay que coordinar runtime de Lambdas/servicios.
+- **Node.js mínimo 20.19.0**. Salto grande — hay que coordinar runtime de Lambdas/servicios. El repo queda con `.nvmrc` en `22`.
+- **Flakiness en `tests/mongodb-wrapper.js`**: la suite usaba `config.host = ${Date.now()}.localhost` en `beforeEach`. Con node 22 los tests corren lo suficientemente rápido como para que dos tests seguidos compartan el mismo `Date.now()`, reusen entrada de caché de `clients` y dejen al test "Should connect only once..." contando 0 invocaciones a `connect`. Fix: agregar un counter incremental al host (`${Date.now()}-${n}.localhost`). No es un cambio del driver, es una flakiness latente que se destapa con el node nuevo.
 - **Dependencias peer actualizadas** (`@mongodb-js/zstd` v7, `kerberos` v7, `mongodb-client-encryption` v7, `@aws-sdk/credential-providers` ^3.806.0, `gcp-metadata` ^7.0.1). Solo aplica a consumers que instalen estos peers; no los usamos directamente pero hay que reflejarlo en `peerDependencies`/docs si corresponde.
 
 ### Riesgos / cosas a validar
@@ -120,6 +121,6 @@ Esta superficie es la que se contrasta contra cada major.
 | ----- | -------- | ---------------------------------------------------------------------- |
 | v5    | No       | Rama `catch` de `multiInsert` (`err.result.result`) + `new ObjectId()` obligatorio en todo el código y tests |
 | v6    | No       | `findOneAndUpdate` en `save()` e `increment()`; BSON v6; Node ≥16.20.1 |
-| v7    | Casi     | `drop()` deja de tirar; Node ≥20.19; revisar batchSize en `aggregate`  |
+| v7    | Casi     | `drop()` deja de tirar; Node ≥20.19 (`.nvmrc` → `22`); flakiness en test de wrapper con node rápido; revisar batchSize en `aggregate` |
 
 Orden recomendado: bump staged 4→5→6→7 con CI de integración por cada salto, no un salto directo 4→7. El pivote más frágil es v6 por `findOneAndUpdate`; conviene cubrirlo con un test de integración real antes del bump.
