@@ -903,7 +903,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
-			}, { upsert: true, returnNewDocument: true, comment });
+			}, { upsert: true, returnNewDocument: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should use a unique index as filter if id is not passed', async () => {
@@ -941,7 +941,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
-			}, { upsert: true, returnNewDocument: true, comment });
+			}, { upsert: true, returnNewDocument: true, includeResultMetadata: true, comment });
 		});
 
 		['indexes', 'uniqueIndexes'].forEach(indexesGetter => {
@@ -983,7 +983,7 @@ describe('MongoDB', () => {
 						},
 						$currentDate: { dateModified: true },
 						$setOnInsert: { dateCreated: sinon.match.date }
-					}, { upsert: true, returnNewDocument: true, comment });
+					}, { upsert: true, returnNewDocument: true, includeResultMetadata: true, comment });
 				});
 			});
 		});
@@ -1023,7 +1023,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
-			}, { upsert: true, returnNewDocument: true, comment });
+			}, { upsert: true, returnNewDocument: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should use extra default insert values', async () => {
@@ -1062,7 +1062,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date, ...setOnInsert }
-			}, { upsert: true, returnNewDocument: true, comment });
+			}, { upsert: true, returnNewDocument: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should throw if no unique indexes are defined and id is not passed', async () => {
@@ -1143,7 +1143,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
-			}, { upsert: true, returnNewDocument: true, comment });
+			}, { upsert: true, returnNewDocument: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should remove conflictive fields from default insert values', async () => {
@@ -1187,7 +1187,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date, quantity: 100 }
-			}, { upsert: true, returnNewDocument: true, comment });
+			}, { upsert: true, returnNewDocument: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should map the model defined ID fields to ObjectIds', async () => {
@@ -1226,7 +1226,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
-			}, { upsert: true, returnNewDocument: true, comment });
+			}, { upsert: true, returnNewDocument: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should send only in $setOnInsert the dateCreated value when received as valid iso date', async () => {
@@ -1256,7 +1256,7 @@ describe('MongoDB', () => {
 				$set: { name: 'Blue rocket' },
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: new Date(item.dateCreated) }
-			}, { upsert: true, returnNewDocument: true, comment });
+			}, { upsert: true, returnNewDocument: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should send only in $setOnInsert the dateCreated value when received as valid date object', async () => {
@@ -1286,7 +1286,7 @@ describe('MongoDB', () => {
 				$set: { name: 'Blue rocket' },
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: new Date(item.dateCreated) }
-			}, { upsert: true, returnNewDocument: true, comment });
+			}, { upsert: true, returnNewDocument: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should send current Date when received an invalid date as string', async () => {
@@ -1318,7 +1318,7 @@ describe('MongoDB', () => {
 				$set: { name: 'Blue rocket' },
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: new Date() }
-			}, { upsert: true, returnNewDocument: true, comment });
+			}, { upsert: true, returnNewDocument: true, includeResultMetadata: true, comment });
 		});
 	});
 
@@ -3691,6 +3691,7 @@ describe('MongoDB', () => {
 					}, {
 						upsert: false,
 						returnNewDocument: true,
+						includeResultMetadata: true,
 						comment
 					});
 				});
@@ -3721,6 +3722,7 @@ describe('MongoDB', () => {
 					}, {
 						upsert: false,
 						returnNewDocument: true,
+						includeResultMetadata: true,
 						comment
 					});
 				});
@@ -3756,6 +3758,7 @@ describe('MongoDB', () => {
 					}, {
 						upsert: false,
 						returnNewDocument: true,
+						includeResultMetadata: true,
 						comment
 					});
 				});
@@ -3785,6 +3788,7 @@ describe('MongoDB', () => {
 					}, {
 						upsert: false,
 						returnNewDocument: true,
+						includeResultMetadata: true,
 						comment
 					});
 				});
