@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [3.18.0] - 2026-04-29
+### Added
+- `options` parameter on `save()` and `multiSave()` with `skipAutomaticSetModifiedData` to skip automatically updating `dateModified` (aligned with `update()` / `multiUpdate()`)
+
 ## [3.17.0] - 2026-04-10
 ### Added
 - `readPreference` parameter to `get()`, `getPaged()`, `distinct()`, `getTotals()` and `aggregate()` methods to optionally set the read preference for the query

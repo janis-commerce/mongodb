@@ -1320,6 +1320,41 @@ describe('MongoDB', () => {
 				$setOnInsert: { dateCreated: new Date() }
 			}, { upsert: true, returnNewDocument: true, comment });
 		});
+
+		it('Should not set $currentDate dateModified when options.skipAutomaticSetModifiedData is true', async () => {
+
+			const fakeNow = new Date('2024-06-01T10:00:00.000Z');
+			sinon.useFakeTimers({ now: fakeNow });
+
+			const id = '5df0151dbc1d570011949d86';
+
+			const item = {
+				id,
+				name: 'Some name'
+			};
+
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
+
+			const collection = stubMongo(true, { findOneAndUpdate });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.save(getModel(), { ...item }, undefined, { skipAutomaticSetModifiedData: true });
+
+			assert.deepStrictEqual(result, id);
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+
+			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
+				_id: {
+					$eq: ObjectId(id)
+				}
+			}, {
+				$set: {
+					name: 'Some name'
+				},
+				$setOnInsert: { dateCreated: fakeNow }
+			}, { upsert: true, returnNewDocument: true, comment });
+		});
 	});
 
 	describe('insert()', () => {
@@ -2199,6 +2234,49 @@ describe('MongoDB', () => {
 			];
 
 			sinon.assert.calledOnceWithExactly(bulkWrite, expectedItems, { comment });
+		});
+
+		it('Should not set $currentDate dateModified when options.skipAutomaticSetModifiedData is true', async () => {
+
+			const fakeNow = new Date('2024-06-01T10:00:00.000Z');
+			sinon.useFakeTimers({ now: fakeNow });
+
+			const id = '5df0151dbc1d570011949d86';
+
+			const item = {
+				id,
+				name: 'Some name'
+			};
+
+			const bulkWrite = sinon.stub().resolves({ result: { ok: 1 } });
+
+			const collection = stubMongo(true, { bulkWrite });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.multiSave(getModel(), [{ ...item }], undefined, { skipAutomaticSetModifiedData: true });
+
+			assert.deepStrictEqual(result, true);
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+
+			sinon.assert.calledOnceWithExactly(bulkWrite, [
+				{
+					updateOne: {
+						filter: {
+							_id: {
+								$eq: ObjectId(id)
+							}
+						},
+						update: {
+							$set: {
+								name: 'Some name'
+							},
+							$setOnInsert: { dateCreated: fakeNow }
+						},
+						upsert: true
+					}
+				}
+			], { comment });
 		});
 	});
 

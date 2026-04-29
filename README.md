@@ -573,7 +573,7 @@ result = await mongo.getTotals(model, { status: 'active' }, { limit: 6000 });
 
 </details>
 
-### ***async*** `save(model, item, setOnInsert)`
+### ***async*** `save(model, item, setOnInsert, options)`
 
 <details>
 <summary>Inserts or updates a document in a collection.</summary>
@@ -581,8 +581,10 @@ result = await mongo.getTotals(model, { status: 'active' }, { limit: 6000 });
 - model: `Model`: A model instance used for the query.
 - item: `Object`: The item to upsert in the collection
 - setOnInsert: `Object`: Default values to insert on Items.
+- options: `Object` (optional): Additional options for the save operation. **Since 3.18.0**.
+  - `skipAutomaticSetModifiedData`: `Boolean`. When **true**, the field `dateModified` is not updated automatically (no `$currentDate` on `dateModified`). Default: **false**.
 
-- Resolves `Object`: An object containing the totalizers
+- Resolves `String`: The document id
 - Rejects `Error` When something bad occurs
 
 This operation uses unique indexes in order to update existing documents. If `id` is provided in the item, it will be used. Otherwise, it will try to match a unique index defined in the model. If no unique index can be matched by the item, it will reject an error.
@@ -636,17 +638,22 @@ await mongo.save(model, {
    status: 'inactive'
 }
 */
+
+// save without touching dateModified (same behavior as update `skipAutomaticSetModifiedData`)
+await mongo.save(model, { id: '...', name: 'x' }, {}, { skipAutomaticSetModifiedData: true });
 ```
 </details>
 
-### ***async*** `multiSave(model, items, setOnInsert)`
+### ***async*** `multiSave(model, items, setOnInsert, options)`
 
 <details>
-<summary>Inserts or updates a document in a collection.</summary>
+<summary>Inserts or updates multiple documents in a collection (bulk upsert).</summary>
 
 - model: `Model`: A model instance used for the query.
 - items: `Array<Object>`: The items to upsert in the collection
 - setOnInsert: `Object`: Default values to insert on Items.
+- options: `Object` (optional): Additional options for the multiSave operation. **Since 3.18.0**.
+  - `skipAutomaticSetModifiedData`: `Boolean`. When **true**, the field `dateModified` is not updated automatically on any item. Default: **false**.
 
 - Resolves `Boolean`: `true` if items can be upserted
 - Rejects `Error` When something bad occurs
