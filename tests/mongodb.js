@@ -3450,6 +3450,33 @@ describe('MongoDB', () => {
 				sinon.assert.notCalled(estimatedDocumentCount);
 				sinon.assert.calledOnceWithExactly(countDocuments, { status: { $eq: 'active' } }, { comment, readPreference: 'secondaryPreferred' });
 			});
+
+			it('Should pass the readPreference param to estimatedDocumentCount() when no filters received', async () => {
+
+				const mongodb = new MongoDB(config);
+
+				const countDocuments = sinon.spy();
+				const estimatedDocumentCount = sinon.stub().resolves(1);
+
+				const collection = stubMongo(true, { countDocuments, estimatedDocumentCount });
+
+				const model = getModel();
+
+				const result = await mongodb.getTotals(model, undefined, {
+					readPreference: 'secondaryPreferred'
+				});
+
+				assert.deepStrictEqual(result, {
+					total: 1,
+					pageSize: 500,
+					pages: 1,
+					page: 0
+				});
+
+				sinon.assert.calledOnce(collection);
+				sinon.assert.notCalled(countDocuments);
+				sinon.assert.calledOnceWithExactly(estimatedDocumentCount, { comment, readPreference: 'secondaryPreferred' });
+			});
 		});
 
 		context('When using filters', () => {
