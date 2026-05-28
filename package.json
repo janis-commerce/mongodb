@@ -10,8 +10,7 @@
     "coverage": "nyc npm test",
     "lint": "eslint lib/ tests/",
     "build-types": "tsc lib/mongodb.js --declaration --allowJs --emitDeclarationOnly --outDir types",
-    "prepare": "husky install",
-    "postpublish": "./.postpublish.sh"
+    "prepare": "husky install"
   },
   "repository": {
     "type": "git",

@@ -36,4 +36,11 @@ jobs:
           npm publish --tag "$TAG" --access public
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
-          SLACK_WEBHOOK: ${{secrets.slack_webhook}}
+
+  notify-slack:
+    needs: publish-npm
+    uses: janis-commerce/.github/.github/workflows/slack-notify-publish.yml@master
+    with:
+      username: Mongodb
+    secrets:
+      SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
