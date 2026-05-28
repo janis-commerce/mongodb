@@ -25,6 +25,6 @@ jobs:
       - name: Run coverage
         run: npm run coverage-ci
       - name: Upload to Coveralls
-        uses: coverallsapp/github-action@master
+        uses: coverallsapp/github-action@v2
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}

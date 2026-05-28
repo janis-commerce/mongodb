@@ -5,13 +5,13 @@
   "main": "lib/mongodb.js",
   "scripts": {
     "test": "export TEST_ENV=true; mocha --exit -R nyan --recursive tests/",
-    "test-ci": "nyc --reporter=lcov --reporter=text-summary mocha --exit --recursive tests/",
     "watch-test": "export TEST_ENV=true; mocha --exit -R nyan -w --recursive tests/",
     "coverage": "nyc npm test",
     "lint": "eslint lib/ tests/",
     "build-types": "tsc lib/mongodb.js --declaration --allowJs --emitDeclarationOnly --outDir types",
     "prepare": "husky install",
-    "postpublish": "./.postpublish.sh"
+    "postpublish": "./.postpublish.sh",
+    "coverage-ci": "nyc --reporter=lcov --reporter=text-summary mocha --exit --recursive tests/"
   },
   "repository": {
     "type": "git",
