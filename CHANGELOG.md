@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Operations `comment` now includes the Lambda request ID when the `AWS_LAMBDA_REQUEST_ID` env var is set: `functionName@requestId` (or `unknown@requestId` if `AWS_LAMBDA_FUNCTION_NAME` is not set)
 
 ## [3.18.0] - 2026-04-29
 ### Added
