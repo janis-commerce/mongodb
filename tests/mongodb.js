@@ -197,6 +197,24 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(mongoDistinctStub, 'foo', {}, { comment });
 		});
 
+		it('Should pass the comment with the request id if AWS_LAMBDA_REQUEST_ID env var is set', async () => {
+
+			process.env.AWS_LAMBDA_REQUEST_ID = 'test-request-id';
+
+			const mongoDistinctStub = sinon.stub().resolves(['bar', 'baz']);
+
+			const collectionStub = stubMongo(true, { distinct: mongoDistinctStub });
+
+			const mongodb = new MongoDB(config);
+			const distinctValues = await mongodb.distinct(getModel(), { key: 'foo' });
+
+			assert.deepStrictEqual(distinctValues, ['bar', 'baz']);
+
+			sinon.assert.calledOnceWithExactly(collectionStub, 'myCollection');
+
+			sinon.assert.calledOnceWithExactly(mongoDistinctStub, 'foo', {}, { comment: 'MyLambdaFunction@test-request-id' });
+		});
+
 		it('Should pass the parsed filters to the mongodb distinct method', async () => {
 
 			const mongoDistinctStub = sinon.stub().resolves(['bar', 'baz']);
