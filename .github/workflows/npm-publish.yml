@@ -2,45 +2,15 @@ name: NPM Publish
 
 on:
   push:
-    tags: [ '*' ]
+    tags:
+      - '**'
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22.x
-      - run: npm i
-      - run: npm test
-
-  publish-npm:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22.x
-          registry-url: https://registry.npmjs.org/
-      - run: npm i
-      - name: Build types
-        run: npm run build-types
-      - name: Publish to NPM
-        run: |
-          TAG=$(echo "${GITHUB_REF_NAME}" | grep -oP '(?<=-)[^-]+' || echo "")
-          if [ -z "$TAG" ]; then
-            TAG="latest"
-          fi
-          npm publish --tag "$TAG" --access public
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
-
-  notify-slack:
-    needs: publish-npm
-    uses: janis-commerce/.github/.github/workflows/slack-notify-publish.yml@master
+  publish:
+    uses: janis-commerce/.github/.github/workflows/npm-publish.yml@master
     with:
-      username: Mongodb
+      build-types: true
+      slack-username: Mongodb
     secrets:
+      npm_token: ${{ secrets.npm_token }}
       SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
