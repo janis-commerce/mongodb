@@ -13,12 +13,12 @@ Deriva de `specs/mongodb-driver-v7-upgrade.md`. Batches en serie, un writer por 
 Toca: `package.json`, `.github/workflows/build-status.yml`, `lib/mongodb.js`, `tests/mongodb.js`, `types/` (build-types), README (secciones `increment`, `multiUpdate`, `dropCollection`, `aggregate`).
 Depende de: B0.
 
-- [ ] `mongodb` `^7.6.0` · `engines.node >=20.19.0` · build-status `node-versions: '["22.x"]'`.
-- [ ] Export `ObjectId` desde `lib/mongodb.js` (+ types).
-- [ ] `save()` / `increment()`: quitar `returnNewDocument`; `increment()` con `returnDocument: 'after'`.
-- [ ] `multiUpdate()`: `getWriteErrors()` / `getWriteConcernError()` → `writeErrors`, `writeConcernErrors` (array).
-- [ ] Tests actualizados; ningún `ObjectId(` sin `new`.
-- Verifica: lint 0 · `npm test` verde · coverage statements 100% · `npm run build-types` sin errores.
+- [x] `mongodb` `^7.6.0` · `engines.node >=20.19.0` · build-status `node-versions: '["22.x"]'`.
+- [x] Export `ObjectId` desde `lib/mongodb.js` (`types/` es build artifact ignorado, se genera en publish).
+- [x] `save()` / `increment()`: quitar `returnNewDocument`; `increment()` con `returnDocument: 'after'`.
+- [x] `multiUpdate()`: `getWriteErrors()` / `getWriteConcernError()` → `writeErrors`, `writeConcernErrors` (array).
+- [x] Tests actualizados; ningún `ObjectId(` sin `new`.
+- Verifica: lint 0 · 287 passing · statements 100% · build-types OK. Pendiente: 2 branches sin cubrir en `multiInsert()` catch (heredado del merge) → se cubre en B2.
 
 ## B2 · Migration guide (janis-developer · haiku/sonnet)
 
@@ -28,12 +28,12 @@ Depende de: B1 (shape final del API).
 - [ ] Sección "Migration guide 3.x → 4.0" con los 7 puntos del spec.
 - Verifica: lectura cruzada contra `lib/` (cada afirmación tiene su línea de código).
 
-## B3 · Integration tests (janis-developer · sonnet) — ⏸ espera Abiertas
+## B3 · Integration tests (janis-developer · sonnet)
 
-Toca: `integration-tests/**` (desde `origin/Mongodb-driver-upgrade`), `package.json` (script).
-Depende de: B1 + decisión docker / `mongodb-memory-server` / postergar.
+Toca: `integration-tests/**` (desde `origin/Mongodb-driver-upgrade`), `package.json` (script + devDependency `mongodb-memory-server`).
+Depende de: B1. Decisión tomada: `mongodb-memory-server` en vez de docker-compose (validado local).
 
-- [ ] Rescatar runner + fixtures; adaptar a server 6 / 7 / 8 y Node 22.
+- [ ] Rescatar runner + fixtures; levantar server 6 / 7 / 8 con `mongodb-memory-server`, Node 22.
 - [ ] Casos: `save()` upsert/existente, `increment()` post-`$inc`, `multiInsert()` duplicados, `multiUpdate()` con write errors, `dropCollection()` inexistente, `aggregate()` > 1000 docs.
 - Verifica: `npm run test-integration` verde local (y en CI si se decide).
 

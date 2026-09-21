@@ -76,6 +76,8 @@ Actualizar el driver `mongodb` de `^4.17.2` a `^7.6` en `@janiscommerce/mongodb`
 - Canaries: wms, catalog, pricing.
 - Features nuevas del driver (IWM, CSOT, MONGODB-AWS, zstd, `MongoClient.bulkWrite()`): evaluación posterior, fuera de este spec.
 
+- Integration tests: sin docker en la máquina local, el runner de la branch 2024 (docker-compose) se reemplaza por `mongodb-memory-server@11` (`engines.node >=20.19.0`, alineado). Validado el 2026-09-21 en macOS arm64: levanta MongoDB 8.0.12 / 7.0.21 / 6.0.24 sin configuración (binarios en `~/.cache/mongodb-binaries`, ~480 MB). Se conservan los fixtures y el runner mocha de la branch 2024; cambia solo cómo se levanta el server.
+
 ## Abiertas
 
-- **Integration tests sin docker**: la máquina local no tiene `docker`. El runner de la branch 2024 depende de docker-compose. Opciones: (a) instalar Docker Desktop / colima y usar el runner tal cual; (b) reemplazar docker por `mongodb-memory-server` (descarga `mongod` por versión, corre local y en GitHub Actions sin docker); (c) postergar los integration tests a un PR aparte. El batch 3 del plan espera esta decisión; los batches 1 y 2 no dependen de ella.
+—
