@@ -5,6 +5,8 @@
 const assert = require('assert');
 const sinon = require('sinon');
 
+const { ObjectId: DriverObjectId } = require('mongodb');
+
 const { MongoWrapper, ObjectId } = require('../lib/mongodb-wrapper');
 const MongoDBError = require('../lib/mongodb-error');
 const MongoDB = require('../lib/mongodb');
@@ -921,7 +923,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
-			}, { upsert: true, returnNewDocument: true, includeResultMetadata: true, comment });
+			}, { upsert: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should use a unique index as filter if id is not passed', async () => {
@@ -959,7 +961,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
-			}, { upsert: true, returnNewDocument: true, includeResultMetadata: true, comment });
+			}, { upsert: true, includeResultMetadata: true, comment });
 		});
 
 		['indexes', 'uniqueIndexes'].forEach(indexesGetter => {
@@ -1001,7 +1003,7 @@ describe('MongoDB', () => {
 						},
 						$currentDate: { dateModified: true },
 						$setOnInsert: { dateCreated: sinon.match.date }
-					}, { upsert: true, returnNewDocument: true, includeResultMetadata: true, comment });
+					}, { upsert: true, includeResultMetadata: true, comment });
 				});
 			});
 		});
@@ -1041,7 +1043,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
-			}, { upsert: true, returnNewDocument: true, includeResultMetadata: true, comment });
+			}, { upsert: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should use extra default insert values', async () => {
@@ -1080,7 +1082,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date, ...setOnInsert }
-			}, { upsert: true, returnNewDocument: true, includeResultMetadata: true, comment });
+			}, { upsert: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should throw if no unique indexes are defined and id is not passed', async () => {
@@ -1161,7 +1163,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
-			}, { upsert: true, returnNewDocument: true, includeResultMetadata: true, comment });
+			}, { upsert: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should remove conflictive fields from default insert values', async () => {
@@ -1205,7 +1207,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date, quantity: 100 }
-			}, { upsert: true, returnNewDocument: true, includeResultMetadata: true, comment });
+			}, { upsert: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should map the model defined ID fields to ObjectIds', async () => {
@@ -1244,7 +1246,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
-			}, { upsert: true, returnNewDocument: true, includeResultMetadata: true, comment });
+			}, { upsert: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should send only in $setOnInsert the dateCreated value when received as valid iso date', async () => {
@@ -1274,7 +1276,7 @@ describe('MongoDB', () => {
 				$set: { name: 'Blue rocket' },
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: new Date(item.dateCreated) }
-			}, { upsert: true, returnNewDocument: true, includeResultMetadata: true, comment });
+			}, { upsert: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should send only in $setOnInsert the dateCreated value when received as valid date object', async () => {
@@ -1304,7 +1306,7 @@ describe('MongoDB', () => {
 				$set: { name: 'Blue rocket' },
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: new Date(item.dateCreated) }
-			}, { upsert: true, returnNewDocument: true, includeResultMetadata: true, comment });
+			}, { upsert: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should send current Date when received an invalid date as string', async () => {
@@ -1336,7 +1338,7 @@ describe('MongoDB', () => {
 				$set: { name: 'Blue rocket' },
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: new Date() }
-			}, { upsert: true, returnNewDocument: true, includeResultMetadata: true, comment });
+			}, { upsert: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should not set $currentDate dateModified when options.skipAutomaticSetModifiedData is true', async () => {
@@ -1372,7 +1374,7 @@ describe('MongoDB', () => {
 				},
 				$setOnInsert: { dateCreated: fakeNow }
 			}, {
-				upsert: true, returnNewDocument: true, includeResultMetadata: true, comment
+				upsert: true, includeResultMetadata: true, comment
 			});
 		});
 	});
@@ -2748,7 +2750,7 @@ describe('MongoDB', () => {
 				insertedCount: 0,
 				deletedCount: 0,
 				writeErrors: [],
-				writeConcernError: undefined,
+				writeConcernErrors: [],
 				operations: [{
 					index: 0,
 					filter: sampleOperation.filter,
@@ -2843,7 +2845,7 @@ describe('MongoDB', () => {
 				writeErrors: [
 					{ index: 1, code: 11000, errmsg: 'Duplicate key error' }
 				],
-				writeConcernError: undefined,
+				writeConcernErrors: [],
 				operations: [{
 					index: 0,
 					filter: sampleOperation.filter,
@@ -2890,7 +2892,7 @@ describe('MongoDB', () => {
 				writeErrors: [
 					{ index: 1, code: 11000, errmsg: 'Duplicate key error' }
 				],
-				writeConcernError: undefined,
+				writeConcernErrors: [],
 				operations: [{
 					index: 0,
 					filter: sampleOperation.filter,
@@ -3010,7 +3012,7 @@ describe('MongoDB', () => {
 			assert.strictEqual(notModified[0].errors[0].errmsg, 'Stock already updated');
 		});
 
-		it('Should handle bulkWrite result with empty writeErrors and undefined writeConcernError', async () => {
+		it('Should handle bulkWrite result with empty writeErrors and no writeConcernErrors', async () => {
 			const operations = [
 				{ filter: { id: 1 }, data: { name: 'test 1' } }
 			];
@@ -3032,9 +3034,35 @@ describe('MongoDB', () => {
 			const result = await mongodb.multiUpdate(getModel(), operations, { rawResponse: true });
 
 			assert.deepStrictEqual(result.writeErrors, []);
-			assert.deepStrictEqual(result.writeConcernError, undefined);
+			assert.deepStrictEqual(result.writeConcernErrors, []);
 			assert.strictEqual(result.operations.length, 1);
 			assert.strictEqual(result.operations[0].errors.length, 0);
+		});
+
+		it('Should handle bulkWrite result with a writeConcernError', async () => {
+			const operations = [
+				{ filter: { id: 1 }, data: { name: 'test 1' } }
+			];
+
+			const writeConcernError = { code: 64, errmsg: 'waiting for replication timed out' };
+
+			const bulkWriteResult = {
+				modifiedCount: 1,
+				matchedCount: 1,
+				upsertedCount: 0,
+				insertedCount: 0,
+				deletedCount: 0,
+				getWriteErrors: () => [],
+				getWriteConcernError: () => writeConcernError
+			};
+
+			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
+			stubMongo(true, { bulkWrite });
+			const mongodb = new MongoDB(config);
+
+			const result = await mongodb.multiUpdate(getModel(), operations, { rawResponse: true });
+
+			assert.deepStrictEqual(result.writeConcernErrors, [writeConcernError]);
 		});
 	});
 
@@ -3787,7 +3815,7 @@ describe('MongoDB', () => {
 						$inc: incrementData
 					}, {
 						upsert: false,
-						returnNewDocument: true,
+						returnDocument: 'after',
 						includeResultMetadata: true,
 						comment
 					});
@@ -3818,7 +3846,7 @@ describe('MongoDB', () => {
 						$inc: incrementData
 					}, {
 						upsert: false,
-						returnNewDocument: true,
+						returnDocument: 'after',
 						includeResultMetadata: true,
 						comment
 					});
@@ -3854,7 +3882,7 @@ describe('MongoDB', () => {
 						$inc: incrementData
 					}, {
 						upsert: false,
-						returnNewDocument: true,
+						returnDocument: 'after',
 						includeResultMetadata: true,
 						comment
 					});
@@ -3884,7 +3912,7 @@ describe('MongoDB', () => {
 						$inc: incrementData
 					}, {
 						upsert: false,
-						returnNewDocument: true,
+						returnDocument: 'after',
 						includeResultMetadata: true,
 						comment
 					});
@@ -4889,6 +4917,14 @@ describe('MongoDB', () => {
 			} catch(error) {
 				assert.deepStrictEqual(error.message, 'Expected a value of type `objectId` but received `"123"`.');
 			}
+		});
+	});
+
+	describe('ObjectId export', () => {
+
+		it('Should export the same ObjectId constructor as the mongodb driver', () => {
+			assert.strictEqual(MongoDB.ObjectId, DriverObjectId);
+			assert.strictEqual(MongoDB.ObjectId, ObjectId);
 		});
 	});
 });

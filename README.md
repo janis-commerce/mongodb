@@ -375,6 +375,13 @@ The package will handle the `string` to `ObjectId` conversion automatically for 
 
 It also maps `_id` field to `id` when retrieving documents.
 
+The `ObjectId` constructor is also re-exported from the package's entrypoint, in case you need to build one manually (same reference as `require('mongodb').ObjectId`):
+```js
+const { ObjectId } = require('@janiscommerce/mongodb');
+
+const id = new ObjectId('5df0151dbc1d570011949d86');
+```
+
 **Example**
 
 Putting it all together, here's a complete example with all possible configurations:
@@ -729,8 +736,8 @@ const result = await mongo.multiUpdate(model, [
   upsertedCount: 0,
   insertedCount: 0,
   deletedCount: 0,
-  writeErrors: [],
-  writeConcernError: undefined,
+  writeErrors: [],       // array of WriteError, one per failed operation
+  writeConcernErrors: [], // array of WriteConcernError, empty if none occurred
   operations: [     // detailed information for each operation
     {
       index: 0,
@@ -812,7 +819,7 @@ await mongo.multiRemove(model, { name: { type: 'search', value: 'test' } });
 - incrementData: `Object`: The fields with the values to increment or decrement to updated in the collection (values must be *number* type).
 - setData: `Object`: extra data to be updated in the registry
 
-- Resolves `Object`: An object containing the updated registry
+- Resolves `Object|null`: The updated document (after applying the increment), or `null` if no document matched the filters
 - Rejects `Error` When something bad occurs
 
 **Usage:**
@@ -826,6 +833,24 @@ await mongo.increment(model, { status: 'pending' }, { pendingDaysQuantity: 1 }, 
    updatedDate:ISODate("2020-11-09T14:01:29.170Z")
 }
 */
+```
+
+</details>
+
+### ***async*** `dropCollection(collection)`
+
+<details>
+<summary>Drops a collection from the database of the current `config`.</summary>
+
+- collection: `String`: The name of the collection to drop.
+
+- Resolves `Boolean`: `true` if the collection was dropped. `false` if the collection did not exist (driver `7.x` resolves `false` instead of rejecting).
+- Rejects `Error` When something bad occurs (other than a non-existent collection)
+
+**Usage:**
+```js
+await mongo.dropCollection('myCollection');
+// > true|false
 ```
 
 </details>
