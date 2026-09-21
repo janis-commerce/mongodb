@@ -2107,6 +2107,64 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
 		});
+
+		it('Should return an empty array when the duplicate key error has no result nor writeErrors', async () => {
+
+			const items = [{
+				id: '5df0151dbc1d570011949d86',
+				name: 'Blue shirt'
+			}];
+
+			const errorMessage = `E11000 duplicate key error collection: someDatabase.myCollection index: _id_ dup key: { _id: ${items[0].id} }`;
+
+			const error = new Error(errorMessage);
+
+			const insertMany = sinon.stub().rejects(error);
+
+			const collection = stubMongo(true, { insertMany });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.multiInsert(getModel(), [...items]);
+
+			sinon.assert.match(result, []);
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+		});
+
+		it('Should return every inserted item when the duplicate key error has insertedIds but no writeErrors', async () => {
+
+			const items = [{
+				// already in DB
+				id: '5df0151dbc1d570011949d86',
+				name: 'Blue shirt'
+			}, {
+				// not in DB
+				id: '5df0151dbc1d570011949d87',
+				name: 'Red shirt'
+			}];
+
+			const errorMessage = `E11000 duplicate key error collection: someDatabase.myCollection index: _id_ dup key: { _id: ${items[0].id} }`;
+
+			const error = new Error(errorMessage);
+
+			error.result = {
+				insertedIds: {
+					0: new ObjectId('5df0151dbc1d570011949d86'),
+					1: new ObjectId('5df0151dbc1d570011949d87')
+				}
+			};
+
+			const insertMany = sinon.stub().rejects(error);
+
+			const collection = stubMongo(true, { insertMany });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.multiInsert(getModel(), [...items]);
+
+			sinon.assert.match(result, items.map(item => ({ ...item, dateCreated: sinon.match.date })));
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+		});
 	});
 
 	describe('multiSave()', () => {

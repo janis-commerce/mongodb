@@ -1,5 +1,14 @@
 # Actualización del driver `mongodb` de v4 a v7
 
+## Estado final (4.0.0)
+
+Driver publicado: `mongodb@^7.6.0`. Desvíos respecto de este análisis:
+
+- `multiUpdate()` mantiene `writeConcernErrors` como **array** (no el singular que expone el driver vía `getWriteConcernError()`), por compatibilidad con el contrato público existente.
+- `increment()` se corrigió a `findOneAndUpdate` con `returnDocument: 'after'`: el análisis original asumía que `returnNewDocument` funcionaba, pero esa opción nunca fue soportada por el driver.
+- `ObjectId` se exporta desde el entrypoint (`lib/mongodb.js`), además de `lib/mongodb-wrapper.js`.
+- Integration tests con `mongodb-memory-server` en vez de docker-compose.
+
 Análisis basado en la superficie que expone `@janiscommerce/mongodb@3.17.0` (`lib/mongodb.js`, `lib/mongodb-wrapper.js`, `lib/config-validator.js`) y los changelogs oficiales de cada major del driver.
 
 ## Superficie que realmente usamos del driver

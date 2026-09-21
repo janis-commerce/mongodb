@@ -14,7 +14,65 @@ npm install --save @janiscommerce/mongodb
 
 ### MongoDB Driver v4
 
-Now we are using [mongodb](https://www.npmjs.com/package/mongodb) `^4.x.x` version of the driver (upgraded from v3)
+Now we are using [mongodb](https://www.npmjs.com/package/mongodb) `^7.x.x` version of the driver (upgraded from v4)
+
+## Migration guide 3.x → 4.0
+
+`4.0.0` upgrades the underlying [mongodb](https://www.npmjs.com/package/mongodb) driver from `^4.x.x` to `^7.6.0`. This is a breaking change, summarized below.
+
+### Node version
+
+The driver requires Node `>= 20.19.0`. Update `engines.node` in your `package.json` and, if deployed as a Lambda, use `nodejs22.x` as the runtime.
+
+### `ObjectId` requires `new`
+
+`bson >= 5` (bundled by driver `^7.x`) no longer allows calling `ObjectId` without `new`:
+
+```js
+ObjectId('5df0151dbc1d570011949d86'); // TypeError: Class constructor ObjectId cannot be invoked without 'new'
+
+new ObjectId('5df0151dbc1d570011949d86'); // OK
+```
+
+`ObjectId` is exported from this package's entrypoint, so there's no need to depend on `mongodb` directly just to build one:
+
+```js
+const { ObjectId } = require('@janiscommerce/mongodb');
+```
+
+A deep import from `lib/mongodb-wrapper` still works for backward compatibility, but it's not part of the public API — use the entrypoint import above.
+
+### `increment()` returns the post-update document
+
+`increment()` now resolves the document **after** applying the `$inc` (or `null` if no document matched the filters). Previous versions returned the pre-update document, since the driver never actually supported the `returnNewDocument` option this package used to pass. See [`increment()`](#async-incrementmodel-filters-incrementdata-setdata) for the current contract.
+
+### `dropCollection()` resolves `false` instead of throwing
+
+Dropping a collection that doesn't exist now resolves `false` instead of rejecting. See [`dropCollection()`](#async-dropcollectioncollection).
+
+### Connection strings use strict booleans
+
+The driver's connection string parser now only accepts `true`/`false` for boolean options. Values like `ssl=1` or `retryWrites=yes` are rejected:
+
+```
+# Before, tolerated:
+mongodb://host/db?ssl=1&retryWrites=yes
+
+# Now, required:
+mongodb://host/db?ssl=true&retryWrites=true
+```
+
+### `multiUpdate()` reports real write errors
+
+`writeErrors` and `writeConcernErrors` (both arrays) now reflect the actual per-operation errors from the bulk write, sourced from the driver's `BulkWriteResult.getWriteErrors()` / `getWriteConcernError()`. Previously they always resolved as empty arrays regardless of failures. See [`multiUpdate()`](#async-multiupdatemodel-operations-options) for the full `rawResponse` shape.
+
+### `aggregate()` and `batchSize`
+
+The driver no longer defaults `getMore` batches to `1000`. `aggregate()` forwards its `options` argument to the underlying cursor, so pass `batchSize` explicitly if your pipeline needs a specific value:
+
+```js
+await mongo.aggregate(model, [{ $match: { status: 'active' } }], { batchSize: 1000 });
+```
 
 ## Models
 Whenever the `Model` type is mentioned in this document, it refers to an instance of [@janiscommerce/model](https://www.npmjs.com/package/@janiscommerce/model).

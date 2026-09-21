@@ -25,7 +25,7 @@ Depende de: B0.
 Toca: `README.md`, `docs/mongodb-driver-v4-to-v7-upgrade.md` (nota de estado final).
 Depende de: B1 (shape final del API).
 
-- [ ] Sección "Migration guide 3.x → 4.0" con los 7 puntos del spec.
+- [x] Sección "Migration guide 3.x → 4.0" con los 7 puntos del spec (+ 2 tests que cierran branches de `multiInsert()`; coverage 100/100/100/100).
 - Verifica: lectura cruzada contra `lib/` (cada afirmación tiene su línea de código).
 
 ## B3 · Integration tests (janis-developer · sonnet)
