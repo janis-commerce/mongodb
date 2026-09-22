@@ -158,61 +158,92 @@ describe('Batch', () => {
 		);
 	});
 
-	it('multiUpdate(): Should apply the operations before the failing index and reject with MongoDBError', async () => {
+	it('multiUpdate(): Should stop at the failing index and reject with MongoDBError when rawResponse is not used', async () => {
 
 		const mongodb = getMongodbInstance();
 		const model = new TestModel();
 
-		await mongodb.multiInsert(model, [{ name: 'A' }, { name: 'B' }]);
+		await mongodb.multiInsert(model, [{ name: 'A' }, { name: 'B' }, { name: 'C' }]);
 
 		await assert.rejects(
 			mongodb.multiUpdate(model, [
 				{ filter: { name: 'A' }, data: { extra: 1 } }, // succeeds
-				{ filter: { name: 'B' }, data: { name: 'A' } } // violates the unique index on `name`
-			], { rawResponse: true }),
+				{ filter: { name: 'B' }, data: { name: 'A' } }, // violates the unique index on `name`
+				{ filter: { name: 'C' }, data: { extra: 3 } } // never executed: the bulk is ordered
+			]),
 			MongoDBError
 		);
 
-		// the operation before the failing index was applied and persisted (bulkWrite default is ordered: true)
-		const stored = await mongodb.get(model, { filters: { name: 'A' } });
-		sinon.assert.match(stored, [{
-			id: sinon.match.string,
-			name: 'A',
-			extra: 1,
-			dateCreated: now,
-			dateModified: sinon.match.instanceOf(Date)
-		}]);
+		// the operation before the failing index was applied and persisted
+		const [updatedFirst] = await mongodb.get(model, { filters: { name: 'A' } });
+		assert.equal(updatedFirst.extra, 1);
+
+		// the operation after the failing index was never executed
+		const [notUpdatedLast] = await mongodb.get(model, { filters: { name: 'C' } });
+		assert.equal(notUpdatedLast.extra, undefined);
 	});
 
-	/**
-	 * TODO(bug): lib/mongodb.js multiUpdate() (~line 597-629) never returns the documented
-	 * `{ writeErrors, writeConcernErrors, operations }` shape when there's an actual write error. `bulkWrite()`
-	 * is called without `ordered: false`, so on a real write error (e.g. unique index violation) the driver
-	 * rejects the bulkWrite() promise with a MongoBulkWriteError instead of resolving with a result object that
-	 * exposes `getWriteErrors()`. The `try` block never reaches the `if(rawResponse)` branch: the `catch` wraps
-	 * ANY error, including this one, into a generic MongoDBError, discarding writeErrors/writeConcernErrors and
-	 * the per-operation success/errors data described by the spec.
-	 *
-	 * Input: multiUpdate(model, [{filter:{name:'A'},data:{extra:1}}, {filter:{name:'B'},data:{name:'A'}}], {rawResponse:true})
-	 * Expected (per spec): resolves { writeErrors: [...], operations: [{success:true,...}, {success:false, errors:[...]}] }
-	 * Actual: rejects with MongoDBError; writeErrors/operations data is never exposed to the caller
-	 */
-	it.skip('multiUpdate(): TODO(bug) Should resolve with writeErrors and per-operation success/errors instead of rejecting', async () => {
+	it('multiUpdate(): Should resolve with the write errors detail and apply every operation when rawResponse is true', async () => {
 
 		const mongodb = getMongodbInstance();
 		const model = new TestModel();
 
-		await mongodb.multiInsert(model, [{ name: 'A' }, { name: 'B' }]);
+		await mongodb.multiInsert(model, [{ name: 'A' }, { name: 'B' }, { name: 'C' }]);
 
 		const result = await mongodb.multiUpdate(model, [
-			{ filter: { name: 'A' }, data: { extra: 1 } },
-			{ filter: { name: 'B' }, data: { name: 'A' } } // violates the unique index on `name`
+			{ filter: { name: 'A' }, data: { extra: 1 } }, // succeeds
+			{ filter: { name: 'B' }, data: { name: 'A' } }, // violates the unique index on `name`
+			{ filter: { name: 'C' }, data: { extra: 3 } } // succeeds: the bulk is unordered
 		], { rawResponse: true });
 
-		assert.ok(result.writeErrors.length);
-		assert.equal(result.operations[0].success, true);
-		assert.equal(result.operations[1].success, false);
+		assert.equal(result.success, false);
+		assert.equal(result.modifiedCount, 2);
+		assert.equal(result.writeErrors.length, 1);
+		assert.equal(result.writeErrors[0].index, 1);
+
+		assert.deepEqual(result.operations.map(({ index, success }) => ({ index, success })), [
+			{ index: 0, success: true },
+			{ index: 1, success: false },
+			{ index: 2, success: true }
+		]);
+
 		assert.ok(result.operations[1].errors.length);
+
+		// the operation after the failing index was applied and persisted
+		const [updatedLast] = await mongodb.get(model, { filters: { name: 'C' } });
+		assert.equal(updatedLast.extra, 3);
+	});
+
+	it('multiUpdate(): Should map the write errors to the original operation index when the failures are non-contiguous', async () => {
+
+		const mongodb = getMongodbInstance();
+		const model = new TestModel();
+
+		await mongodb.multiInsert(model, [{ name: 'A' }, { name: 'B' }, { name: 'C' }, { name: 'D' }]);
+
+		const result = await mongodb.multiUpdate(model, [
+			{ filter: { name: 'B' }, data: { name: 'A' } }, // violates the unique index on `name`
+			{ filter: { name: 'C' }, data: { extra: 1 } }, // succeeds
+			{ filter: { name: 'D' }, data: { name: 'A' } }, // violates the unique index on `name`
+			{ filter: { name: 'C' }, data: { otherExtra: 2 } } // succeeds
+		], { rawResponse: true });
+
+		assert.equal(result.success, false);
+		assert.deepEqual(result.writeErrors.map(({ index }) => index), [0, 2]);
+
+		assert.deepEqual(result.operations.map(({ index, success }) => ({ index, success })), [
+			{ index: 0, success: false },
+			{ index: 1, success: true },
+			{ index: 2, success: false },
+			{ index: 3, success: true }
+		]);
+
+		assert.equal(result.operations[0].errors[0].index, 0);
+		assert.equal(result.operations[2].errors[0].index, 2);
+
+		const [updatedDocument] = await mongodb.get(model, { filters: { name: 'C' } });
+		assert.equal(updatedDocument.extra, 1);
+		assert.equal(updatedDocument.otherExtra, 2);
 	});
 
 });

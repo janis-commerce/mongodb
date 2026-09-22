@@ -5,7 +5,7 @@
 const assert = require('assert');
 const sinon = require('sinon');
 
-const { ObjectId: DriverObjectId } = require('mongodb');
+const { MongoBulkWriteError, ObjectId: DriverObjectId } = require('mongodb');
 
 const { MongoWrapper, ObjectId } = require('../lib/mongodb-wrapper');
 const MongoDBError = require('../lib/mongodb-error');
@@ -2826,19 +2826,28 @@ describe('MongoDB', () => {
 			sinon.assert.notCalled(bulkWrite);
 		});
 
-		it('Should return detailed result when rawResponse is true', async () => {
+		const buildBulkWriteResult = ({ writeErrors = [], writeConcernError, ...counts } = {}) => ({
+			modifiedCount: 0,
+			matchedCount: 0,
+			upsertedCount: 0,
+			insertedCount: 0,
+			deletedCount: 0,
+			...counts,
+			getWriteErrors: () => writeErrors,
+			getWriteConcernError: () => writeConcernError
+		});
 
-			const bulkWriteResult = {
-				modifiedCount: 5,
-				matchedCount: 10,
-				upsertedCount: 0,
-				insertedCount: 0,
-				deletedCount: 0,
-				getWriteErrors: () => [],
-				getWriteConcernError: () => undefined
-			};
+		// The driver never resolves bulkWrite() when the server reports write errors: it rejects with a
+		// MongoBulkWriteError that carries the partial BulkWriteResult
+		const buildBulkWriteError = bulkWriteResult => new MongoBulkWriteError({
+			message: bulkWriteResult.getWriteErrors()[0]?.errmsg || 'write operation failed',
+			code: bulkWriteResult.getWriteErrors()[0]?.code,
+			writeErrors: bulkWriteResult.getWriteErrors()
+		}, bulkWriteResult);
 
-			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
+		it('Should resolve the detailed result using an unordered bulk when rawResponse is true', async () => {
+
+			const bulkWrite = sinon.stub().resolves(buildBulkWriteResult({ modifiedCount: 5, matchedCount: 10 }));
 
 			const collection = stubMongo(true, { bulkWrite });
 
@@ -2866,20 +2875,12 @@ describe('MongoDB', () => {
 			});
 
 			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
-			sinon.assert.calledOnceWithExactly(bulkWrite, sinon.match.array, { comment });
+			sinon.assert.calledOnceWithExactly(bulkWrite, sinon.match.array, { ordered: false, comment });
 		});
 
-		it('Should return boolean true when rawResponse is false (default)', async () => {
+		it('Should resolve true using an ordered bulk when rawResponse is false', async () => {
 
-			const bulkWriteResult = {
-				modifiedCount: 3,
-				matchedCount: 8,
-				upsertedCount: 0,
-				insertedCount: 0,
-				deletedCount: 0
-			};
-
-			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
+			const bulkWrite = sinon.stub().resolves(buildBulkWriteResult({ modifiedCount: 3, matchedCount: 8 }));
 
 			const collection = stubMongo(true, { bulkWrite });
 
@@ -2893,17 +2894,9 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(bulkWrite, sinon.match.array, { comment });
 		});
 
-		it('Should return boolean true when rawResponse is not provided (backward compatibility)', async () => {
+		it('Should resolve true using an ordered bulk when rawResponse is not provided (backward compatibility)', async () => {
 
-			const bulkWriteResult = {
-				modifiedCount: 2,
-				matchedCount: 5,
-				upsertedCount: 0,
-				insertedCount: 0,
-				deletedCount: 0
-			};
-
-			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
+			const bulkWrite = sinon.stub().resolves(buildBulkWriteResult({ modifiedCount: 2, matchedCount: 5 }));
 
 			const collection = stubMongo(true, { bulkWrite });
 
@@ -2917,101 +2910,7 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(bulkWrite, sinon.match.array, { comment });
 		});
 
-		it('Should handle bulkWrite result with writeErrors when rawResponse is true', async () => {
-
-			const bulkWriteResult = {
-				modifiedCount: 1,
-				matchedCount: 3,
-				upsertedCount: 0,
-				insertedCount: 0,
-				deletedCount: 0,
-				getWriteErrors: () => [
-					{ index: 1, code: 11000, errmsg: 'Duplicate key error' }
-				],
-				getWriteConcernError: () => undefined
-			};
-
-			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
-
-			const collection = stubMongo(true, { bulkWrite });
-
-			const mongodb = new MongoDB(config);
-
-			const result = await mongodb.multiUpdate(getModel(), [sampleOperation], { rawResponse: true });
-
-			assert.deepStrictEqual(result, {
-				success: true,
-				modifiedCount: 1,
-				matchedCount: 3,
-				upsertedCount: 0,
-				insertedCount: 0,
-				deletedCount: 0,
-				writeErrors: [
-					{ index: 1, code: 11000, errmsg: 'Duplicate key error' }
-				],
-				writeConcernErrors: [],
-				operations: [{
-					index: 0,
-					filter: sampleOperation.filter,
-					data: sampleOperation.data,
-					options: undefined,
-					success: true,
-					errors: []
-				}]
-			});
-
-			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
-			sinon.assert.calledOnceWithExactly(bulkWrite, sinon.match.array, { comment });
-		});
-
-		it('Should handle bulkWrite result with writeErrors when rawResponse is true', async () => {
-
-			const bulkWriteResult = {
-				modifiedCount: 1,
-				matchedCount: 3,
-				upsertedCount: 0,
-				insertedCount: 0,
-				deletedCount: 0,
-				getWriteErrors: () => [
-					{ index: 1, code: 11000, errmsg: 'Duplicate key error' }
-				],
-				getWriteConcernError: () => undefined
-			};
-
-			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
-
-			const collection = stubMongo(true, { bulkWrite });
-
-			const mongodb = new MongoDB(config);
-
-			const result = await mongodb.multiUpdate(getModel(), [sampleOperation], { rawResponse: true });
-
-			assert.deepStrictEqual(result, {
-				success: true,
-				modifiedCount: 1,
-				matchedCount: 3,
-				upsertedCount: 0,
-				insertedCount: 0,
-				deletedCount: 0,
-				writeErrors: [
-					{ index: 1, code: 11000, errmsg: 'Duplicate key error' }
-				],
-				writeConcernErrors: [],
-				operations: [{
-					index: 0,
-					filter: sampleOperation.filter,
-					data: sampleOperation.data,
-					options: undefined,
-					success: true,
-					errors: []
-				}]
-			});
-
-			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
-			sinon.assert.calledOnceWithExactly(bulkWrite, sinon.match.array, { comment });
-		});
-
-		it('Should return detailed operations info when rawResponse is true with multiple operations', async () => {
+		it('Should resolve the write errors detail when the bulk write rejects and rawResponse is true', async () => {
 
 			const operations = [
 				{ filter: { id: 1 }, data: { name: 'test 1' } },
@@ -3019,19 +2918,13 @@ describe('MongoDB', () => {
 				{ filter: { id: 3 }, data: { name: 'test 3' } }
 			];
 
-			const bulkWriteResult = {
+			const writeError = { index: 1, code: 11000, errmsg: 'Duplicate key error' };
+
+			const bulkWrite = sinon.stub().rejects(buildBulkWriteError(buildBulkWriteResult({
 				modifiedCount: 2,
 				matchedCount: 3,
-				upsertedCount: 0,
-				insertedCount: 0,
-				deletedCount: 0,
-				getWriteErrors: () => [
-					{ index: 1, code: 11000, errmsg: 'Duplicate key error' }
-				],
-				getWriteConcernError: () => undefined
-			};
-
-			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
+				writeErrors: [writeError]
+			})));
 
 			const collection = stubMongo(true, { bulkWrite });
 
@@ -3039,134 +2932,160 @@ describe('MongoDB', () => {
 
 			const result = await mongodb.multiUpdate(getModel(), operations, { rawResponse: true });
 
-			assert.deepStrictEqual(result.operations, [
-				{
-					index: 0,
-					filter: operations[0].filter,
-					data: operations[0].data,
-					options: undefined,
-					success: true,
-					errors: []
-				},
-				{
-					index: 1,
-					filter: operations[1].filter,
-					data: operations[1].data,
-					options: operations[1].options,
-					success: false,
-					errors: [{ index: 1, code: 11000, errmsg: 'Duplicate key error' }]
-				},
-				{
-					index: 2,
-					filter: operations[2].filter,
-					data: operations[2].data,
-					options: undefined,
-					success: true,
-					errors: []
-				}
-			]);
-
-			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
-			sinon.assert.calledOnceWithExactly(bulkWrite, sinon.match.array, { comment });
-		});
-
-		it('Should return which stock operations were modified and which were not (realistic stock example)', async () => {
-			const operations = [
-				{
-					filter: { productId: 'A', dateModified: { $lt: '2024-07-01' } },
-					data: { stock: 10 },
-					options: { updateOne: true }
-				},
-				{
-					filter: { productId: 'B', dateModified: { $lt: '2024-07-01' } },
-					data: { stock: 20 },
-					options: { updateOne: true }
-				},
-				{
-					filter: { productId: 'C', dateModified: { $lt: '2024-07-01' } },
-					data: { stock: 30 },
-					options: { updateOne: true }
-				}
-			];
-
-			const bulkWriteResult = {
+			assert.deepStrictEqual(result, {
+				success: false,
 				modifiedCount: 2,
 				matchedCount: 3,
 				upsertedCount: 0,
 				insertedCount: 0,
 				deletedCount: 0,
-				getWriteErrors: () => [
-					{ index: 1, code: 11000, errmsg: 'Stock already updated' }
-				],
-				getWriteConcernError: () => undefined
-			};
+				writeErrors: [writeError],
+				writeConcernErrors: [],
+				operations: [
+					{
+						index: 0,
+						filter: operations[0].filter,
+						data: operations[0].data,
+						options: undefined,
+						success: true,
+						errors: []
+					},
+					{
+						index: 1,
+						filter: operations[1].filter,
+						data: operations[1].data,
+						options: operations[1].options,
+						success: false,
+						errors: [writeError]
+					},
+					{
+						index: 2,
+						filter: operations[2].filter,
+						data: operations[2].data,
+						options: undefined,
+						success: true,
+						errors: []
+					}
+				]
+			});
 
-			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+			sinon.assert.calledOnceWithExactly(bulkWrite, sinon.match.array, { ordered: false, comment });
+		});
+
+		it('Should mark only the failed operations when the write errors are in non-contiguous positions', async () => {
+
+			const operations = [
+				{ filter: { productId: 'A' }, data: { stock: 10 }, options: { updateOne: true } },
+				{ filter: { productId: 'B' }, data: { stock: 20 }, options: { updateOne: true } },
+				{ filter: { productId: 'C' }, data: { stock: 30 }, options: { updateOne: true } },
+				{ filter: { productId: 'D' }, data: { stock: 40 }, options: { updateOne: true } }
+			];
+
+			const writeErrors = [
+				{ index: 0, code: 11000, errmsg: 'Stock already updated' },
+				{ index: 2, code: 66, errmsg: 'Performing an update on the path of an immutable field' }
+			];
+
+			const bulkWrite = sinon.stub().rejects(buildBulkWriteError(buildBulkWriteResult({
+				modifiedCount: 2,
+				matchedCount: 2,
+				writeErrors
+			})));
+
 			stubMongo(true, { bulkWrite });
+
 			const mongodb = new MongoDB(config);
 
 			const result = await mongodb.multiUpdate(getModel(), operations, { rawResponse: true });
 
-			const modified = result.operations.filter(op => op.success);
-			const notModified = result.operations.filter(op => !op.success);
+			assert.strictEqual(result.success, false);
+			assert.deepStrictEqual(result.writeErrors, writeErrors);
 
-			assert.strictEqual(modified.length, 2);
-			assert.strictEqual(notModified.length, 1);
-			assert.deepStrictEqual(notModified[0].filter, { productId: 'B', dateModified: { $lt: '2024-07-01' } });
-			assert.strictEqual(notModified[0].errors[0].errmsg, 'Stock already updated');
+			assert.deepStrictEqual(result.operations.map(({ index, success }) => ({ index, success })), [
+				{ index: 0, success: false },
+				{ index: 1, success: true },
+				{ index: 2, success: false },
+				{ index: 3, success: true }
+			]);
+
+			assert.deepStrictEqual(result.operations[0].errors, [writeErrors[0]]);
+			assert.deepStrictEqual(result.operations[2].errors, [writeErrors[1]]);
+
+			const notModified = result.operations.filter(operation => !operation.success);
+
+			assert.deepStrictEqual(notModified.map(({ filter }) => filter), [{ productId: 'A' }, { productId: 'C' }]);
 		});
 
-		it('Should handle bulkWrite result with empty writeErrors and no writeConcernErrors', async () => {
-			const operations = [
-				{ filter: { id: 1 }, data: { name: 'test 1' } }
-			];
-
-			const bulkWriteResult = {
-				modifiedCount: 1,
-				matchedCount: 1,
-				upsertedCount: 0,
-				insertedCount: 0,
-				deletedCount: 0,
-				getWriteErrors: () => [],
-				getWriteConcernError: () => undefined
-			};
-
-			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
-			stubMongo(true, { bulkWrite });
-			const mongodb = new MongoDB(config);
-
-			const result = await mongodb.multiUpdate(getModel(), operations, { rawResponse: true });
-
-			assert.deepStrictEqual(result.writeErrors, []);
-			assert.deepStrictEqual(result.writeConcernErrors, []);
-			assert.strictEqual(result.operations.length, 1);
-			assert.strictEqual(result.operations[0].errors.length, 0);
-		});
-
-		it('Should handle bulkWrite result with a writeConcernError', async () => {
-			const operations = [
-				{ filter: { id: 1 }, data: { name: 'test 1' } }
-			];
+		it('Should resolve the write concern error detail when the bulk write rejects and rawResponse is true', async () => {
 
 			const writeConcernError = { code: 64, errmsg: 'waiting for replication timed out' };
 
-			const bulkWriteResult = {
+			const bulkWrite = sinon.stub().rejects(buildBulkWriteError(buildBulkWriteResult({
 				modifiedCount: 1,
 				matchedCount: 1,
-				upsertedCount: 0,
-				insertedCount: 0,
-				deletedCount: 0,
-				getWriteErrors: () => [],
-				getWriteConcernError: () => writeConcernError
-			};
+				writeConcernError
+			})));
 
-			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
 			stubMongo(true, { bulkWrite });
+
 			const mongodb = new MongoDB(config);
 
-			const result = await mongodb.multiUpdate(getModel(), operations, { rawResponse: true });
+			const result = await mongodb.multiUpdate(getModel(), [sampleOperation], { rawResponse: true });
 
+			assert.strictEqual(result.success, false);
+			assert.deepStrictEqual(result.writeErrors, []);
 			assert.deepStrictEqual(result.writeConcernErrors, [writeConcernError]);
+			assert.strictEqual(result.operations[0].success, true);
+		});
+
+		it('Should reject with MongoDBError when the bulk write reports write errors and rawResponse is not used', async () => {
+
+			const bulkWrite = sinon.stub().rejects(buildBulkWriteError(buildBulkWriteResult({
+				writeErrors: [{ index: 0, code: 11000, errmsg: 'Duplicate key error' }]
+			})));
+
+			stubMongo(true, { bulkWrite });
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(() => mongodb.multiUpdate(getModel(), [sampleOperation]), {
+				message: 'Duplicate key error',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+		});
+
+		it('Should reject with MongoDBError when the bulk write fails with a non bulk error and rawResponse is true', async () => {
+
+			const bulkWrite = sinon.stub().rejects(new Error('BulkWrite internal error'));
+
+			stubMongo(true, { bulkWrite });
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(() => mongodb.multiUpdate(getModel(), [sampleOperation], { rawResponse: true }), {
+				message: 'BulkWrite internal error',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+		});
+
+		it('Should reject with MongoDBError when the bulk write fails without write errors and rawResponse is true', async () => {
+
+			// The driver also wraps a driver-level failure raised mid-bulk (connection, timeout) in a
+			// MongoBulkWriteError, but its partial result has no write error to report
+			const bulkWrite = sinon.stub().rejects(new MongoBulkWriteError(
+				new Error('connection <monitor> to 127.0.0.1:27017 closed'),
+				buildBulkWriteResult()
+			));
+
+			stubMongo(true, { bulkWrite });
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(() => mongodb.multiUpdate(getModel(), [sampleOperation], { rawResponse: true }), {
+				message: 'connection <monitor> to 127.0.0.1:27017 closed',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
 		});
 	});
 

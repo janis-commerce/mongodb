@@ -62,9 +62,30 @@ mongodb://host/db?ssl=1&retryWrites=yes
 mongodb://host/db?ssl=true&retryWrites=true
 ```
 
-### `multiUpdate()` reports real write errors
+### `multiUpdate()` with `rawResponse` resolves instead of rejecting
 
-`writeErrors` and `writeConcernErrors` (both arrays) now reflect the actual per-operation errors from the bulk write, sourced from the driver's `BulkWriteResult.getWriteErrors()` / `getWriteConcernError()`. Previously they always resolved as empty arrays regardless of failures. See [`multiUpdate()`](#async-multiupdatemodel-operations-options) for the full `rawResponse` shape.
+**In `3.x`**, a write error made the promise **reject** with a generic `MongoDBError`. The documented detail was unreachable: `writeErrors` and `writeConcernErrors` always resolved as empty arrays and every `operations[].success` was `true`. The bulk write was ordered, so the operations after the failing one were never executed.
+
+**In `4.0`**, when `rawResponse: true` is used the bulk write runs **unordered** and the promise **resolves** with `success: false` and the real detail from the driver: `writeErrors`, `writeConcernErrors` and the per-operation `success`/`errors`. Every operation is attempted, so the ones after a failing operation are applied too.
+
+Any other failure (connection, timeout, invalid operation) keeps rejecting with `MongoDBError`. **Without `rawResponse` nothing changes**: the bulk write is still ordered and a write error still rejects.
+
+**How to migrate:** code that relied on the rejection to detect failures — for example a consumer that let the error propagate so the message is retried — must now inspect `success` (or `operations[].success`), because the promise no longer rejects:
+
+```js
+// Before (3.x): the rejection was the only failure signal
+await mongo.multiUpdate(model, operations, { rawResponse: true });
+
+// After (4.0): the failure detail comes in the resolved response
+const result = await mongo.multiUpdate(model, operations, { rawResponse: true });
+
+if(!result.success) {
+   const failedOperations = result.operations.filter(operation => !operation.success);
+   throw new Error(`multiUpdate failed for ${failedOperations.length} of ${result.operations.length} operations`);
+}
+```
+
+See [`multiUpdate()`](#async-multiupdatemodel-operations-options) for the full `rawResponse` shape.
 
 ### `aggregate()` and `batchSize`
 
@@ -748,10 +769,13 @@ await mongo.multiSave(model, [
   - `updateOne: boolean` If `true`, uses `updateOne()` operation (updates only the first matching document). If `false` or not provided, uses `updateMany()` operation (updates all matching documents).
   - `skipAutomaticSetModifiedData: boolean` If `true`, the `dateModified` field is not automatically updated.
 - options: `Object` (optional): Global options for the entire multiUpdate operation:
-  - `rawResponse: boolean` If `true`, returns an object with detailed information about the bulkWrite operation result (number of modified documents, errors, etc). By default, returns `true` for backward compatibility.
+  - `rawResponse: boolean` If `true`, resolves an object with detailed information about the bulkWrite operation result (number of modified documents, write errors, per-operation outcome). By default, resolves `true` for backward compatibility.
 
-- Resolves `Boolean|Object`: `true` if the operation was successful, or an object with details if `rawResponse: true` is used.
-- Rejects `Error` When something bad occurs
+- Resolves `Boolean`: `true` if the operation was successful, when `rawResponse` is not used.
+- Resolves `Object`: The detailed result, when `rawResponse: true` is used. It also resolves when the server reports write errors, with `success: false` and the failures detailed in `writeErrors` and `operations[]`.
+- Rejects `MongoDBError` When something bad occurs. With `rawResponse: true`, write errors no longer reject: only failures that abort the whole bulk write do (connection, timeout, invalid operation).
+
+**Ordering:** with `rawResponse: true` the bulk write is executed as **unordered**, so every operation is attempted even if a previous one fails. Without `rawResponse` it is executed as **ordered**, so it stops at the first failing operation. _Since 4.0.0_
 
 **Basic usage (updateMany by default):**
 ```js
@@ -818,11 +842,47 @@ const result = await mongo.multiUpdate(model, [
 */
 
 // You can easily identify which operations succeeded and which failed:
-const successful = result.operations.filter(op => op.success);
-const failed = result.operations.filter(op => !op.success);
+const successfulOperations = result.operations.filter(operation => operation.success);
+const failedOperations = result.operations.filter(operation => !operation.success);
 
-console.log(`Successful operations: ${successful.length}`);
-console.log(`Failed operations: ${failed.length}`);
+console.log(`Successful operations: ${successfulOperations.length}`);
+console.log(`Failed operations: ${failedOperations.length}`);
+```
+
+**Usage with rawResponse when the server reports write errors:**
+```js
+const result = await mongo.multiUpdate(model, [
+   { filter: { name: 'test 1' }, data: { extra: 1 } },
+   { filter: { name: 'test 2' }, data: { name: 'test 1' } }, // violates a unique index on `name`
+   { filter: { name: 'test 3' }, data: { extra: 3 } }
+], { rawResponse: true });
+
+/* result:
+{
+  success: false,         // at least one operation failed
+  modifiedCount: 2,       // the operations after the failing one are applied too: the bulk write is unordered
+  matchedCount: 2,
+  upsertedCount: 0,
+  insertedCount: 0,
+  deletedCount: 0,
+  writeErrors: [          // one WriteError per failed operation, `index` is the position in `operations`
+    { index: 1, code: 11000, errmsg: 'E11000 duplicate key error collection...' }
+  ],
+  writeConcernErrors: [],
+  operations: [
+    { index: 0, filter: { name: 'test 1' }, data: { extra: 1 }, options: undefined, success: true, errors: [] },
+    {
+      index: 1,
+      filter: { name: 'test 2' },
+      data: { name: 'test 1' },
+      options: undefined,
+      success: false,
+      errors: [{ index: 1, code: 11000, errmsg: 'E11000 duplicate key error collection...' }]
+    },
+    { index: 2, filter: { name: 'test 3' }, data: { extra: 3 }, options: undefined, success: true, errors: [] }
+  ]
+}
+*/
 ```
 
 </details>
