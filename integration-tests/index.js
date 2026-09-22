@@ -11,6 +11,7 @@ const DEFAULT_VERSIONS = ['8.0.12', '7.0.21', '6.0.24'];
 
 const MOCHA_BIN = path.join(__dirname, '..', 'node_modules', '.bin', 'mocha');
 const FIXTURES_PATH = path.join(__dirname, 'fixtures');
+const BOOTSTRAP_PATH = path.join(__dirname, 'fixtures', '_bootstrap');
 
 /**
  * Runs the mocha integration suite in a dedicated child process against the given MongoDB URI.
@@ -23,7 +24,7 @@ const FIXTURES_PATH = path.join(__dirname, 'fixtures');
  */
 const runMochaAgainst = (uri, version) => new Promise(resolve => {
 
-	const mochaProcess = spawn(MOCHA_BIN, ['--exit', '--recursive', FIXTURES_PATH], {
+	const mochaProcess = spawn(MOCHA_BIN, ['--exit', '--recursive', '--require', BOOTSTRAP_PATH, FIXTURES_PATH], {
 		stdio: 'inherit',
 		env: {
 			...process.env,
@@ -33,7 +34,12 @@ const runMochaAgainst = (uri, version) => new Promise(resolve => {
 		}
 	});
 
-	mochaProcess.on('exit', code => resolve(code ?? 1));
+	mochaProcess.on('close', code => resolve(code ?? 1));
+
+	mochaProcess.on('error', err => {
+		console.error('Failed to spawn mocha process:', err);
+		resolve(1);
+	});
 });
 
 (async () => {
@@ -51,7 +57,7 @@ const runMochaAgainst = (uri, version) => new Promise(resolve => {
 		const mongod = await MongoMemoryServer.create({ binary: { version } });
 
 		try {
-			const exitCode = await runMochaAgainst(mongod.getUri(), version);
+			const exitCode = await runMochaAgainst(mongod.getUri('integration-tests'), version);
 			results.push({ version, exitCode });
 		} finally {
 			await mongod.stop();

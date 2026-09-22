@@ -49,3 +49,28 @@ Depende de: B1. Decisión tomada: `mongodb-memory-server` en vez de docker-compo
 - [ ] Commit(s) + push (gate) → PR a master vía `create-pr` (gate).
 - [ ] Prerelease `4.0.0-beta.0` vía `prepare-release` (gate de bump) → dist-tag `beta`.
 - [ ] Canaries: wms → catalog → pricing (beta → QA → prod). Después: GA `4.0.0`.
+
+## B5 · Fix de `multiUpdate({ rawResponse: true })` (janis-developer · opus)
+
+Decisión del usuario: corregir dentro de este major (opción A), bulk **unordered** cuando se pide el detalle.
+
+- [x] `ordered: false` solo con `rawResponse`; sin `rawResponse` no cambia nada.
+- [x] Resolver desde el `catch` con `success: false` + `writeErrors` + `operations[].success` reales. Errores de driver (conexión/timeout) siguen lanzando: se detectan por ausencia de fallos reportados en el resultado parcial.
+- [x] Unit tests reescritos contra el comportamiento real del driver (los 4 anteriores mockeaban un camino imposible).
+- [x] Integration tests: fallo simple, fallos no contiguos, y verificación de que las operaciones posteriores al error sí se aplican.
+- [x] README: guía de migración con ejemplo antes/después + sección de referencia actualizada.
+- Verifica: lint 0 · 290 passing · coverage 100/100/100/100 · 8.0.12 / 7.0.21 / 6.0.24 PASSED · build-types OK.
+
+## B6 · Paquete de findings del review (janis-developer · sonnet)
+
+- [ ] 3 medias: postinstall de 141 MB, runner que puede colgar en CI + `timeout-minutes`, `--require` del bootstrap de logs.
+- [ ] 6 bajas: heading del README, `node:util`, comentario de `writeErrors`, `getUri()` explícito, silenciado de logs en fixtures.
+
+## Cierre (pendiente)
+
+- [x] Review `janis-code-reviewer` (opus): APROBADO CON CAMBIOS, 0 altas · 4 medias · 7 bajas.
+- [x] Push de la branch; CI en verde (Build Status, Coverage Status, Integration Tests).
+- [ ] §9: evaluar docs del repo y borrar `specs/` antes del PR.
+- [ ] PR a master vía `create-pr` (gate).
+- [ ] Prerelease `4.0.0-beta.0` desde `master` vía `prepare-release` (gate de bump) → dist-tag `beta`.
+- [ ] Canaries: wms → catalog → pricing. Ojo: wms, vtex-wms, vtex-pricing, shopify y mercadolibre usan `rawResponse: true` y necesitan la migración del README.

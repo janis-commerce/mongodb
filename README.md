@@ -12,7 +12,7 @@ npm install --save @janiscommerce/mongodb
 
 ## :new: Changes from _v2.0.0_
 
-### MongoDB Driver v4
+### MongoDB Driver v7
 
 Now we are using [mongodb](https://www.npmjs.com/package/mongodb) `^7.x.x` version of the driver (upgraded from v4)
 

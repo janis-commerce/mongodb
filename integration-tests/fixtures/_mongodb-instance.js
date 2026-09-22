@@ -15,7 +15,7 @@ module.exports.getMongodbInstance = () => {
 			throw new Error('Missing MONGODB_INTEGRATION_URI env var: run these tests through `npm run test-integration`');
 
 		mongodb = new MongoDB({
-			connectionString: `${process.env.MONGODB_INTEGRATION_URI}integration-tests`
+			connectionString: process.env.MONGODB_INTEGRATION_URI
 		});
 	}
 	return mongodb;
