@@ -7,10 +7,11 @@
     "test": "export TEST_ENV=true; mocha --exit -R nyan --recursive tests/",
     "watch-test": "export TEST_ENV=true; mocha --exit -R nyan -w --recursive tests/",
     "coverage": "nyc npm test",
-    "lint": "eslint lib/ tests/",
+    "lint": "eslint lib/ tests/ integration-tests/",
     "build-types": "tsc lib/mongodb.js --declaration --allowJs --emitDeclarationOnly --outDir types",
     "prepare": "husky install",
-    "coverage-ci": "nyc --reporter=lcov --reporter=text-summary mocha --exit --recursive tests/"
+    "coverage-ci": "nyc --reporter=lcov --reporter=text-summary mocha --exit --recursive tests/",
+    "test-integration": "node integration-tests/index.js"
   },
   "repository": {
     "type": "git",
@@ -37,6 +38,7 @@
     "eslint-plugin-import": "^2.32.0",
     "husky": "^8.0.3",
     "mocha": "^10.2.0",
+    "mongodb-memory-server": "^11.3.0",
     "nyc": "^15.1.0",
     "sinon": "^16.1.3",
     "typescript": "^5.9.3"
