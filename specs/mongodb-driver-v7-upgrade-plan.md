@@ -33,9 +33,15 @@ Depende de: B1 (shape final del API).
 Toca: `integration-tests/**` (desde `origin/Mongodb-driver-upgrade`), `package.json` (script + devDependency `mongodb-memory-server`).
 Depende de: B1. Decisión tomada: `mongodb-memory-server` en vez de docker-compose (validado local).
 
-- [ ] Rescatar runner + fixtures; levantar server 6 / 7 / 8 con `mongodb-memory-server`, Node 22.
-- [ ] Casos: `save()` upsert/existente, `increment()` post-`$inc`, `multiInsert()` duplicados, `multiUpdate()` con write errors, `dropCollection()` inexistente, `aggregate()` > 1000 docs.
-- Verifica: `npm run test-integration` verde local (y en CI si se decide).
+- [x] Rescatar runner + fixtures; levantar server 6 / 7 / 8 con `mongodb-memory-server`, Node 22 (un proceso mocha por versión).
+- [x] Casos: `save()` upsert/existente, `increment()` post-`$inc`, `multiInsert()` duplicados, `multiUpdate()` con write errors (rechaza: `it.skip` pendiente de decisión), `dropCollection()` inexistente (booleano según versión de server), `aggregate()` > 1000 docs, `getPaged()`, índices.
+- Verifica: `npm run test-integration` → 8.0.12 / 7.0.21 / 6.0.24 PASSED (21 + 1 pending c/u). Workflow `integration-tests.yml` en `ubuntu-22.04`, sin ejecutar aún en CI.
+
+## B4 · Fixes post-integration (janis-developer · sonnet)
+
+- [x] `multiInsert()`: filtrar por índice original antes de mapear (regresión del upgrade: driver 7 solo devuelve `insertedIds` de los insertados).
+- [x] README: `dropCollection()` inexistente ya no rechaza; booleano según versión de server.
+- [ ] `multiUpdate({ rawResponse: true })`: decisión pendiente (A: resolver con `writeErrors` reales desde el `catch` + `ordered: false` · B: documentar limitación).
 
 ## Cierre
 
