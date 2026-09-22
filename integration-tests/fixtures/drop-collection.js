@@ -29,8 +29,7 @@ describe('Drop collection', () => {
 		const result = await mongodb.dropCollection('never-existed-collection');
 
 		// The `drop` command became a no-op (idempotent) for non-existent namespaces on some server versions but
-		// not others: resolves `false` on 6.0.24, `true` on 7.0.21 and 8.0.12. README documents `false`
-		// unconditionally, which only holds in practice for 6.x (see risks in the task report).
+		// not others: resolves `false` on 6.0.24, `true` on 7.0.21 and 8.0.12.
 		const [majorVersion] = process.env.MONGODB_INTEGRATION_VERSION.split('.').map(Number);
 		const expected = majorVersion >= 7;
 

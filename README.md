@@ -46,9 +46,9 @@ A deep import from `lib/mongodb-wrapper` still works for backward compatibility,
 
 `increment()` now resolves the document **after** applying the `$inc` (or `null` if no document matched the filters). Previous versions returned the pre-update document, since the driver never actually supported the `returnNewDocument` option this package used to pass. See [`increment()`](#async-incrementmodel-filters-incrementdata-setdata) for the current contract.
 
-### `dropCollection()` resolves `false` instead of throwing
+### `dropCollection()` no longer throws for a non-existent collection
 
-Dropping a collection that doesn't exist now resolves `false` instead of rejecting. See [`dropCollection()`](#async-dropcollectioncollection).
+Dropping a collection that doesn't exist no longer rejects. The resolved boolean now depends on the MongoDB server version: `false` on 6.0, `true` on 7.0+ (the `drop` command became idempotent on non-existent namespaces). If you need to know whether the collection existed beforehand, check it separately (e.g. with `getIndexes()` or by listing collections). See [`dropCollection()`](#async-dropcollectioncollection).
 
 ### Connection strings use strict booleans
 
@@ -902,7 +902,7 @@ await mongo.increment(model, { status: 'pending' }, { pendingDaysQuantity: 1 }, 
 
 - collection: `String`: The name of the collection to drop.
 
-- Resolves `Boolean`: `true` if the collection was dropped. `false` if the collection did not exist (driver `7.x` resolves `false` instead of rejecting).
+- Resolves `Boolean`: `true` if the collection was dropped. If the collection did not exist, it no longer rejects: resolves `false` on MongoDB 6.0, or `true` on MongoDB 7.0+ (the `drop` command is idempotent on those versions). To know beforehand whether the collection existed, check it separately (e.g. with `getIndexes()` or by listing collections).
 - Rejects `Error` When something bad occurs (other than a non-existent collection)
 
 **Usage:**

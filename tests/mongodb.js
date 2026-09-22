@@ -2165,6 +2165,52 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 		});
+
+		it('Should return every inserted item preserving order when a duplicate is intercalated', async () => {
+
+			const items = [{
+				id: '5df0151dbc1d570011949d86',
+				name: 'Item A'
+			}, {
+				// duplicate of items[0], rejected
+				id: '5df0151dbc1d570011949d86',
+				name: 'Item A'
+			}, {
+				id: '5df0151dbc1d570011949d87',
+				name: 'Item B'
+			}, {
+				id: '5df0151dbc1d570011949d88',
+				name: 'Item C'
+			}];
+
+			const errorMessage = `E11000 duplicate key error collection: someDatabase.myCollection index: _id_ dup key: { _id: ${items[0].id} }`;
+
+			const error = new Error(errorMessage);
+
+			error.result = {
+				insertedIds: {
+					0: new ObjectId(items[0].id),
+					2: new ObjectId(items[2].id),
+					3: new ObjectId(items[3].id)
+				}
+			};
+			error.writeErrors = [{ index: 1, code: 11000, errmsg: errorMessage, op: items[1] }];
+
+			const insertMany = sinon.stub().rejects(error);
+
+			const collection = stubMongo(true, { insertMany });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.multiInsert(getModel(), [...items]);
+
+			sinon.assert.match(result, [
+				{ ...items[0], dateCreated: sinon.match.date },
+				{ ...items[2], dateCreated: sinon.match.date },
+				{ ...items[3], dateCreated: sinon.match.date }
+			]);
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+		});
 	});
 
 	describe('multiSave()', () => {

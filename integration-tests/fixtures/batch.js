@@ -126,19 +126,7 @@ describe('Batch', () => {
 		assert.equal(stored.length, 1);
 	});
 
-	/**
-	 * TODO(bug): lib/mongodb.js multiInsert() (~line 489-493) filters the returned array using the index of the
-	 * already-mapped/filtered array of successful inserts, instead of the original index in `items`:
-	 * `.filter((item, index) => !indexesWithError.includes(index))`. `indexesWithError` holds ORIGINAL indexes
-	 * (from `err.writeErrors[].index`), but the `index` received by `.filter()` is the position within the
-	 * already-successful-only mapped array. When more than one item is inserted successfully after the failed
-	 * index, a valid inserted item gets silently dropped from the return value, even though it IS persisted.
-	 *
-	 * Input: multiInsert(model, [{name:'A'}, {name:'A'} (dup of index 0, fails), {name:'B'}, {name:'C'}])
-	 * Expected: returns the 3 actually inserted documents (A, B, C)
-	 * Actual: returns only 2 documents (A, C) — B is missing from the return value despite being inserted
-	 */
-	it.skip('multiInsert(): TODO(bug) Should return every successfully inserted document, not just the ones matching the wrong index', async () => {
+	it('multiInsert(): Should return every successfully inserted document, not just the ones matching the wrong index', async () => {
 
 		const mongodb = getMongodbInstance();
 		const model = new TestModel();
