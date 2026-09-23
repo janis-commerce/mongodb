@@ -1,13 +1,15 @@
 # Actualización del driver `mongodb` de v4 a v7
 
+> Análisis interno de qué trajo cada major del driver `mongodb` y qué nos afectaba a la hora de subir de v4 a v7. No es una guía de uso: para el detalle de qué cambia para quien consume el package, ver [`migration-v3-to-v4.md`](./migration-v3-to-v4.md).
+
 ## Estado final (4.0.0)
 
-Driver publicado: `mongodb@^7.6.0`. Desvíos respecto de este análisis:
+Driver publicado: `mongodb@^7.6.0`. Desvíos respecto de este análisis, es decir puntos donde se asumió algo que resultó distinto al implementar:
 
-- `multiUpdate()` mantiene `writeConcernErrors` como **array** (no el singular que expone el driver vía `getWriteConcernError()`), por compatibilidad con el contrato público existente.
 - `increment()` se corrigió a `findOneAndUpdate` con `returnDocument: 'after'`: el análisis original asumía que `returnNewDocument` funcionaba, pero esa opción nunca fue soportada por el driver.
-- `ObjectId` se exporta desde el entrypoint (`lib/mongodb.js`), además de `lib/mongodb-wrapper.js`.
-- Integration tests con `mongodb-memory-server` en vez de docker-compose.
+- `multiUpdate()`: el análisis no previó que el driver rechaza (`reject`) el `bulkWrite` completo ante un write error cuando la operación es `ordered` (el default); solo se contemplaba leer `writeErrors` del resultado ya resuelto. Para exponer el detalle sin romper la promesa, `rawResponse: true` ejecuta el bulk como `unordered` y resuelve en vez de rechazar. _(Confirmado por integration tests: `writeErrors` siempre llega como array, incluso ante un único error.)_
+
+Para el impacto de estos dos puntos en el contrato público del package, ver [`increment()`](./migration-v3-to-v4.md#increment-returns-the-post-update-document) y [`multiUpdate()` con `rawResponse`](./migration-v3-to-v4.md#multiupdate-with-rawresponse-resolves-instead-of-rejecting) en la guía de migración.
 
 Análisis basado en la superficie que expone `@janiscommerce/mongodb@3.17.0` (`lib/mongodb.js`, `lib/mongodb-wrapper.js`, `lib/config-validator.js`) y los changelogs oficiales de cada major del driver.
 
@@ -108,7 +110,7 @@ Esta superficie es la que se contrasta contra cada major.
 
 ### Riesgos / cosas a validar
 
-- **`Collection.drop()` ya no tira cuando el namespace no existe; devuelve `false`** (`lib/mongodb-wrapper.js:128` → `lib/mongodb.js:953`). Hoy `dropCollection()` hace `return !!result` y confiamos en que el error llega al `catch`. Post-v7 un drop de una colección inexistente **va a resolverse con `false` silenciosamente** en vez de propagar un error. Cambia el contrato observable del paquete. Decidir si queremos mantener el comportamiento previo (chequear explícitamente y tirar) o aceptar el nuevo.
+- **`Collection.drop()` ya no tira cuando el namespace no existe; devuelve `false`** (`lib/mongodb-wrapper.js:128` → `lib/mongodb.js:953`). Hoy `dropCollection()` hace `return !!result` y confiamos en que el error llega al `catch`. Post-v7 un drop de una colección inexistente **va a resolverse con `false` silenciosamente** en vez de propagar un error. Cambia el contrato observable del paquete. Decidir si queremos mantener el comportamiento previo (chequear explícitamente y tirar) o aceptar el nuevo. _Nota: los integration tests mostraron que el booleano depende de la versión del server: `false` en 6.0, `true` en 7.0+ (el `drop` se volvió idempotente sobre namespaces inexistentes recién en 7.0+), no `false` de forma constante como asumía este análisis._
 - **Cursores sin `batchSize` default (antes 1000)**. En `get()` usamos `.skip().limit().toArray()` — sin impacto, el servidor corta por `limit`. En `getPaged()` seteamos `batchSize` explícito — sin impacto. En `aggregate()` no seteamos `batchSize` y terminamos con `.toArray()`: el servidor va a usar el default del server, lo cual puede aumentar la cantidad de `getMore` round-trips en agregaciones que devuelven muchos documentos. Performance, no corrección. Medir si aparece regresión.
 - **BSON v7**: mismo tipo de riesgo que v6 pero con menor superficie ya amortizada.
 
