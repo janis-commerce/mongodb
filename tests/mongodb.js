@@ -5,6 +5,8 @@
 const assert = require('assert');
 const sinon = require('sinon');
 
+const { MongoBulkWriteError, ObjectId: DriverObjectId } = require('mongodb');
+
 const { MongoWrapper, ObjectId } = require('../lib/mongodb-wrapper');
 const MongoDBError = require('../lib/mongodb-error');
 const MongoDB = require('../lib/mongodb');
@@ -310,7 +312,7 @@ describe('MongoDB', () => {
 		it('Should resolve what the mongodb find-method-chain resolves mapping _id field to id', async () => {
 
 			mockChain(true, [{
-				_id: ObjectId('5df0151dbc1d570011949d86'),
+				_id: new ObjectId('5df0151dbc1d570011949d86'),
 				foo: 'bar'
 			}]);
 
@@ -347,7 +349,7 @@ describe('MongoDB', () => {
 					foo: 'bar',
 					baz: 1,
 					id: '5df0151dbc1d570011949d86',
-					otherId: ObjectId('5df0151dbc1d570011949d87')
+					otherId: new ObjectId('5df0151dbc1d570011949d87')
 				}
 			});
 
@@ -359,10 +361,10 @@ describe('MongoDB', () => {
 					$eq: 1
 				},
 				_id: {
-					$eq: ObjectId('5df0151dbc1d570011949d86')
+					$eq: new ObjectId('5df0151dbc1d570011949d86')
 				},
 				otherId: {
-					$eq: ObjectId('5df0151dbc1d570011949d87')
+					$eq: new ObjectId('5df0151dbc1d570011949d87')
 				}
 			}, undefined, 0, 500);
 		});
@@ -385,13 +387,13 @@ describe('MongoDB', () => {
 
 			assertChain(stubs, 'myCollection', {
 				_id: {
-					$gt: ObjectId('5df0151dbc1d570011949d86')
+					$gt: new ObjectId('5df0151dbc1d570011949d86')
 				},
 				idField: {
-					$ne: [ObjectId('69b2e2ba6d0ffde88ca5d102'), ObjectId('69b2e2bd6d0ffde88ca5d103')]
+					$ne: [new ObjectId('69b2e2ba6d0ffde88ca5d102'), new ObjectId('69b2e2bd6d0ffde88ca5d103')]
 				},
 				otherIdField: {
-					$in: [ObjectId('69b2e24e6d0ffde88ca5d100'), ObjectId('69b2e2536d0ffde88ca5d101')]
+					$in: [new ObjectId('69b2e24e6d0ffde88ca5d100'), new ObjectId('69b2e2536d0ffde88ca5d101')]
 				}
 			}, undefined, 0, 500);
 		});
@@ -412,7 +414,7 @@ describe('MongoDB', () => {
 					{
 						foo: 'bar',
 						id: '5df0151dbc1d570011949d86',
-						otherId: [ObjectId('5df0151dbc1d570011949d87'), '5df0151dbc1d570011949d88']
+						otherId: [new ObjectId('5df0151dbc1d570011949d87'), '5df0151dbc1d570011949d88']
 					},
 					{
 						baz: {
@@ -431,10 +433,10 @@ describe('MongoDB', () => {
 							$eq: 'bar'
 						},
 						_id: {
-							$eq: ObjectId('5df0151dbc1d570011949d86')
+							$eq: new ObjectId('5df0151dbc1d570011949d86')
 						},
 						otherId: {
-							$in: [ObjectId('5df0151dbc1d570011949d87'), ObjectId('5df0151dbc1d570011949d88')]
+							$in: [new ObjectId('5df0151dbc1d570011949d87'), new ObjectId('5df0151dbc1d570011949d88')]
 						}
 					},
 					{
@@ -896,7 +898,7 @@ describe('MongoDB', () => {
 				}
 			};
 
-			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: new ObjectId(id) } });
 
 			const collection = stubMongo(true, { findOneAndUpdate });
 
@@ -909,7 +911,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 				_id: {
-					$eq: ObjectId(id)
+					$eq: new ObjectId(id)
 				}
 			}, {
 				$set: {
@@ -921,7 +923,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
-			}, { upsert: true, returnNewDocument: true, comment });
+			}, { upsert: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should use a unique index as filter if id is not passed', async () => {
@@ -933,7 +935,7 @@ describe('MongoDB', () => {
 				name: 'Some name'
 			};
 
-			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: new ObjectId(id) } });
 
 			const collection = stubMongo(true, { findOneAndUpdate });
 
@@ -950,16 +952,16 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 				otherId: {
-					$eq: ObjectId('5df0151dbc1d570011949d87')
+					$eq: new ObjectId('5df0151dbc1d570011949d87')
 				}
 			}, {
 				$set: {
-					otherId: ObjectId('5df0151dbc1d570011949d87'),
+					otherId: new ObjectId('5df0151dbc1d570011949d87'),
 					name: 'Some name'
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
-			}, { upsert: true, returnNewDocument: true, comment });
+			}, { upsert: true, includeResultMetadata: true, comment });
 		});
 
 		['indexes', 'uniqueIndexes'].forEach(indexesGetter => {
@@ -973,7 +975,7 @@ describe('MongoDB', () => {
 						name: 'Some name'
 					};
 
-					const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
+					const findOneAndUpdate = sinon.stub().resolves({ value: { _id: new ObjectId(id) } });
 
 					const collection = stubMongo(true, { findOneAndUpdate });
 
@@ -1001,7 +1003,7 @@ describe('MongoDB', () => {
 						},
 						$currentDate: { dateModified: true },
 						$setOnInsert: { dateCreated: sinon.match.date }
-					}, { upsert: true, returnNewDocument: true, comment });
+					}, { upsert: true, includeResultMetadata: true, comment });
 				});
 			});
 		});
@@ -1015,7 +1017,7 @@ describe('MongoDB', () => {
 				name: 'Some name'
 			};
 
-			const findOneAndUpdate = sinon.stub().resolves({ lastErrorObject: { upserted: ObjectId(id) }, value: null });
+			const findOneAndUpdate = sinon.stub().resolves({ lastErrorObject: { upserted: new ObjectId(id) }, value: null });
 
 			const collection = stubMongo(true, { findOneAndUpdate });
 
@@ -1032,16 +1034,16 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 				otherId: {
-					$eq: ObjectId('5df0151dbc1d570011949d87')
+					$eq: new ObjectId('5df0151dbc1d570011949d87')
 				}
 			}, {
 				$set: {
-					otherId: ObjectId('5df0151dbc1d570011949d87'),
+					otherId: new ObjectId('5df0151dbc1d570011949d87'),
 					name: 'Some name'
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
-			}, { upsert: true, returnNewDocument: true, comment });
+			}, { upsert: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should use extra default insert values', async () => {
@@ -1058,7 +1060,7 @@ describe('MongoDB', () => {
 				status: 'active'
 			};
 
-			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: new ObjectId(id) } });
 
 			const collection = stubMongo(true, { findOneAndUpdate });
 
@@ -1071,7 +1073,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 				_id: {
-					$eq: ObjectId(id)
+					$eq: new ObjectId(id)
 				}
 			}, {
 				$set: {
@@ -1080,7 +1082,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date, ...setOnInsert }
-			}, { upsert: true, returnNewDocument: true, comment });
+			}, { upsert: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should throw if no unique indexes are defined and id is not passed', async () => {
@@ -1092,7 +1094,7 @@ describe('MongoDB', () => {
 				name: 'Some name'
 			};
 
-			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: new ObjectId(id) } });
 
 			const collection = stubMongo(true, { findOneAndUpdate });
 
@@ -1114,7 +1116,7 @@ describe('MongoDB', () => {
 				name: 'Some name'
 			};
 
-			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: new ObjectId(id) } });
 
 			const collection = stubMongo(true, { findOneAndUpdate });
 
@@ -1139,7 +1141,7 @@ describe('MongoDB', () => {
 				dateModified: new Date()
 			};
 
-			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: new ObjectId(id) } });
 
 			const collection = stubMongo(true, { findOneAndUpdate });
 
@@ -1152,7 +1154,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 				_id: {
-					$eq: ObjectId(id)
+					$eq: new ObjectId(id)
 				}
 			}, {
 				$set: {
@@ -1161,7 +1163,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
-			}, { upsert: true, returnNewDocument: true, comment });
+			}, { upsert: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should remove conflictive fields from default insert values', async () => {
@@ -1182,7 +1184,7 @@ describe('MongoDB', () => {
 				quantity: 100
 			};
 
-			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: new ObjectId(id) } });
 
 			const collection = stubMongo(true, { findOneAndUpdate });
 
@@ -1195,7 +1197,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 				_id: {
-					$eq: ObjectId(id)
+					$eq: new ObjectId(id)
 				}
 			}, {
 				$set: {
@@ -1205,7 +1207,7 @@ describe('MongoDB', () => {
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date, quantity: 100 }
-			}, { upsert: true, returnNewDocument: true, comment });
+			}, { upsert: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should map the model defined ID fields to ObjectIds', async () => {
@@ -1218,7 +1220,7 @@ describe('MongoDB', () => {
 				name: 'Some name'
 			};
 
-			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: new ObjectId(id) } });
 
 			const collection = stubMongo(true, { findOneAndUpdate });
 
@@ -1235,16 +1237,16 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 				_id: {
-					$eq: ObjectId(id)
+					$eq: new ObjectId(id)
 				}
 			}, {
 				$set: {
-					otherId: ObjectId('5df0151dbc1d570011949d87'),
+					otherId: new ObjectId('5df0151dbc1d570011949d87'),
 					name: 'Some name'
 				},
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: sinon.match.date }
-			}, { upsert: true, returnNewDocument: true, comment });
+			}, { upsert: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should send only in $setOnInsert the dateCreated value when received as valid iso date', async () => {
@@ -1257,7 +1259,7 @@ describe('MongoDB', () => {
 				dateCreated: '2023-02-22T17:43:45.460Z'
 			};
 
-			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: new ObjectId(id) } });
 
 			const collection = stubMongo(true, { findOneAndUpdate });
 
@@ -1269,12 +1271,12 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
 			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
-				_id: { $eq: ObjectId(id) }
+				_id: { $eq: new ObjectId(id) }
 			}, {
 				$set: { name: 'Blue rocket' },
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: new Date(item.dateCreated) }
-			}, { upsert: true, returnNewDocument: true, comment });
+			}, { upsert: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should send only in $setOnInsert the dateCreated value when received as valid date object', async () => {
@@ -1287,7 +1289,7 @@ describe('MongoDB', () => {
 				dateCreated: new Date('2023-02-22T17:43:45.460Z')
 			};
 
-			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: new ObjectId(id) } });
 
 			const collection = stubMongo(true, { findOneAndUpdate });
 
@@ -1299,12 +1301,12 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
 			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
-				_id: { $eq: ObjectId(id) }
+				_id: { $eq: new ObjectId(id) }
 			}, {
 				$set: { name: 'Blue rocket' },
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: new Date(item.dateCreated) }
-			}, { upsert: true, returnNewDocument: true, comment });
+			}, { upsert: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should send current Date when received an invalid date as string', async () => {
@@ -1319,7 +1321,7 @@ describe('MongoDB', () => {
 				dateCreated: '22/02/2023' // invalid date
 			};
 
-			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: new ObjectId(id) } });
 
 			const collection = stubMongo(true, { findOneAndUpdate });
 
@@ -1331,12 +1333,12 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
 			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
-				_id: { $eq: ObjectId(id) }
+				_id: { $eq: new ObjectId(id) }
 			}, {
 				$set: { name: 'Blue rocket' },
 				$currentDate: { dateModified: true },
 				$setOnInsert: { dateCreated: new Date() }
-			}, { upsert: true, returnNewDocument: true, comment });
+			}, { upsert: true, includeResultMetadata: true, comment });
 		});
 
 		it('Should not set $currentDate dateModified when options.skipAutomaticSetModifiedData is true', async () => {
@@ -1351,7 +1353,7 @@ describe('MongoDB', () => {
 				name: 'Some name'
 			};
 
-			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: ObjectId(id) } });
+			const findOneAndUpdate = sinon.stub().resolves({ value: { _id: new ObjectId(id) } });
 
 			const collection = stubMongo(true, { findOneAndUpdate });
 
@@ -1364,14 +1366,16 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 				_id: {
-					$eq: ObjectId(id)
+					$eq: new ObjectId(id)
 				}
 			}, {
 				$set: {
 					name: 'Some name'
 				},
 				$setOnInsert: { dateCreated: fakeNow }
-			}, { upsert: true, returnNewDocument: true, comment });
+			}, {
+				upsert: true, includeResultMetadata: true, comment
+			});
 		});
 	});
 
@@ -1431,7 +1435,7 @@ describe('MongoDB', () => {
 				name: 'Some name'
 			};
 
-			const insertOne = sinon.stub().resolves({ insertedId: ObjectId(id) });
+			const insertOne = sinon.stub().resolves({ insertedId: new ObjectId(id) });
 
 			const collection = stubMongo(true, { insertOne });
 
@@ -1447,7 +1451,7 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
 			const expectedItem = {
-				otherId: ObjectId('5df0151dbc1d570011949d87'),
+				otherId: new ObjectId('5df0151dbc1d570011949d87'),
 				name: 'Some name',
 				dateCreated: sinon.match.date
 			};
@@ -1464,7 +1468,7 @@ describe('MongoDB', () => {
 				dateCreated: '2023-02-22T17:43:45.460Z'
 			};
 
-			const insertOne = sinon.stub().resolves({ insertedId: ObjectId(id) });
+			const insertOne = sinon.stub().resolves({ insertedId: new ObjectId(id) });
 
 			const collection = stubMongo(true, { insertOne });
 
@@ -1490,7 +1494,7 @@ describe('MongoDB', () => {
 				dateCreated: new Date('2023-02-22T17:43:45.460Z')
 			};
 
-			const insertOne = sinon.stub().resolves({ insertedId: ObjectId(id) });
+			const insertOne = sinon.stub().resolves({ insertedId: new ObjectId(id) });
 
 			const collection = stubMongo(true, { insertOne });
 
@@ -1518,7 +1522,7 @@ describe('MongoDB', () => {
 				dateCreated: 'invalid date'
 			};
 
-			const insertOne = sinon.stub().resolves({ insertedId: ObjectId(id) });
+			const insertOne = sinon.stub().resolves({ insertedId: new ObjectId(id) });
 
 			const collection = stubMongo(true, { insertOne });
 
@@ -1624,7 +1628,7 @@ describe('MongoDB', () => {
 			const expectedItem = {
 				$set: {
 					dateModified: sinon.match.date,
-					otherId: ObjectId('5df0151dbc1d570011949d87'),
+					otherId: new ObjectId('5df0151dbc1d570011949d87'),
 					name: 'Some name',
 					description: 'The description'
 				},
@@ -1641,7 +1645,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(updateMany, {
 				_id: {
-					$eq: ObjectId(id)
+					$eq: new ObjectId(id)
 				}
 			}, expectedItem, {
 				...options,
@@ -1684,7 +1688,7 @@ describe('MongoDB', () => {
 			const expectedItem = [
 				{
 					$set: {
-						otherId: ObjectId('5df0151dbc1d570011949d87'),
+						otherId: new ObjectId('5df0151dbc1d570011949d87'),
 						name: 'Some name',
 						description: 'The description'
 					}
@@ -1695,7 +1699,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(updateMany, {
 				_id: {
-					$eq: ObjectId(id)
+					$eq: new ObjectId(id)
 				}
 			}, expectedItem, {
 				...options,
@@ -1738,7 +1742,7 @@ describe('MongoDB', () => {
 			const expectedItem = [
 				{
 					$set: {
-						otherId: ObjectId('5df0151dbc1d570011949d87'),
+						otherId: new ObjectId('5df0151dbc1d570011949d87'),
 						name: 'Some name',
 						description: 'The description'
 					}
@@ -1748,7 +1752,7 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(updateMany, {
 				_id: {
-					$eq: ObjectId(id)
+					$eq: new ObjectId(id)
 				}
 			}, expectedItem, {
 				upsert: true,
@@ -1926,7 +1930,7 @@ describe('MongoDB', () => {
 			};
 
 			const expectedItem = {
-				otherId: ObjectId('5df0151dbc1d570011949d87'),
+				otherId: new ObjectId('5df0151dbc1d570011949d87'),
 				name: 'Some name',
 				dateCreated: sinon.match.date
 			};
@@ -1934,7 +1938,7 @@ describe('MongoDB', () => {
 			const insertMany = sinon.stub().resolves({
 				acknowledged: true,
 				insertedCount: 1,
-				insertedIds: { 0: ObjectId('5df0151dbc1d570011949d86') }
+				insertedIds: { 0: new ObjectId('5df0151dbc1d570011949d86') }
 			});
 
 			const collection = stubMongo(true, { insertMany });
@@ -2025,14 +2029,12 @@ describe('MongoDB', () => {
 			const error = new Error(errorMessage);
 
 			error.result = {
-				result: {
-					insertedIds: [
-						{ index: 0, _id: ObjectId('5df0151dbc1d570011949d88') }, // MongoDB genera un id antes de insertar y devuelve ese
-						{ index: 1, _id: ObjectId('5df0151dbc1d570011949d87') }
-					],
-					writeErrors: [{ index: 0, code: 11000, errmsg: errorMessage, op: items[0] }]
+				insertedIds: {
+					0: new ObjectId('5df0151dbc1d570011949d88'), // MongoDB genera un id antes de insertar y devuelve ese
+					1: new ObjectId('5df0151dbc1d570011949d87')
 				}
 			};
+			error.writeErrors = [{ index: 0, code: 11000, errmsg: errorMessage, op: items[0] }];
 
 			const insertMany = sinon.stub().rejects(error);
 
@@ -2062,13 +2064,11 @@ describe('MongoDB', () => {
 			const error = new Error(errorMessage);
 
 			error.result = {
-				result: {
-					insertedIds: [
-						{ index: 0, _id: ObjectId('5df0151dbc1d570011949d88') }
-					],
-					writeErrors: [{ index: 0, code: 11000, errmsg: errorMessage, op: items[0] }]
+				insertedIds: {
+					0: new ObjectId('5df0151dbc1d570011949d88')
 				}
 			};
+			error.writeErrors = [{ index: 0, code: 11000, errmsg: errorMessage, op: items[0] }];
 
 			const insertMany = sinon.stub().rejects(error);
 
@@ -2106,6 +2106,110 @@ describe('MongoDB', () => {
 
 			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
+		});
+
+		it('Should return an empty array when the duplicate key error has no result nor writeErrors', async () => {
+
+			const items = [{
+				id: '5df0151dbc1d570011949d86',
+				name: 'Blue shirt'
+			}];
+
+			const errorMessage = `E11000 duplicate key error collection: someDatabase.myCollection index: _id_ dup key: { _id: ${items[0].id} }`;
+
+			const error = new Error(errorMessage);
+
+			const insertMany = sinon.stub().rejects(error);
+
+			const collection = stubMongo(true, { insertMany });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.multiInsert(getModel(), [...items]);
+
+			sinon.assert.match(result, []);
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+		});
+
+		it('Should return every inserted item when the duplicate key error has insertedIds but no writeErrors', async () => {
+
+			const items = [{
+				// already in DB
+				id: '5df0151dbc1d570011949d86',
+				name: 'Blue shirt'
+			}, {
+				// not in DB
+				id: '5df0151dbc1d570011949d87',
+				name: 'Red shirt'
+			}];
+
+			const errorMessage = `E11000 duplicate key error collection: someDatabase.myCollection index: _id_ dup key: { _id: ${items[0].id} }`;
+
+			const error = new Error(errorMessage);
+
+			error.result = {
+				insertedIds: {
+					0: new ObjectId('5df0151dbc1d570011949d86'),
+					1: new ObjectId('5df0151dbc1d570011949d87')
+				}
+			};
+
+			const insertMany = sinon.stub().rejects(error);
+
+			const collection = stubMongo(true, { insertMany });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.multiInsert(getModel(), [...items]);
+
+			sinon.assert.match(result, items.map(item => ({ ...item, dateCreated: sinon.match.date })));
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+		});
+
+		it('Should return every inserted item preserving order when a duplicate is intercalated', async () => {
+
+			const items = [{
+				id: '5df0151dbc1d570011949d86',
+				name: 'Item A'
+			}, {
+				// duplicate of items[0], rejected
+				id: '5df0151dbc1d570011949d86',
+				name: 'Item A'
+			}, {
+				id: '5df0151dbc1d570011949d87',
+				name: 'Item B'
+			}, {
+				id: '5df0151dbc1d570011949d88',
+				name: 'Item C'
+			}];
+
+			const errorMessage = `E11000 duplicate key error collection: someDatabase.myCollection index: _id_ dup key: { _id: ${items[0].id} }`;
+
+			const error = new Error(errorMessage);
+
+			error.result = {
+				insertedIds: {
+					0: new ObjectId(items[0].id),
+					2: new ObjectId(items[2].id),
+					3: new ObjectId(items[3].id)
+				}
+			};
+			error.writeErrors = [{ index: 1, code: 11000, errmsg: errorMessage, op: items[1] }];
+
+			const insertMany = sinon.stub().rejects(error);
+
+			const collection = stubMongo(true, { insertMany });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.multiInsert(getModel(), [...items]);
+
+			sinon.assert.match(result, [
+				{ ...items[0], dateCreated: sinon.match.date },
+				{ ...items[2], dateCreated: sinon.match.date },
+				{ ...items[3], dateCreated: sinon.match.date }
+			]);
+
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 		});
 	});
 
@@ -2215,12 +2319,12 @@ describe('MongoDB', () => {
 					updateOne: {
 						filter: {
 							_id: {
-								$eq: ObjectId('5df0151dbc1d570011949d86')
+								$eq: new ObjectId('5df0151dbc1d570011949d86')
 							}
 						},
 						update: {
 							$set: {
-								otherId: ObjectId('5df0151dbc1d570011949d87'),
+								otherId: new ObjectId('5df0151dbc1d570011949d87'),
 								name: 'Some name',
 								status: 'active',
 								quantity: 100
@@ -2235,12 +2339,12 @@ describe('MongoDB', () => {
 					updateOne: {
 						filter: {
 							otherId: {
-								$eq: ObjectId('5df0151dbc1d570011949d88')
+								$eq: new ObjectId('5df0151dbc1d570011949d88')
 							}
 						},
 						update: {
 							$set: {
-								otherId: ObjectId('5df0151dbc1d570011949d88'),
+								otherId: new ObjectId('5df0151dbc1d570011949d88'),
 								name: 'Some name'
 							},
 							$currentDate: { dateModified: true },
@@ -2282,7 +2386,7 @@ describe('MongoDB', () => {
 					updateOne: {
 						filter: {
 							_id: {
-								$eq: ObjectId(id)
+								$eq: new ObjectId(id)
 							}
 						},
 						update: {
@@ -2722,19 +2826,28 @@ describe('MongoDB', () => {
 			sinon.assert.notCalled(bulkWrite);
 		});
 
-		it('Should return detailed result when rawResponse is true', async () => {
+		const buildBulkWriteResult = ({ writeErrors = [], writeConcernError, ...counts } = {}) => ({
+			modifiedCount: 0,
+			matchedCount: 0,
+			upsertedCount: 0,
+			insertedCount: 0,
+			deletedCount: 0,
+			...counts,
+			getWriteErrors: () => writeErrors,
+			getWriteConcernError: () => writeConcernError
+		});
 
-			const bulkWriteResult = {
-				modifiedCount: 5,
-				matchedCount: 10,
-				upsertedCount: 0,
-				insertedCount: 0,
-				deletedCount: 0,
-				writeErrors: [],
-				writeConcernErrors: []
-			};
+		// The driver never resolves bulkWrite() when the server reports write errors: it rejects with a
+		// MongoBulkWriteError that carries the partial BulkWriteResult
+		const buildBulkWriteError = bulkWriteResult => new MongoBulkWriteError({
+			message: bulkWriteResult.getWriteErrors()[0]?.errmsg || 'write operation failed',
+			code: bulkWriteResult.getWriteErrors()[0]?.code,
+			writeErrors: bulkWriteResult.getWriteErrors()
+		}, bulkWriteResult);
 
-			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
+		it('Should resolve the detailed result using an unordered bulk when rawResponse is true', async () => {
+
+			const bulkWrite = sinon.stub().resolves(buildBulkWriteResult({ modifiedCount: 5, matchedCount: 10 }));
 
 			const collection = stubMongo(true, { bulkWrite });
 
@@ -2762,20 +2875,12 @@ describe('MongoDB', () => {
 			});
 
 			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
-			sinon.assert.calledOnceWithExactly(bulkWrite, sinon.match.array, { comment });
+			sinon.assert.calledOnceWithExactly(bulkWrite, sinon.match.array, { ordered: false, comment });
 		});
 
-		it('Should return boolean true when rawResponse is false (default)', async () => {
+		it('Should resolve true using an ordered bulk when rawResponse is false', async () => {
 
-			const bulkWriteResult = {
-				modifiedCount: 3,
-				matchedCount: 8,
-				upsertedCount: 0,
-				insertedCount: 0,
-				deletedCount: 0
-			};
-
-			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
+			const bulkWrite = sinon.stub().resolves(buildBulkWriteResult({ modifiedCount: 3, matchedCount: 8 }));
 
 			const collection = stubMongo(true, { bulkWrite });
 
@@ -2789,17 +2894,9 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(bulkWrite, sinon.match.array, { comment });
 		});
 
-		it('Should return boolean true when rawResponse is not provided (backward compatibility)', async () => {
+		it('Should resolve true using an ordered bulk when rawResponse is not provided (backward compatibility)', async () => {
 
-			const bulkWriteResult = {
-				modifiedCount: 2,
-				matchedCount: 5,
-				upsertedCount: 0,
-				insertedCount: 0,
-				deletedCount: 0
-			};
-
-			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
+			const bulkWrite = sinon.stub().resolves(buildBulkWriteResult({ modifiedCount: 2, matchedCount: 5 }));
 
 			const collection = stubMongo(true, { bulkWrite });
 
@@ -2813,101 +2910,7 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(bulkWrite, sinon.match.array, { comment });
 		});
 
-		it('Should handle bulkWrite result with writeErrors when rawResponse is true', async () => {
-
-			const bulkWriteResult = {
-				modifiedCount: 1,
-				matchedCount: 3,
-				upsertedCount: 0,
-				insertedCount: 0,
-				deletedCount: 0,
-				writeErrors: [
-					{ index: 1, code: 11000, errmsg: 'Duplicate key error' }
-				],
-				writeConcernErrors: []
-			};
-
-			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
-
-			const collection = stubMongo(true, { bulkWrite });
-
-			const mongodb = new MongoDB(config);
-
-			const result = await mongodb.multiUpdate(getModel(), [sampleOperation], { rawResponse: true });
-
-			assert.deepStrictEqual(result, {
-				success: true,
-				modifiedCount: 1,
-				matchedCount: 3,
-				upsertedCount: 0,
-				insertedCount: 0,
-				deletedCount: 0,
-				writeErrors: [
-					{ index: 1, code: 11000, errmsg: 'Duplicate key error' }
-				],
-				writeConcernErrors: [],
-				operations: [{
-					index: 0,
-					filter: sampleOperation.filter,
-					data: sampleOperation.data,
-					options: undefined,
-					success: true,
-					errors: []
-				}]
-			});
-
-			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
-			sinon.assert.calledOnceWithExactly(bulkWrite, sinon.match.array, { comment });
-		});
-
-		it('Should handle bulkWrite result with writeErrors when rawResponse is true', async () => {
-
-			const bulkWriteResult = {
-				modifiedCount: 1,
-				matchedCount: 3,
-				upsertedCount: 0,
-				insertedCount: 0,
-				deletedCount: 0,
-				writeErrors: [
-					{ index: 1, code: 11000, errmsg: 'Duplicate key error' }
-				],
-				writeConcernErrors: []
-			};
-
-			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
-
-			const collection = stubMongo(true, { bulkWrite });
-
-			const mongodb = new MongoDB(config);
-
-			const result = await mongodb.multiUpdate(getModel(), [sampleOperation], { rawResponse: true });
-
-			assert.deepStrictEqual(result, {
-				success: true,
-				modifiedCount: 1,
-				matchedCount: 3,
-				upsertedCount: 0,
-				insertedCount: 0,
-				deletedCount: 0,
-				writeErrors: [
-					{ index: 1, code: 11000, errmsg: 'Duplicate key error' }
-				],
-				writeConcernErrors: [],
-				operations: [{
-					index: 0,
-					filter: sampleOperation.filter,
-					data: sampleOperation.data,
-					options: undefined,
-					success: true,
-					errors: []
-				}]
-			});
-
-			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
-			sinon.assert.calledOnceWithExactly(bulkWrite, sinon.match.array, { comment });
-		});
-
-		it('Should return detailed operations info when rawResponse is true with multiple operations', async () => {
+		it('Should resolve the write errors detail when the bulk write rejects and rawResponse is true', async () => {
 
 			const operations = [
 				{ filter: { id: 1 }, data: { name: 'test 1' } },
@@ -2915,19 +2918,13 @@ describe('MongoDB', () => {
 				{ filter: { id: 3 }, data: { name: 'test 3' } }
 			];
 
-			const bulkWriteResult = {
+			const writeError = { index: 1, code: 11000, errmsg: 'Duplicate key error' };
+
+			const bulkWrite = sinon.stub().rejects(buildBulkWriteError(buildBulkWriteResult({
 				modifiedCount: 2,
 				matchedCount: 3,
-				upsertedCount: 0,
-				insertedCount: 0,
-				deletedCount: 0,
-				writeErrors: [
-					{ index: 1, code: 11000, errmsg: 'Duplicate key error' }
-				],
-				writeConcernErrors: []
-			};
-
-			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
+				writeErrors: [writeError]
+			})));
 
 			const collection = stubMongo(true, { bulkWrite });
 
@@ -2935,136 +2932,160 @@ describe('MongoDB', () => {
 
 			const result = await mongodb.multiUpdate(getModel(), operations, { rawResponse: true });
 
-			assert.deepStrictEqual(result.operations, [
-				{
-					index: 0,
-					filter: operations[0].filter,
-					data: operations[0].data,
-					options: undefined,
-					success: true,
-					errors: []
-				},
-				{
-					index: 1,
-					filter: operations[1].filter,
-					data: operations[1].data,
-					options: operations[1].options,
-					success: false,
-					errors: [{ index: 1, code: 11000, errmsg: 'Duplicate key error' }]
-				},
-				{
-					index: 2,
-					filter: operations[2].filter,
-					data: operations[2].data,
-					options: undefined,
-					success: true,
-					errors: []
-				}
-			]);
-
-			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
-			sinon.assert.calledOnceWithExactly(bulkWrite, sinon.match.array, { comment });
-		});
-
-		it('Should return which stock operations were modified and which were not (realistic stock example)', async () => {
-			const operations = [
-				{
-					filter: { productId: 'A', dateModified: { $lt: '2024-07-01' } },
-					data: { stock: 10 },
-					options: { updateOne: true }
-				},
-				{
-					filter: { productId: 'B', dateModified: { $lt: '2024-07-01' } },
-					data: { stock: 20 },
-					options: { updateOne: true }
-				},
-				{
-					filter: { productId: 'C', dateModified: { $lt: '2024-07-01' } },
-					data: { stock: 30 },
-					options: { updateOne: true }
-				}
-			];
-
-			const bulkWriteResult = {
+			assert.deepStrictEqual(result, {
+				success: false,
 				modifiedCount: 2,
 				matchedCount: 3,
 				upsertedCount: 0,
 				insertedCount: 0,
 				deletedCount: 0,
-				writeErrors: [
-					{ index: 1, code: 11000, errmsg: 'Stock already updated' }
-				],
-				writeConcernErrors: []
-			};
+				writeErrors: [writeError],
+				writeConcernErrors: [],
+				operations: [
+					{
+						index: 0,
+						filter: operations[0].filter,
+						data: operations[0].data,
+						options: undefined,
+						success: true,
+						errors: []
+					},
+					{
+						index: 1,
+						filter: operations[1].filter,
+						data: operations[1].data,
+						options: operations[1].options,
+						success: false,
+						errors: [writeError]
+					},
+					{
+						index: 2,
+						filter: operations[2].filter,
+						data: operations[2].data,
+						options: undefined,
+						success: true,
+						errors: []
+					}
+				]
+			});
 
-			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
-			stubMongo(true, { bulkWrite });
-			const mongodb = new MongoDB(config);
-
-			const result = await mongodb.multiUpdate(getModel(), operations, { rawResponse: true });
-
-			const modified = result.operations.filter(op => op.success);
-			const notModified = result.operations.filter(op => !op.success);
-
-			assert.strictEqual(modified.length, 2);
-			assert.strictEqual(notModified.length, 1);
-			assert.deepStrictEqual(notModified[0].filter, { productId: 'B', dateModified: { $lt: '2024-07-01' } });
-			assert.strictEqual(notModified[0].errors[0].errmsg, 'Stock already updated');
+			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
+			sinon.assert.calledOnceWithExactly(bulkWrite, sinon.match.array, { ordered: false, comment });
 		});
 
-		it('Should handle bulkWrite result with undefined writeErrors and writeConcernErrors', async () => {
+		it('Should mark only the failed operations when the write errors are in non-contiguous positions', async () => {
+
 			const operations = [
-				{ filter: { id: 1 }, data: { name: 'test 1' } },
-				{ filter: { id: 2 }, data: { name: 'test 2' } }
+				{ filter: { productId: 'A' }, data: { stock: 10 }, options: { updateOne: true } },
+				{ filter: { productId: 'B' }, data: { stock: 20 }, options: { updateOne: true } },
+				{ filter: { productId: 'C' }, data: { stock: 30 }, options: { updateOne: true } },
+				{ filter: { productId: 'D' }, data: { stock: 40 }, options: { updateOne: true } }
 			];
 
-			const bulkWriteResult = {
+			const writeErrors = [
+				{ index: 0, code: 11000, errmsg: 'Stock already updated' },
+				{ index: 2, code: 66, errmsg: 'Performing an update on the path of an immutable field' }
+			];
+
+			const bulkWrite = sinon.stub().rejects(buildBulkWriteError(buildBulkWriteResult({
 				modifiedCount: 2,
 				matchedCount: 2,
-				upsertedCount: 0,
-				insertedCount: 0,
-				deletedCount: 0
-				// writeErrors and writeConcernErrors are undefined
-			};
+				writeErrors
+			})));
 
-			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
 			stubMongo(true, { bulkWrite });
+
 			const mongodb = new MongoDB(config);
 
 			const result = await mongodb.multiUpdate(getModel(), operations, { rawResponse: true });
 
-			assert.deepStrictEqual(result.writeErrors, []);
-			assert.deepStrictEqual(result.writeConcernErrors, []);
-			assert.strictEqual(result.operations.length, 2);
-			assert.strictEqual(result.operations[0].errors.length, 0);
-			assert.strictEqual(result.operations[1].errors.length, 0);
+			assert.strictEqual(result.success, false);
+			assert.deepStrictEqual(result.writeErrors, writeErrors);
+
+			assert.deepStrictEqual(result.operations.map(({ index, success }) => ({ index, success })), [
+				{ index: 0, success: false },
+				{ index: 1, success: true },
+				{ index: 2, success: false },
+				{ index: 3, success: true }
+			]);
+
+			assert.deepStrictEqual(result.operations[0].errors, [writeErrors[0]]);
+			assert.deepStrictEqual(result.operations[2].errors, [writeErrors[1]]);
+
+			const notModified = result.operations.filter(operation => !operation.success);
+
+			assert.deepStrictEqual(notModified.map(({ filter }) => filter), [{ productId: 'A' }, { productId: 'C' }]);
 		});
 
-		it('Should handle bulkWrite result with null writeErrors and writeConcernErrors', async () => {
-			const operations = [
-				{ filter: { id: 1 }, data: { name: 'test 1' } }
-			];
+		it('Should resolve the write concern error detail when the bulk write rejects and rawResponse is true', async () => {
 
-			const bulkWriteResult = {
+			const writeConcernError = { code: 64, errmsg: 'waiting for replication timed out' };
+
+			const bulkWrite = sinon.stub().rejects(buildBulkWriteError(buildBulkWriteResult({
 				modifiedCount: 1,
 				matchedCount: 1,
-				upsertedCount: 0,
-				insertedCount: 0,
-				deletedCount: 0,
-				writeErrors: null,
-				writeConcernErrors: null
-			};
+				writeConcernError
+			})));
 
-			const bulkWrite = sinon.stub().resolves(bulkWriteResult);
 			stubMongo(true, { bulkWrite });
+
 			const mongodb = new MongoDB(config);
 
-			const result = await mongodb.multiUpdate(getModel(), operations, { rawResponse: true });
+			const result = await mongodb.multiUpdate(getModel(), [sampleOperation], { rawResponse: true });
 
+			assert.strictEqual(result.success, false);
 			assert.deepStrictEqual(result.writeErrors, []);
-			assert.deepStrictEqual(result.writeConcernErrors, []);
-			assert.strictEqual(result.operations.length, 1);
-			assert.strictEqual(result.operations[0].errors.length, 0);
+			assert.deepStrictEqual(result.writeConcernErrors, [writeConcernError]);
+			assert.strictEqual(result.operations[0].success, true);
+		});
+
+		it('Should reject with MongoDBError when the bulk write reports write errors and rawResponse is not used', async () => {
+
+			const bulkWrite = sinon.stub().rejects(buildBulkWriteError(buildBulkWriteResult({
+				writeErrors: [{ index: 0, code: 11000, errmsg: 'Duplicate key error' }]
+			})));
+
+			stubMongo(true, { bulkWrite });
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(() => mongodb.multiUpdate(getModel(), [sampleOperation]), {
+				message: 'Duplicate key error',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+		});
+
+		it('Should reject with MongoDBError when the bulk write fails with a non bulk error and rawResponse is true', async () => {
+
+			const bulkWrite = sinon.stub().rejects(new Error('BulkWrite internal error'));
+
+			stubMongo(true, { bulkWrite });
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(() => mongodb.multiUpdate(getModel(), [sampleOperation], { rawResponse: true }), {
+				message: 'BulkWrite internal error',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+		});
+
+		it('Should reject with MongoDBError when the bulk write fails without write errors and rawResponse is true', async () => {
+
+			// The driver also wraps a driver-level failure raised mid-bulk (connection, timeout) in a
+			// MongoBulkWriteError, but its partial result has no write error to report
+			const bulkWrite = sinon.stub().rejects(new MongoBulkWriteError(
+				new Error('connection <monitor> to 127.0.0.1:27017 closed'),
+				buildBulkWriteResult()
+			));
+
+			stubMongo(true, { bulkWrite });
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(() => mongodb.multiUpdate(getModel(), [sampleOperation], { rawResponse: true }), {
+				message: 'connection <monitor> to 127.0.0.1:27017 closed',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
 		});
 	});
 
@@ -3142,7 +3163,7 @@ describe('MongoDB', () => {
 
 			const expectedItem = {
 				_id: {
-					$eq: ObjectId(id)
+					$eq: new ObjectId(id)
 				}
 			};
 
@@ -3173,7 +3194,7 @@ describe('MongoDB', () => {
 
 			const expectedItem = {
 				otherId: {
-					$eq: ObjectId('5df0151dbc1d570011949d87')
+					$eq: new ObjectId('5df0151dbc1d570011949d87')
 				}
 			};
 
@@ -3277,10 +3298,10 @@ describe('MongoDB', () => {
 
 			const expectedFilter = {
 				_id: {
-					$in: [ObjectId(id1), ObjectId(id2)]
+					$in: [new ObjectId(id1), new ObjectId(id2)]
 				},
 				otherId: {
-					$eq: ObjectId('5df0151dbc1d570011949d88')
+					$eq: new ObjectId('5df0151dbc1d570011949d88')
 				},
 				name: {
 					$eq: 'Some name'
@@ -3746,7 +3767,7 @@ describe('MongoDB', () => {
 
 		const response = {
 			value: {
-				_id: ObjectId(id),
+				_id: new ObjectId(id),
 				name: 'Fake',
 				quantity: 10,
 				total: 100,
@@ -3807,7 +3828,7 @@ describe('MongoDB', () => {
 
 					sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 						_id: {
-							$eq: ObjectId(id)
+							$eq: new ObjectId(id)
 						}
 					}, {
 						$set: {
@@ -3817,7 +3838,8 @@ describe('MongoDB', () => {
 						$inc: incrementData
 					}, {
 						upsert: false,
-						returnNewDocument: true,
+						returnDocument: 'after',
+						includeResultMetadata: true,
 						comment
 					});
 				});
@@ -3847,7 +3869,8 @@ describe('MongoDB', () => {
 						$inc: incrementData
 					}, {
 						upsert: false,
-						returnNewDocument: true,
+						returnDocument: 'after',
+						includeResultMetadata: true,
 						comment
 					});
 				});
@@ -3882,7 +3905,8 @@ describe('MongoDB', () => {
 						$inc: incrementData
 					}, {
 						upsert: false,
-						returnNewDocument: true,
+						returnDocument: 'after',
+						includeResultMetadata: true,
 						comment
 					});
 				});
@@ -3902,7 +3926,7 @@ describe('MongoDB', () => {
 
 					sinon.assert.calledOnceWithExactly(findOneAndUpdate, {
 						_id: {
-							$eq: ObjectId(id)
+							$eq: new ObjectId(id)
 						}
 					}, {
 						$set: {
@@ -3911,7 +3935,8 @@ describe('MongoDB', () => {
 						$inc: incrementData
 					}, {
 						upsert: false,
-						returnNewDocument: true,
+						returnDocument: 'after',
+						includeResultMetadata: true,
 						comment
 					});
 				});
@@ -4834,7 +4859,7 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
 			sinon.assert.calledOnceWithExactly(aggregate, [
-				{ $match: { _id: ObjectId(itemId), referenceId: 'display-id' } },
+				{ $match: { _id: new ObjectId(itemId), referenceId: 'display-id' } },
 				{ $unset: 'category' }
 			], { comment });
 
@@ -4866,7 +4891,7 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
 			sinon.assert.calledOnceWithExactly(aggregate, [
-				{ $match: { _id: ObjectId(itemId), referenceId: 'display-id' } },
+				{ $match: { _id: new ObjectId(itemId), referenceId: 'display-id' } },
 				{ $unset: 'category' }
 			], { comment, allowDiskUse: true });
 
@@ -4898,7 +4923,7 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
 			sinon.assert.calledOnceWithExactly(aggregate, [
-				{ $match: { _id: ObjectId(itemId), referenceId: 'display-id' } },
+				{ $match: { _id: new ObjectId(itemId), referenceId: 'display-id' } },
 				{ $unset: 'category' }
 			], { comment, readPreference: 'secondaryPreferred' });
 
@@ -4915,6 +4940,14 @@ describe('MongoDB', () => {
 			} catch(error) {
 				assert.deepStrictEqual(error.message, 'Expected a value of type `objectId` but received `"123"`.');
 			}
+		});
+	});
+
+	describe('ObjectId export', () => {
+
+		it('Should export the same ObjectId constructor as the mongodb driver', () => {
+			assert.strictEqual(MongoDB.ObjectId, DriverObjectId);
+			assert.strictEqual(MongoDB.ObjectId, ObjectId);
 		});
 	});
 });

@@ -12,9 +12,23 @@ npm install --save @janiscommerce/mongodb
 
 ## :new: Changes from _v2.0.0_
 
-### MongoDB Driver v4
+### MongoDB Driver v7
 
-Now we are using [mongodb](https://www.npmjs.com/package/mongodb) `^4.x.x` version of the driver (upgraded from v3)
+Now we are using [mongodb](https://www.npmjs.com/package/mongodb) `^7.x.x` version of the driver (upgraded from v4)
+
+## Migration guide 3.x → 4.0
+
+`4.0.0` upgrades the underlying [mongodb](https://www.npmjs.com/package/mongodb) driver from `^4.x.x` to `^7.6.0`, which brings breaking changes:
+
+- **Node version**: the driver requires Node `>= 20.19.0`.
+- **`ObjectId` requires `new`**: calling it without `new` now throws.
+- **`increment()` returns the post-update document** instead of the pre-update one.
+- **`dropCollection()` no longer throws for a non-existent collection**.
+- **Connection strings use strict booleans**: `ssl=1`/`retryWrites=yes` are rejected.
+- **`multiUpdate()` with `rawResponse` resolves instead of rejecting** on write errors.
+- **`aggregate()` no longer defaults `getMore` batches to `1000`**.
+
+See [`docs/migration-v3-to-v4.md`](docs/migration-v3-to-v4.md) for the full detail, code examples and a migration checklist.
 
 ## Models
 Whenever the `Model` type is mentioned in this document, it refers to an instance of [@janiscommerce/model](https://www.npmjs.com/package/@janiscommerce/model).
@@ -375,6 +389,13 @@ The package will handle the `string` to `ObjectId` conversion automatically for 
 
 It also maps `_id` field to `id` when retrieving documents.
 
+The `ObjectId` constructor is also re-exported from the package's entrypoint, in case you need to build one manually (same reference as `require('mongodb').ObjectId`):
+```js
+const { ObjectId } = require('@janiscommerce/mongodb');
+
+const id = new ObjectId('5df0151dbc1d570011949d86');
+```
+
 **Example**
 
 Putting it all together, here's a complete example with all possible configurations:
@@ -683,10 +704,13 @@ await mongo.multiSave(model, [
   - `updateOne: boolean` If `true`, uses `updateOne()` operation (updates only the first matching document). If `false` or not provided, uses `updateMany()` operation (updates all matching documents).
   - `skipAutomaticSetModifiedData: boolean` If `true`, the `dateModified` field is not automatically updated.
 - options: `Object` (optional): Global options for the entire multiUpdate operation:
-  - `rawResponse: boolean` If `true`, returns an object with detailed information about the bulkWrite operation result (number of modified documents, errors, etc). By default, returns `true` for backward compatibility.
+  - `rawResponse: boolean` If `true`, resolves an object with detailed information about the bulkWrite operation result (number of modified documents, write errors, per-operation outcome). By default, resolves `true` for backward compatibility.
 
-- Resolves `Boolean|Object`: `true` if the operation was successful, or an object with details if `rawResponse: true` is used.
-- Rejects `Error` When something bad occurs
+- Resolves `Boolean`: `true` if the operation was successful, when `rawResponse` is not used.
+- Resolves `Object`: The detailed result, when `rawResponse: true` is used. It also resolves when the server reports write errors, with `success: false` and the failures detailed in `writeErrors` and `operations[]`.
+- Rejects `MongoDBError` When something bad occurs. With `rawResponse: true`, write errors no longer reject: only failures that abort the whole bulk write do (connection, timeout, invalid operation).
+
+**Ordering:** with `rawResponse: true` the bulk write is executed as **unordered**, so every operation is attempted even if a previous one fails. Without `rawResponse` it is executed as **ordered**, so it stops at the first failing operation. _Since 4.0.0_
 
 **Basic usage (updateMany by default):**
 ```js
@@ -729,8 +753,8 @@ const result = await mongo.multiUpdate(model, [
   upsertedCount: 0,
   insertedCount: 0,
   deletedCount: 0,
-  writeErrors: [],
-  writeConcernErrors: [],
+  writeErrors: [],       // array of WriteError, one per failed operation
+  writeConcernErrors: [], // array of WriteConcernError, empty if none occurred
   operations: [     // detailed information for each operation
     {
       index: 0,
@@ -753,11 +777,47 @@ const result = await mongo.multiUpdate(model, [
 */
 
 // You can easily identify which operations succeeded and which failed:
-const successful = result.operations.filter(op => op.success);
-const failed = result.operations.filter(op => !op.success);
+const successfulOperations = result.operations.filter(operation => operation.success);
+const failedOperations = result.operations.filter(operation => !operation.success);
 
-console.log(`Successful operations: ${successful.length}`);
-console.log(`Failed operations: ${failed.length}`);
+console.log(`Successful operations: ${successfulOperations.length}`);
+console.log(`Failed operations: ${failedOperations.length}`);
+```
+
+**Usage with rawResponse when the server reports write errors:**
+```js
+const result = await mongo.multiUpdate(model, [
+   { filter: { name: 'test 1' }, data: { extra: 1 } },
+   { filter: { name: 'test 2' }, data: { name: 'test 1' } }, // violates a unique index on `name`
+   { filter: { name: 'test 3' }, data: { extra: 3 } }
+], { rawResponse: true });
+
+/* result:
+{
+  success: false,         // at least one operation failed
+  modifiedCount: 2,       // the operations after the failing one are applied too: the bulk write is unordered
+  matchedCount: 2,
+  upsertedCount: 0,
+  insertedCount: 0,
+  deletedCount: 0,
+  writeErrors: [          // one WriteError per failed operation, `index` is the position in `operations`
+    { index: 1, code: 11000, errmsg: 'E11000 duplicate key error collection...' }
+  ],
+  writeConcernErrors: [],
+  operations: [
+    { index: 0, filter: { name: 'test 1' }, data: { extra: 1 }, options: undefined, success: true, errors: [] },
+    {
+      index: 1,
+      filter: { name: 'test 2' },
+      data: { name: 'test 1' },
+      options: undefined,
+      success: false,
+      errors: [{ index: 1, code: 11000, errmsg: 'E11000 duplicate key error collection...' }]
+    },
+    { index: 2, filter: { name: 'test 3' }, data: { extra: 3 }, options: undefined, success: true, errors: [] }
+  ]
+}
+*/
 ```
 
 </details>
@@ -812,7 +872,7 @@ await mongo.multiRemove(model, { name: { type: 'search', value: 'test' } });
 - incrementData: `Object`: The fields with the values to increment or decrement to updated in the collection (values must be *number* type).
 - setData: `Object`: extra data to be updated in the registry
 
-- Resolves `Object`: An object containing the updated registry
+- Resolves `Object|null`: The updated document (after applying the increment), or `null` if no document matched the filters
 - Rejects `Error` When something bad occurs
 
 **Usage:**
@@ -826,6 +886,24 @@ await mongo.increment(model, { status: 'pending' }, { pendingDaysQuantity: 1 }, 
    updatedDate:ISODate("2020-11-09T14:01:29.170Z")
 }
 */
+```
+
+</details>
+
+### ***async*** `dropCollection(collection)`
+
+<details>
+<summary>Drops a collection from the database of the current `config`.</summary>
+
+- collection: `String`: The name of the collection to drop.
+
+- Resolves `Boolean`: `true` if the collection was dropped. If the collection did not exist, it no longer rejects: resolves `false` on MongoDB 6.0, or `true` on MongoDB 7.0+ (the `drop` command is idempotent on those versions). To know beforehand whether the collection existed, check it separately (e.g. with `getIndexes()` or by listing collections).
+- Rejects `Error` When something bad occurs (other than a non-existent collection)
+
+**Usage:**
+```js
+await mongo.dropCollection('myCollection');
+// > true|false
 ```
 
 </details>
