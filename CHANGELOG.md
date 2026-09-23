@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [4.0.0-beta.0] - 2026-09-23
+### Added
+- `ObjectId` is now exported from the package entrypoint
+- Integration tests running against real MongoDB 6.0, 7.0 and 8.0 servers
+- Migration guide from 3.x to 4.0 in `docs/migration-v3-to-v4.md`
+
+### Changed
+- **Breaking** Upgraded the MongoDB driver to `^7.6.0`. The package now requires Node `>= 20.19.0`
+- **Breaking** `increment()` now resolves the document after the increment, or `null` when no document matches the filters. It used to resolve the document as it was before the increment
+- **Breaking** `multiUpdate()` with `rawResponse` runs the bulk write unordered and resolves with `success: false` and the reported write errors, instead of rejecting
+- **Breaking** `dropCollection()` no longer rejects when the collection does not exist
+
 ## [3.19.0] - 2026-07-13
 ### Added
 - Operations `comment` now includes the Lambda request ID when the `AWS_LAMBDA_REQUEST_ID` env var is set: `functionName@requestId` (or `unknown@requestId` if `AWS_LAMBDA_FUNCTION_NAME` is not set)
