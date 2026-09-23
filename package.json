@@ -1,6 +1,6 @@
 {
   "name": "@janiscommerce/mongodb",
-  "version": "3.19.0",
+  "version": "4.0.0-beta.0",
   "description": "MongoDB driver for Janis Commerce with advanced querying and bulk operations support",
   "main": "lib/mongodb.js",
   "scripts": {
