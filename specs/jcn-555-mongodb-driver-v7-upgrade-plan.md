@@ -23,8 +23,8 @@
 - Depende de: 1
 
 ## Batch 5 — Índices y drops
-- [ ] `get-indexes.js`, `create-indexes.js`, `create-index.js`, `drop-index.js`, `drop-indexes.js`, `drop-collection.js`, `drop-database.js`
-- [ ] Migrar `indexes.js` y `drop-collection.js` viejo; borrar `indexes.js`.
+- [x] `get-indexes.js`, `create-indexes.js`, `create-index.js`, `drop-index.js`, `drop-indexes.js`, `drop-collection.js`, `drop-database.js`
+- [x] Migrar `indexes.js` y `drop-collection.js` viejo; borrar `indexes.js`.
 - Depende de: 1
 
 ## Batch 6 — README
@@ -48,6 +48,10 @@
 - `multiUpdate` vs `update`: en `multiUpdate` stage >1 key (11) y filtro inválido (8) salen sin envolver.
 - `deleteAllDocuments`: filtro crudo; `{ id }` y `{ _id: '<hex string>' }` no matchean.
 
+- `createIndexes(model, [])`: rechaza con code 4 (server 2) en vez de devolver `false` (`create-indexes.js`).
+- `dropIndexes`: `Promise.all` rechaza con bajas en vuelo; estado inmediato no determinístico (`drop-indexes.js`).
+
 ## Server codes observados (3 versiones)
 - `hint` inexistente → 2 · `$text` sin índice → 27 · `$nearSphere` sin índice → 291 · stage desconocido → 40324
 - E11000 → 11000 · conflicto de operadores/path → 40 · `$inc` sobre string → 14 · operador desconocido → 9
+- colección inexistente → 26 · mismo key otro name → 85 · mismo name otro key/opciones → 86 · `[]` en createIndexes → 2 · dropIndex inexistente → 27 · `_id_` → 72 · dropCollection('') → 73
