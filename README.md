@@ -18,7 +18,7 @@ Now we are using [mongodb](https://www.npmjs.com/package/mongodb) `^7.x.x` versi
 
 ## Migration guide 3.x → 4.0
 
-`4.0.0` upgrades the underlying [mongodb](https://www.npmjs.com/package/mongodb) driver from `^4.x.x` to `^7.6.0`, which brings breaking changes:
+`4.0.0` upgrades the underlying [mongodb](https://www.npmjs.com/package/mongodb) driver from `^4.x.x` to `^7.6.0`, which brings breaking changes (additive and non-breaking changes are marked):
 
 - **Node version**: the driver requires Node `>= 20.19.0`.
 - **`ObjectId` requires `new`**: calling it without `new` now throws.
@@ -31,7 +31,7 @@ Now we are using [mongodb](https://www.npmjs.com/package/mongodb) `^7.x.x` versi
 - **`aggregate()` converts the ids inside `$in`, `$nin`, `$eq` and `$ne` in `$match`**, and maps `_id` to `id` only when it is an `ObjectId` or a string (a number or an object `_id` is kept as `_id`).
 - **`createIndexes([])` rejects with code `10` (`INVALID_INDEX`)** instead of code `4`.
 - **`increment()` adds `id`** (string) to the returned document, keeping `_id` (additive).
-- **`dropIndexes()` is deterministic**: it waits for every drop before rejecting.
+- **`dropIndexes()` is deterministic**: it waits for every drop before rejecting (not breaking).
 
 See [`docs/migration-v3-to-v4.md`](docs/migration-v3-to-v4.md) for the full detail, code examples and a migration checklist.
 

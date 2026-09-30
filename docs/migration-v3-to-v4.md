@@ -98,7 +98,7 @@ await mongo.aggregate(model, [{ $match: { status: 'active' } }], { batchSize: 10
 
 ## `distinct()` maps `id` to `_id`
 
-Like `get()`, `distinct()` now converts an `id` filter (and the fields with `isID: true`) to `_id` as `ObjectId`. Before, `filters: { id }` matched nothing and the workaround was filtering by `_id` with an `ObjectId`. That workaround is still valid.
+Like `get()`, `distinct()` now converts an `id` filter (and the fields with `isID: true`) to `_id` as `ObjectId`. Before, `filters: { id }` matched nothing and the workaround was filtering by `_id` with an `ObjectId`. That workaround is still valid. A `null` `filters` is now treated as `{}` (before it threw a `TypeError`).
 
 ## `aggregate()` ids handling
 

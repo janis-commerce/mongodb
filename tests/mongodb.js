@@ -199,6 +199,20 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(mongoDistinctStub, 'foo', {}, { comment });
 		});
 
+		it('Should use an empty filter when filters is null', async () => {
+
+			const mongoDistinctStub = sinon.stub().resolves(['bar']);
+
+			stubMongo(true, { distinct: mongoDistinctStub });
+
+			const mongodb = new MongoDB(config);
+			const distinctValues = await mongodb.distinct(getModel(), { key: 'foo', filters: null });
+
+			assert.deepStrictEqual(distinctValues, ['bar']);
+
+			sinon.assert.calledOnceWithExactly(mongoDistinctStub, 'foo', {}, { comment });
+		});
+
 		it('Should pass the comment with the request id if AWS_LAMBDA_REQUEST_ID env var is set', async () => {
 
 			process.env.AWS_LAMBDA_REQUEST_ID = 'test-request-id';
