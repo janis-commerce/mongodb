@@ -1,7 +1,7 @@
 # Integration tests: un fixture por método público
 
 > Repo: `packages/mongodb` · Branch: `JCN-555-mongodb-driver-v7-upgrade` · Ticket: [JCN-555](https://janiscommerce.atlassian.net/browse/JCN-555)
-> Estado: aprobado · Creado: 2026-09-30
+> Estado: borrador · Creado: 2026-09-30
 
 ## Objetivo
 
