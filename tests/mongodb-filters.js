@@ -182,10 +182,10 @@ describe('MongoDBFilters', () => {
 					$eq: date
 				},
 				id: {
-					$eq: ObjectId(id)
+					$eq: new ObjectId(id)
 				},
 				id2: {
-					$in: [ObjectId(id), ObjectId(id2)]
+					$in: [new ObjectId(id), new ObjectId(id2)]
 				}
 			});
 		});
@@ -229,7 +229,7 @@ describe('MongoDBFilters', () => {
 					$eq: date
 				},
 				id: {
-					$eq: ObjectId(id)
+					$eq: new ObjectId(id)
 				}
 			});
 		});

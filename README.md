@@ -10,11 +10,25 @@
 npm install --save @janiscommerce/mongodb
 ```
 
-## :new: Changes from _v2.0.0_
+## :new: Changes from _v3.0.0_
 
-### MongoDB Driver v4
+### MongoDB Driver v7
 
-Now we are using [mongodb](https://www.npmjs.com/package/mongodb) `^4.x.x` version of the driver (upgraded from v3)
+Now we are using [mongodb](https://www.npmjs.com/package/mongodb) `^7.x.x` version of the driver (upgraded from v4)
+
+## Migration guide 3.x → 4.0
+
+`4.0.0` upgrades the underlying [mongodb](https://www.npmjs.com/package/mongodb) driver from `^4.x.x` to `^7.6.0`, which brings breaking changes:
+
+- **Node version**: the driver requires Node `>= 20.19.0`.
+- **`ObjectId` requires `new`**: calling it without `new` now throws.
+- **`increment()` returns the post-update document** instead of the pre-update one.
+- **`dropCollection()` no longer throws for a non-existent collection**.
+- **Connection strings use strict booleans**: `ssl=1`/`retryWrites=yes` are rejected.
+- **`multiUpdate()` with `rawResponse` resolves instead of rejecting** on write errors.
+- **`aggregate()` no longer defaults `getMore` batches to `1000`**.
+
+See [`docs/migration-v3-to-v4.md`](docs/migration-v3-to-v4.md) for the full detail, code examples and a migration checklist.
 
 ## Models
 Whenever the `Model` type is mentioned in this document, it refers to an instance of [@janiscommerce/model](https://www.npmjs.com/package/@janiscommerce/model).
@@ -31,13 +45,13 @@ This is used to configure which collection should be used, which unique indexes 
 
 **Properties:**
 
-- connectionString `String` (optional): Full connectionString to connect, default: `localhost`. _Since 3.9.0_
+- connectionString `String` (optional): Full connectionString to connect, default none. When it is not received, the connection string is built from `protocol`, `host`, `port`, `user` and `password`. _Since 3.9.0_
 - host `String` (optional): MongoDB host, default: `localhost`
 - protocol `String` (optional): host protocol, default: `mongodb://`
 - port `Number` (optional): host port, default none
 - user `String` (optional): host username, default none
 - password `String` (optional): host user password, default none
-- database `String` **(required)**: MongoDB database
+- database `String` (optional): MongoDB database, default none. When it is received, it takes precedence over the database of the connection string. When it is not received, the database of the connection string is used
 - limit `Number` (optional): Default limit for `get`/`getTotals` operations, default: `500`
 
 **Usage:**
@@ -151,7 +165,7 @@ const itemsInserted = await mongo.multiInsert(model, [
 	- `updateOne`: _Boolean_. When receive as **true**, `updateOne()` operation will be used, otherwise `updateMany()` is used.
 	- `skipAutomaticSetModifiedData`: _Boolean_. When receive as **true**, the field `dateModified` is not updated automatically.
 
-- Resolves `Number`: The number of modified documents
+- Resolves `Number`: The number of modified documents (`modifiedCount`). Documents matched but not modified are not counted, and neither are documents created with `upsert: true` (it resolves `0` when the document was created)
 - Rejects `Error` When something bad occurs
 
 **Usage:**
@@ -203,8 +217,10 @@ await mongo.update(
 - model: `Model`: A model instance
 - parameters: `Object` (optional): The query parameters. Default: `{}`. It accepts `key` (the field name to get distinct values from), `filters` (described below in `get()` method) and `readPreference` (described below in `get()` method)
 
-- Resolves `Array<Object>`: An array of documents
+- Resolves `Array<*>`: An array with the distinct values of `key` (values, not documents)
 - Rejects `Error` When something bad occurs
+
+> :warning: Unlike `get()`, a filter by `id` is not mapped to `_id`, so it matches nothing. Filter by `_id` using an `ObjectId`.
 
 **Usage:**
 ```js
@@ -289,21 +305,29 @@ mongodb.get(myModel, {
 });
 ```
 
-The mapper option for a field can take three forms:
+The mapper option for a field is only read from the model static getter `fields` (a `mapper` sent inside a query filter is ignored). It can take three forms:
 ```js
+class MyModel extends Model {
+	static get fields() {
+		return {
+			myField: {
+				type: 'lesserOrEqual',
+				mapper: 'toDate'
+			}
+		}
+	}
+}
+
 mongodb.get(myModel, {
 	filters: {
-		myField: {
-			type: 'lesserOrEqual',
-			mapper: 'toDate'
-		}
+		myField: '2024-01-01'
 	}
 });
 ```
 
-Declare a function: The value will pass through this function as a custom mapper.
-string: It will attempt to access existing mappers within the package.
-`false`: This disables any default mapper the field may have.
+- Function: The value will pass through this function as a custom mapper.
+- String: It will attempt to access existing mappers within the package.
+- `false`: This disables any default mapper the field may have.
 
 For specific fields like dateCreated, dateCreatedFrom, dateCreatedTo, dateModified, dateModifiedFrom, and dateModifiedTo, it's important to note that they pass through the default mapper toDate by default.
 
@@ -375,6 +399,13 @@ The package will handle the `string` to `ObjectId` conversion automatically for 
 
 It also maps `_id` field to `id` when retrieving documents.
 
+The `ObjectId` constructor is also re-exported from the package's entrypoint, in case you need to build one manually (same reference as `require('mongodb').ObjectId`):
+```js
+const { ObjectId } = require('@janiscommerce/mongodb');
+
+const id = new ObjectId('5df0151dbc1d570011949d86');
+```
+
 **Example**
 
 Putting it all together, here's a complete example with all possible configurations:
@@ -416,8 +447,8 @@ mongodb.get(myModel, {
 
 // This is converted to the following mongo filter:
 {
-	id: {
-		$eq: ObjectId('5df0151dbc1d570011949d86') // Automatically converted to ObjectId, default $eq type
+	_id: {
+		$eq: ObjectId('5df0151dbc1d570011949d86') // `id` is mapped to `_id` and converted to ObjectId, default $eq type
 	},
 	otherIdField: {
 		$in: [ObjectId('5df0151dbc1d570011949d87'), ObjectId('5df0151dbc1d570011949d88')] // Converted to ObjectId by model, default $in type
@@ -541,6 +572,8 @@ Return example:
 
 If the last query response was empty, it will just return the `total` and `pages` properties with a value of zero.
 
+When no `get()` was executed before with the same model instance, `page` is `0`.
+
 
 
 **Since *3.2.0*:**
@@ -556,19 +589,19 @@ If the last query response was empty, it will just return the `total` and `pages
 ```js
 // getTotals
 result = await mongo.getTotals(model);
-// > { page: 1, pageSize: 500, pages: 1, total: 4 }
+// > { page: 0, pageSize: 500, pages: 1, total: 4 } // page is 0 when there was no previous get()
 
 // with filter
 result = await mongo.getTotals(model, { name: 'foo' });
-// > { page: 1, pageSize: 500, pages: 1, total: 1 }
+// > { page: 0, pageSize: 500, pages: 1, total: 1 }
 
 // with limit
 result = await mongo.getTotals(model, {}, { limit: 100 });
-// > { page: 1, pageSize: 500, pages: 1, total: 5456 } -> 5456 is the total of documents in the collection, ignoring the limit because estimatedDocumentCount is used.
+// > { page: 0, pageSize: 500, pages: 1, total: 5456 } -> 5456 is the total of documents in the collection, ignoring the limit because estimatedDocumentCount is used.
 
 // with limit and filter
 result = await mongo.getTotals(model, { status: 'active' }, { limit: 6000 });
-// > { page: 1, pageSize: 500, pages: 12, total: 6000 } -> limit is capped to 100 even if the filter matches more documents.
+// > { page: 0, pageSize: 500, pages: 12, total: 6000 } -> the count stops at 6000 even if the filter matches more documents.
 ```
 
 </details>
@@ -683,10 +716,13 @@ await mongo.multiSave(model, [
   - `updateOne: boolean` If `true`, uses `updateOne()` operation (updates only the first matching document). If `false` or not provided, uses `updateMany()` operation (updates all matching documents).
   - `skipAutomaticSetModifiedData: boolean` If `true`, the `dateModified` field is not automatically updated.
 - options: `Object` (optional): Global options for the entire multiUpdate operation:
-  - `rawResponse: boolean` If `true`, returns an object with detailed information about the bulkWrite operation result (number of modified documents, errors, etc). By default, returns `true` for backward compatibility.
+  - `rawResponse: boolean` If `true`, resolves an object with detailed information about the bulkWrite operation result (number of modified documents, write errors, per-operation outcome). By default, resolves `true` for backward compatibility.
 
-- Resolves `Boolean|Object`: `true` if the operation was successful, or an object with details if `rawResponse: true` is used.
-- Rejects `Error` When something bad occurs
+- Resolves `Boolean`: `true` if the operation was successful, when `rawResponse` is not used.
+- Resolves `Object`: The detailed result, when `rawResponse: true` is used. It also resolves when the server reports write errors, with `success: false` and the failures detailed in `writeErrors` and `operations[]`.
+- Rejects `MongoDBError` When something bad occurs. With `rawResponse: true`, write errors no longer reject: only failures that abort the whole bulk write do (connection, timeout, invalid operation).
+
+**Ordering:** with `rawResponse: true` the bulk write is executed as **unordered**, so every operation is attempted even if a previous one fails. Without `rawResponse` it is executed as **ordered**, so it stops at the first failing operation. _Since 4.0.0_
 
 **Basic usage (updateMany by default):**
 ```js
@@ -729,8 +765,8 @@ const result = await mongo.multiUpdate(model, [
   upsertedCount: 0,
   insertedCount: 0,
   deletedCount: 0,
-  writeErrors: [],
-  writeConcernErrors: [],
+  writeErrors: [],       // array of WriteError, one per failed operation
+  writeConcernErrors: [], // array of WriteConcernError, empty if none occurred
   operations: [     // detailed information for each operation
     {
       index: 0,
@@ -753,11 +789,47 @@ const result = await mongo.multiUpdate(model, [
 */
 
 // You can easily identify which operations succeeded and which failed:
-const successful = result.operations.filter(op => op.success);
-const failed = result.operations.filter(op => !op.success);
+const successfulOperations = result.operations.filter(operation => operation.success);
+const failedOperations = result.operations.filter(operation => !operation.success);
 
-console.log(`Successful operations: ${successful.length}`);
-console.log(`Failed operations: ${failed.length}`);
+console.log(`Successful operations: ${successfulOperations.length}`);
+console.log(`Failed operations: ${failedOperations.length}`);
+```
+
+**Usage with rawResponse when the server reports write errors:**
+```js
+const result = await mongo.multiUpdate(model, [
+   { filter: { name: 'test 1' }, data: { extra: 1 } },
+   { filter: { name: 'test 2' }, data: { name: 'test 1' } }, // violates a unique index on `name`
+   { filter: { name: 'test 3' }, data: { extra: 3 } }
+], { rawResponse: true });
+
+/* result:
+{
+  success: false,         // at least one operation failed
+  modifiedCount: 2,       // the operations after the failing one are applied too: the bulk write is unordered
+  matchedCount: 2,
+  upsertedCount: 0,
+  insertedCount: 0,
+  deletedCount: 0,
+  writeErrors: [          // one WriteError per failed operation, `index` is the position in `operations`
+    { index: 1, code: 11000, errmsg: 'E11000 duplicate key error collection...' }
+  ],
+  writeConcernErrors: [],
+  operations: [
+    { index: 0, filter: { name: 'test 1' }, data: { extra: 1 }, options: undefined, success: true, errors: [] },
+    {
+      index: 1,
+      filter: { name: 'test 2' },
+      data: { name: 'test 1' },
+      options: undefined,
+      success: false,
+      errors: [{ index: 1, code: 11000, errmsg: 'E11000 duplicate key error collection...' }]
+    },
+    { index: 2, filter: { name: 'test 3' }, data: { extra: 3 }, options: undefined, success: true, errors: [] }
+  ]
+}
+*/
 ```
 
 </details>
@@ -765,7 +837,7 @@ console.log(`Failed operations: ${failed.length}`);
 ### ***async*** `remove(model, item)`
 
 <details>
-<summary>Inserts or updates a document in a collection.</summary>
+<summary>Removes a document from a collection.</summary>
 
 - model: `Model`: A model instance used for the query.
 - item: `Object`: The items to be removed
@@ -794,6 +866,8 @@ await mongo.remove(model, { id: '0000000055f2255a1a8e0c54' });
 - Resolves `Number`: Number that represents the amount of removed documents.
 - Rejects `Error` When something bad occurs
 
+> :warning: An empty filter (`undefined`, `{}` or `[]`) is not rejected and **removes every document of the collection**. Make sure the filter is never empty.
+
 **Usage:**
 ```js
 await mongo.multiRemove(model, { name: { type: 'search', value: 'test' } });
@@ -812,7 +886,7 @@ await mongo.multiRemove(model, { name: { type: 'search', value: 'test' } });
 - incrementData: `Object`: The fields with the values to increment or decrement to updated in the collection (values must be *number* type).
 - setData: `Object`: extra data to be updated in the registry
 
-- Resolves `Object`: An object containing the updated registry
+- Resolves `Object|null`: The updated document (after applying the increment), or `null` if no document matched the filters. It is the raw document from MongoDB: it has the `_id` as `ObjectId` and no `id` property
 - Rejects `Error` When something bad occurs
 
 **Usage:**
@@ -822,10 +896,29 @@ await mongo.increment(model, { status: 'pending' }, { pendingDaysQuantity: 1 }, 
 {
    _id: ObjectID('5df0151dbc1d570011949d86'),
    status: 'pending',
-   pendingDaysQuantity: 4
-   updatedDate:ISODate("2020-11-09T14:01:29.170Z")
+   pendingDaysQuantity: 4,
+   updatedDate: ISODate("2020-11-09T14:01:29.170Z"),
+   dateModified: ISODate("2020-11-09T14:01:29.170Z") // always set by the package
 }
 */
+```
+
+</details>
+
+### ***async*** `dropCollection(collection)`
+
+<details>
+<summary>Drops a collection from the database of the current `config`.</summary>
+
+- collection: `String`: The name of the collection to drop.
+
+- Resolves `Boolean`: `true` if the collection was dropped. If the collection did not exist, it no longer rejects: resolves `false` on MongoDB 6.0, or `true` on MongoDB 7.0+ (the `drop` command is idempotent on those versions). To know beforehand whether the collection existed, check it separately (e.g. with `getIndexes()` or by listing collections).
+- Rejects `Error` When something bad occurs (other than a non-existent collection)
+
+**Usage:**
+```js
+await mongo.dropCollection('myCollection');
+// > true|false
 ```
 
 </details>
@@ -837,15 +930,17 @@ await mongo.increment(model, { status: 'pending' }, { pendingDaysQuantity: 1 }, 
 
 - model `Model`: A model instance
 
-- Resolves `Array<object>`: An array with the collection indexes
-- Rejects `Error`: When something bad occurs
-
-This method also format the received indexes from MongoDB by getting only the fields `name`, `key` and `unique`.
+- Resolves `Array<object>`: An array with the raw indexes returned by the MongoDB driver (`v`, `key`, `name` and the options of each index, such as `unique`). It includes the default `_id_` index
+- Rejects `Error`: When something bad occurs (for example, when the collection does not exist)
 
 **Usage:**
 ```js
 await mongo.getIndexes(model);
-// > [{name: 'some-index', key: { field: 1 }, unique: false}]
+/* > [
+	{ v: 2, key: { _id: 1 }, name: '_id_' },
+	{ v: 2, key: { field: 1 }, name: 'some-index', unique: true }
+]
+*/
 ```
 
 </details>
@@ -860,6 +955,9 @@ await mongo.getIndexes(model);
    - name `String` (Required): The index name
    - key `Object` (Required): The index key with the fields to index
    - unique `Boolean` (Optional): Indicates if the index must be unique or not
+   - expireAfterSeconds `Number` (Optional): Seconds to keep the documents (TTL index)
+   - partialFilterExpression `Object` (Optional): Filter to index only the documents that match it
+   - sparse `Boolean` (Optional): Indicates if the index must be sparse or not
 
 - Resolves `Boolean`: `true` if the index was successfully created
 - Rejects `Error`: When something bad occurs
@@ -882,4 +980,133 @@ await mongo.createIndex(model, {
 <summary>Creates multiple indexes into the collection.</summary>
 
 - model `Model`: A model instance
-- indexes `
+- indexes `Array<Object>`: The indexes to create. Each one accepts the same properties as `createIndex()`:
+   - name `String` (Required): The index name
+   - key `Object` (Required): The index key with the fields to index
+   - unique `Boolean` (Optional)
+   - expireAfterSeconds `Number` (Optional)
+   - partialFilterExpression `Object` (Optional)
+   - sparse `Boolean` (Optional)
+
+- Resolves `Boolean`: `true` if the indexes were successfully created
+- Rejects `Error`: When something bad occurs. An empty array `[]` is rejected by the server. Creating an existing index again with the same name, key and options is idempotent
+
+**Usage:**
+```js
+await mongo.createIndexes(model, [
+   { name: 'some-index', key: { field: 1 }, unique: true },
+   { name: 'ttl-index', key: { expiresAt: 1 }, expireAfterSeconds: 3600 },
+   { name: 'partial-index', key: { code: 1 }, partialFilterExpression: { code: { $exists: true } } },
+   { name: 'sparse-index', key: { optional: 1 }, sparse: true }
+]);
+// > true
+```
+
+</details>
+
+### ***async*** `dropIndex(model, indexName)`
+
+<details>
+<summary>Drops an index from the collection.</summary>
+
+- model `Model`: A model instance
+- indexName `String`: The name of the index to drop
+
+- Resolves `Boolean`: `true` if the index was dropped
+- Rejects `Error`: When the index name is not a string, or when something bad occurs (for example, the index does not exist, or it is the `_id_` index)
+
+**Usage:**
+```js
+await mongo.dropIndex(model, 'some-index');
+// > true
+```
+
+</details>
+
+### ***async*** `dropIndexes(model, indexNames)`
+
+<details>
+<summary>Drops multiple indexes from the collection.</summary>
+
+- model `Model`: A model instance
+- indexNames `Array<String>`: The names of the indexes to drop
+
+- Resolves `Boolean`: `true` if every index was dropped. An empty array drops nothing and resolves `true`
+- Rejects `Error`: When `indexNames` is not an array, or when something bad occurs
+
+> :warning: The indexes are dropped in parallel. If one of them fails (for example, it does not exist), the call rejects but the other indexes are still dropped.
+
+**Usage:**
+```js
+await mongo.dropIndexes(model, ['some-index', 'other-index']);
+// > true
+```
+
+</details>
+
+### ***async*** `dropDatabase()`
+
+<details>
+<summary>Drops the database of the current `config`.</summary>
+
+- Resolves `Boolean`: `true` when the database was dropped. It also resolves `true` if the database did not exist
+- Rejects `Error` When something bad occurs
+
+**Usage:**
+```js
+await mongo.dropDatabase();
+// > true
+```
+
+</details>
+
+### ***async*** `deleteAllDocuments(collection, filter)`
+
+<details>
+<summary>Deletes the documents of a collection, keeping the collection and its indexes.</summary>
+
+- collection: `String`: The name of the collection
+- filter: `Object` (optional): A raw MongoDB filter. When it is not received, every document is deleted
+
+- Resolves `Number`: The amount of deleted documents
+- Rejects `Error` When something bad occurs
+
+> :warning: The filter is used as is, without the model filters parsing: `id` is not mapped to `_id`, and strings are not converted to `ObjectId`. To match by id use `{ _id: new ObjectId('...') }`.
+
+**Usage:**
+```js
+await mongo.deleteAllDocuments('myCollection', { status: 'inactive' });
+// > 2
+
+await mongo.deleteAllDocuments('myCollection');
+// > 10
+```
+
+</details>
+
+### ***async*** `aggregate(model, stages, options)`
+
+<details>
+<summary>Runs an aggregation pipeline on the collection.</summary>
+
+- model: `Model`: A model instance
+- stages: `Array<Object>`: The pipeline stages, in the order to be executed
+- options: `Object` (optional): Options passed as is to the driver `aggregate()` (for example `batchSize`, `allowDiskUse`, `hint`)
+
+- Resolves `Array<Object>`: The computed results. A truthy `_id` of every result is mapped to `id` as a string. A falsy `_id` (for example `null` in a `$group`) is left as is
+- Rejects `Error` When `stages` is not an array, or when something bad occurs
+
+**IDs conversion:** in the stages (for example in `$match`), an `id` field is converted to `_id` as `ObjectId`, and the fields declared with `isID: true` in the model are converted to `ObjectId` too. Only plain values are converted: a value with a mongo operator (for example `{ $in: [...] }`) is left as is.
+
+> :warning: The `_id` of `$group` results is also mapped to `id`. A compound `_id` object is converted to a string, losing its data.
+
+**Usage:**
+```js
+await mongo.aggregate(model, [
+   { $match: { id: '5df0151dbc1d570011949d86' } },
+   { $project: { name: 1 } }
+], { allowDiskUse: true });
+// > [{ id: '5df0151dbc1d570011949d86', name: 'foobar' }]
+```
+
+</details>

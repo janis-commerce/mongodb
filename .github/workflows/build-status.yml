@@ -11,3 +11,4 @@ jobs:
     uses: janis-commerce/.github/.github/workflows/build-status.yml@master
     with:
       build-types: true
+      node-versions: '["22.x"]'
