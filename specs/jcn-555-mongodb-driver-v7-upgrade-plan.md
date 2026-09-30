@@ -13,8 +13,8 @@
 - Depende de: 1
 
 ## Batch 3 — Escrituras simples
-- [ ] `insert.js`, `save.js`, `update.js`, `increment.js`, `remove.js`
-- [ ] Migrar el resto de `crud.js`; borrar `crud.js`.
+- [x] `insert.js`, `save.js`, `update.js`, `increment.js`, `remove.js`
+- [x] Migrar el resto de `crud.js`; borrar `crud.js`.
 - Depende de: 1
 
 ## Batch 4 — Escrituras masivas
@@ -39,6 +39,11 @@
 - `aggregate`: ids dentro de operadores (`$in`) no se convierten a ObjectId; en `get` sí (`aggregate.js:98`).
 - Conexión fallida: doble wrap code 4; el error del driver queda en `previousError.previousError` (`constructor.js:122`).
 
+- `update`: validación dentro del `try`; filtro inválido (8), stage >1 key (11) y BSONError salen como code 4 (`update.js:290,371,390`).
+- `insert`: id no-hex sale code 4; en `save`/`remove`/`get` sale `BSONError` crudo (`insert.js:182`, `save.js:343`, `remove.js:109`).
+- `increment`: devuelve doc crudo con `_id` ObjectId, sin `id` (`increment.js:46`).
+- `update` con `upsert: true`: retorna 0 (solo `modifiedCount`) aunque crea el doc (`update.js:321`).
+
 ## Server codes observados (3 versiones)
 - `hint` inexistente → 2 · `$text` sin índice → 27 · `$nearSphere` sin índice → 291 · stage desconocido → 40324
-
+- E11000 → 11000 · conflicto de operadores/path → 40 · `$inc` sobre string → 14 · operador desconocido → 9
