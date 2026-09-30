@@ -3,8 +3,8 @@
 > Spec: `specs/jcn-555-mongodb-driver-v7-upgrade.md` · Verificación de cada batch: `npm run lint` + `npm test` + `npm run test-integration` (6.0.24, 7.0.21, 8.0.12)
 
 ## Batch 1 — Base
-- [ ] `integration-tests/fixtures/_model.js`: agregar `fields` (`isID`, `field`, `type`, `mapper`) y variante `hasCustomId`.
-- [ ] `integration-tests/fixtures/_helpers.js`: cleanup de colección y assert de error de driver (`code === 4` + `previousError.code`).
+- [x] `integration-tests/fixtures/_model.js`: agregar `fields` (`isID`, `field`, `type`, `mapper`) y variante `hasCustomId`.
+- [x] `integration-tests/fixtures/_helpers.js`: cleanup de colección y assert de error de driver (`code === 4` + `previousError.code`).
 - Depende de: —
 
 ## Batch 2 — Lecturas
