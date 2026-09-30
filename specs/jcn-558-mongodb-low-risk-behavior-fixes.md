@@ -19,7 +19,7 @@ Corregir 6 comportamientos inconsistentes antes del GA de 4.0.0: `distinct` e `a
 - `distinct`: pasar `params.filters` por `ObjectIdHelper.ensureObjectIdsForWrite` antes de `parseFilters` (`lib/mongodb.js:109`).
 - `aggregate`: en stages `$match`, convertir `id` y campos `isID` dentro de `$in`, `$nin`, `$eq`, `$ne` (`lib/mongodb.js:1064`).
 - `aggregate`: mapear `_id` → `id` solo si `_id` es ObjectId o string. Otro tipo deja `_id` sin tocar.
-- `increment`: devolver el documento mapeado como `get` (`id` string, sin `_id`), o `null` (`lib/mongodb.js:861`).
+- `increment`: agregar `id` string al documento devuelto y conservar `_id`; `null` sin match (`lib/mongodb.js:861`).
 - `createIndexes(model, [])`: rechazar con code 10 `INVALID_INDEX` antes del driver (`lib/helpers/validate-indexes.js`).
 - `dropIndexes`: `Promise.allSettled`; cuando todos terminan, rechazar con el primer error en orden de `indexNames` (`lib/mongodb.js:990`).
 - Unitarios en `tests/` con cobertura 100%.
@@ -40,13 +40,13 @@ Corregir 6 comportamientos inconsistentes antes del GA de 4.0.0: `distinct` e `a
 - [ ] `aggregate` con `$match: { id: { $in: [hex1, hex2] } }` matchea los dos documentos. Igual con `$nin`, `$eq`, `$ne` y con campos `isID`.
 - [ ] `aggregate` con `$group: { _id: { a, b } }` devuelve `_id` objeto intacto y sin `id`.
 - [ ] `aggregate` con `_id` ObjectId o string devuelve `id` string y sin `_id`. Con `_id` null o número deja `_id`.
-- [ ] `increment` devuelve `id` string, sin `_id`. Sin match devuelve `null`.
+- [ ] `increment` devuelve `id` string y conserva `_id` ObjectId. Sin match devuelve `null`.
 - [ ] `createIndexes(model, [])` rechaza con `MongoDBError` code 10 sin llamar al driver. `createIndex` no cambia.
 - [ ] `dropIndexes(model, ['a', 'missing', 'b'])` rechaza con el error de `missing` y, al rechazar, `a` y `b` ya no existen.
 - [ ] `dropIndexes` sin errores resuelve `true` igual que hoy.
 - [ ] `npm test` pasa con cobertura 100%.
 - [ ] `npm run test-integration` pasa en 8.0.12, 7.0.21 y 6.0.24. No quedan `// Current behavior:` de estos 6 casos.
-- [ ] `docs/migration-v3-to-v4.md` lista `increment`, `createIndexes([])`, `distinct` y `aggregate` como breaking.
+- [ ] `docs/migration-v3-to-v4.md` lista `createIndexes([])`, `distinct` y `aggregate` como breaking, y `increment` como aditivo.
 - [ ] `lint` pasa.
 
 ## Plan de archivos
@@ -63,7 +63,7 @@ Corregir 6 comportamientos inconsistentes antes del GA de 4.0.0: `distinct` e `a
 - Branch desde `JCN-555`, PR contra `JCN-555`: separa tests de cambio de comportamiento. Excepción a "branch desde master", decidida por Juan.
 - `aggregate` convierte solo en `$match`: evita convertir strings que no son ids en `$project` o `$addFields`.
 - `aggregate` con `_id` compuesto lo deja en `_id`: sin pérdida de data.
-- `increment` mapea como `get`: consistencia sobre compatibilidad; es breaking y va en la migration guide.
+- `increment` aditivo (`id` + `_id`): `@janiscommerce/model` lee `result._id.toString()` (`model.js:551`); el mapeo como `get` lo rompería. Decisión post-Explore.
 - `createIndexes([])` rechaza con code 10: error de validación explícito.
 - `dropIndexes` con `allSettled`: estado final determinístico, mismo contrato de error.
 - `multiRemove` vacío fuera: requiere `@janiscommerce/model`.
