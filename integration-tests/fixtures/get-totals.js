@@ -29,7 +29,7 @@ describe('getTotals()', () => {
 
 		const result = await getMongodbInstance().getTotals(model);
 
-		// estimatedDocumentCount() branch, page defaults to 0 (README says 1)
+		// estimatedDocumentCount() branch, page defaults to 0 (as documented in the README)
 		assert.deepEqual(result, { total: 25, pageSize: 500, pages: 1, page: 0 });
 	});
 

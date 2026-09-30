@@ -37,7 +37,7 @@ describe('multiSave()', () => {
 
 		assert.equal(result, true);
 
-		const stored = await findRaw(model);
+		const stored = (await findRaw(model)).sort((a, b) => a.name.localeCompare(b.name));
 
 		assert.equal(stored.length, 2);
 		assert.deepEqual(stored.map(({ name, value }) => ({ name, value })), [
@@ -69,7 +69,7 @@ describe('multiSave()', () => {
 
 		assert.equal(result, true);
 
-		const stored = await findRaw(model);
+		const stored = (await findRaw(model)).sort((a, b) => a.value - b.value);
 
 		assert.equal(stored.length, 2);
 		assert.deepEqual(stored.map(({ value }) => value), [10, 20]);
@@ -88,7 +88,7 @@ describe('multiSave()', () => {
 			{ name: 'New', value: 3 }
 		]);
 
-		const stored = await findRaw(model);
+		const stored = (await findRaw(model)).sort((a, b) => a.name.localeCompare(b.name));
 
 		assert.deepEqual(stored.map(({ name, value }) => ({ name, value })), [
 			{ name: 'Existing', value: 2 },
@@ -209,7 +209,7 @@ describe('multiSave()', () => {
 				11000
 			);
 
-			const names = (await findRaw(model)).map(({ name }) => name);
+			const names = (await findRaw(model)).map(({ name }) => name).sort();
 
 			assert.deepEqual(names, ['Existing', 'First']);
 		});

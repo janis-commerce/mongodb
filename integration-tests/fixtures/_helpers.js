@@ -68,12 +68,16 @@ const createModelWithFields = fields => class ModelWithCustomFields extends Test
 
 /**
  * Reads the documents as stored in the collection (raw driver documents: `_id` is not mapped to `id`)
+ * Sorted by `_id` so the assertions do not depend on the natural order (ObjectIds are monotonic within the process).
  *
  * @param {object} model Model instance
  * @param {object} [filter]
  * @returns {Promise<Array<object>>}
  */
-const findRaw = (model, filter = {}) => getMongodbInstance().mongo.makeQuery(model, collection => collection.find(filter).toArray());
+const findRaw = (model, filter = {}) => getMongodbInstance().mongo.makeQuery(model, collection => collection
+	.find(filter)
+	.sort({ _id: 1 })
+	.toArray());
 
 module.exports = {
 	createModelWithFields,

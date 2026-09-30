@@ -7,7 +7,7 @@ const MongoDBError = require('../../lib/mongodb-error');
 
 const TestModel = require('./_model');
 const { getMongodbInstance } = require('./_mongodb-instance');
-const { cleanCollection, assertDriverError } = require('./_helpers');
+const { cleanCollection, assertDriverError, findRaw } = require('./_helpers');
 
 describe('get()', () => {
 
@@ -72,9 +72,11 @@ describe('get()', () => {
 		const asc = await getMongodbInstance().get(model, { order: { id: 'asc' } });
 		const desc = await getMongodbInstance().get(model, { order: { id: 'desc' } });
 
-		// Insertion order (ObjectId is monotonic within the same process)
-		assert.deepEqual(names(asc), ['Charlie', 'Alice', 'Bob', 'Dave']);
-		assert.deepEqual(names(desc), ['Dave', 'Bob', 'Alice', 'Charlie']);
+		// Explicit _id order (ObjectId is monotonic within the same process, so it matches the insertion order)
+		const expected = names(await findRaw(model));
+
+		assert.deepEqual(names(asc), expected);
+		assert.deepEqual(names(desc), [...expected].reverse());
 	});
 
 	it('Should sort by several fields', async () => {
@@ -99,7 +101,8 @@ describe('get()', () => {
 
 		const result = await getMongodbInstance().get(model, { order: { age: 'invalid' } });
 
-		assert.deepEqual(names(result), ['Charlie', 'Alice', 'Bob', 'Dave']);
+		// Natural order is not guaranteed: only check that every document is returned
+		assert.deepEqual(names(result).sort(), ['Alice', 'Bob', 'Charlie', 'Dave']);
 	});
 
 	it('Should apply limit and page', async () => {
@@ -258,6 +261,8 @@ describe('get()', () => {
 
 		assert.ok(error instanceof MongoDBError);
 		assert.equal(error.code, MongoDBError.codes.MONGODB_INTERNAL_ERROR);
+		assert.equal(error.previousError.name, 'MongoInvalidArgumentError');
+		assert.equal(error.previousError.message, 'Invalid read preference mode "invalid"');
 	});
 
 	it('Should reject with code 8 when the filter type is invalid', async () => {

@@ -3,7 +3,6 @@
 const assert = require('node:assert').strict;
 
 const { ObjectId } = require('../../lib/mongodb');
-const MongoDBError = require('../../lib/mongodb-error');
 
 const TestModel = require('./_model');
 const { TestModelWithFields } = require('./_model');
@@ -237,17 +236,12 @@ describe('aggregate()', () => {
 		await assertDriverError(getMongodbInstance().aggregate(model, [{ $unknownStage: {} }]), 40324);
 	});
 
-	it('Should reject with code 4 and a numeric server code when a stage has an invalid argument', async () => {
+	it('Should reject with code 4 and a server code when a stage has an invalid argument', async () => {
 
 		const model = await seedSmall();
 
-		const error = await getMongodbInstance()
-			.aggregate(model, [{ $limit: 'invalid' }])
-			.catch(err => err);
-
-		assert.ok(error instanceof MongoDBError);
-		assert.equal(error.code, MongoDBError.codes.MONGODB_INTERNAL_ERROR);
-		assert.equal(typeof error.previousError.code, 'number');
+		// 5107201 = $limit argument must be a positive integer
+		await assertDriverError(getMongodbInstance().aggregate(model, [{ $limit: 'invalid' }]), 5107201);
 	});
 
 });

@@ -51,7 +51,7 @@ This is used to configure which collection should be used, which unique indexes 
 - port `Number` (optional): host port, default none
 - user `String` (optional): host username, default none
 - password `String` (optional): host user password, default none
-- database `String` (optional): MongoDB database, default none. When it is not received, the database of the connection string is used
+- database `String` (optional): MongoDB database, default none. When it is received, it takes precedence over the database of the connection string. When it is not received, the database of the connection string is used
 - limit `Number` (optional): Default limit for `get`/`getTotals` operations, default: `500`
 
 **Usage:**
@@ -220,7 +220,7 @@ await mongo.update(
 - Resolves `Array<*>`: An array with the distinct values of `key` (values, not documents)
 - Rejects `Error` When something bad occurs
 
-> :warning: Unlike `get()`, a filter by `id` is not mapped to `_id`, so it matches nothing. Filter by `_id` using an `ObjectId`, or declare the field with `isID: true` in the model `fields`.
+> :warning: Unlike `get()`, a filter by `id` is not mapped to `_id`, so it matches nothing. Filter by `_id` using an `ObjectId`.
 
 **Usage:**
 ```js
@@ -1093,7 +1093,7 @@ await mongo.deleteAllDocuments('myCollection');
 - stages: `Array<Object>`: The pipeline stages, in the order to be executed
 - options: `Object` (optional): Options passed as is to the driver `aggregate()` (for example `batchSize`, `allowDiskUse`, `hint`)
 
-- Resolves `Array<Object>`: The computed results. The `_id` of every result is mapped to `id` as a string
+- Resolves `Array<Object>`: The computed results. A truthy `_id` of every result is mapped to `id` as a string. A falsy `_id` (for example `null` in a `$group`) is left as is
 - Rejects `Error` When `stages` is not an array, or when something bad occurs
 
 **IDs conversion:** in the stages (for example in `$match`), an `id` field is converted to `_id` as `ObjectId`, and the fields declared with `isID: true` in the model are converted to `ObjectId` too. Only plain values are converted: a value with a mongo operator (for example `{ $in: [...] }`) is left as is.

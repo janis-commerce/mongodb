@@ -23,9 +23,11 @@ describe('constructor', () => {
 
 	it('Should connect using host, port and database without connectionString', async () => {
 
-		const mongodb = new MongoDB({ host: hostname, port: Number(port), database: DATABASE });
+		// A different host than the shared instance (127.0.0.1) forces a different configKey, so it opens its own client
+		const mongodb = new MongoDB({ host: 'localhost', port: Number(port), database: DATABASE });
 
-		assert.equal(mongodb.mongo.connectionString, `mongodb://${hostname}:${port}/${DATABASE}`);
+		assert.equal(mongodb.mongo.connectionString, `mongodb://localhost:${port}/${DATABASE}`);
+		assert.notEqual(mongodb.mongo.configKey, getMongodbInstance().mongo.configKey);
 
 		const model = new TestModel();
 
@@ -39,6 +41,12 @@ describe('constructor', () => {
 		const sharedResult = await getMongodbInstance().get(model, {});
 
 		assert.deepEqual(sharedResult.map(({ name }) => name), ['Separated params']);
+
+		// Each configKey has its own client
+		const client = await mongodb.mongo.getDb().then(db => db.client);
+		const sharedClient = await getMongodbInstance().mongo.getDb().then(db => db.client);
+
+		assert.notEqual(client, sharedClient);
 	});
 
 	it('Should use the received database', async () => {
@@ -66,16 +74,26 @@ describe('constructor', () => {
 		assert.equal(mongodb.mongo.connectionString, 'mongodb://some-user:some-pass@some-host:27018/some-db');
 	});
 
-	it('Should use the connectionString over host, port and database', () => {
+	it('Should use the connectionString over host and port, and the config database over the connectionString database', async () => {
 
 		const mongodb = new MongoDB({
 			connectionString: process.env.MONGODB_INTEGRATION_URI,
 			host: 'ignored-host',
 			port: 1,
-			database: 'ignored'
+			database: OTHER_DATABASE
 		});
 
 		assert.equal(mongodb.mongo.connectionString, process.env.MONGODB_INTEGRATION_URI);
+
+		const model = new TestModel();
+
+		await mongodb.insert(model, { name: 'Config database' });
+
+		// Current behavior: config.database overrides the database of the connectionString
+		const otherMongodb = new MongoDB({ host: hostname, port: Number(port), database: OTHER_DATABASE });
+
+		assert.deepEqual((await otherMongodb.get(model, {})).map(({ name }) => name), ['Config database']);
+		assert.deepEqual(await getMongodbInstance().get(model, {}), []);
 	});
 
 	it('Should apply the custom config limit as default limit in get(), getPaged() and getTotals()', async () => {
@@ -128,6 +146,9 @@ describe('constructor', () => {
 		const secondError = await assertDriverError(mongodb.insert(new TestModel(), { name: 'Not inserted' }), MongoDBError.codes.MONGODB_INTERNAL_ERROR);
 
 		assert.equal(secondError.previousError.previousError.name, 'MongoServerSelectionError');
+
+		// A new connection attempt means a new driver error instance (a cached rejected client would repeat the same one)
+		assert.notEqual(secondError.previousError.previousError, error.previousError.previousError);
 	});
 
 });

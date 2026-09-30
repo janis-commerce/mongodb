@@ -223,7 +223,9 @@ describe('Filters (through get())', () => {
 
 			const [{ id }] = await getMongodbInstance().get(model, { filters: { name: 'Alice' } });
 
-			assert.deepEqual(await getNames(model, { _id: { raw: true, value: id } }), []);
+			// Without raw the same id string is converted to ObjectId and matches
+			assert.deepEqual(await getNames(model, { id }), ['Alice']);
+			assert.deepEqual(await getNames(model, { id: { raw: true, value: id } }), []);
 		});
 
 	});

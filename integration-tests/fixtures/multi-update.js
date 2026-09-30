@@ -328,6 +328,8 @@ describe('multiUpdate()', () => {
 
 			const model = await seed();
 
+			// Current behavior: unlike update() (wrapped as code 4), the id conversion runs outside the try/catch and the BSONError is thrown as is
+
 			await assert.rejects(
 				getMongodbInstance().multiUpdate(model, [{ filter: { id: 'invalid' }, data: { value: 1 } }]),
 				err => {
@@ -341,6 +343,8 @@ describe('multiUpdate()', () => {
 		it('Should reject with INVALID_FILTER_TYPE (not wrapped) when a filter type is invalid', async () => {
 
 			const model = await seed();
+
+			// Current behavior: unlike update() (wrapped as code 4), the filter parsing runs outside the try/catch and the error is thrown as is
 
 			await assert.rejects(
 				getMongodbInstance().multiUpdate(model, [{ filter: { name: { type: 'invalidType', value: 'A' } }, data: { value: 1 } }]),

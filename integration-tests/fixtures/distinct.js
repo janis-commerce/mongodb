@@ -2,6 +2,8 @@
 
 const assert = require('node:assert').strict;
 
+const { ObjectId } = require('../../lib/mongodb');
+
 const TestModel = require('./_model');
 const { TestModelWithFields } = require('./_model');
 const { getMongodbInstance } = require('./_mongodb-instance');
@@ -126,6 +128,18 @@ describe('distinct()', () => {
 		const withRawId = await mongodb.distinct(model, { key: 'color', filters: { _id: { raw: true, value: _id } } });
 
 		assert.deepEqual(withRawId, ['red']);
+	});
+
+	it('Should filter by _id using an ObjectId', async () => {
+
+		const model = await seed();
+		const mongodb = getMongodbInstance();
+
+		const [{ id }] = await mongodb.get(model, { filters: { name: 'Test 1' } });
+
+		const result = await mongodb.distinct(model, { key: 'color', filters: { _id: new ObjectId(id) } });
+
+		assert.deepEqual(result, ['red']);
 	});
 
 });
