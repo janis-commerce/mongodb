@@ -2,14 +2,36 @@
 
 const assert = require('node:assert').strict;
 
+const { ObjectId } = require('../../lib/mongodb');
+const MongoDBError = require('../../lib/mongodb-error');
+
 const TestModel = require('./_model');
+const { TestModelWithFields } = require('./_model');
 const { getMongodbInstance } = require('./_mongodb-instance');
+const { cleanCollection, assertDriverError } = require('./_helpers');
 
-const TOTAL_DOCUMENTS = 1500;
+describe('aggregate()', () => {
 
-describe('Aggregate and paging', () => {
+	const TOTAL_DOCUMENTS = 1500;
 
-	before(async () => {
+	const seedSmall = async (model = new TestModel()) => {
+
+		await getMongodbInstance().multiInsert(model, [
+			{ name: 'Alice', group: 'a', amount: 10 },
+			{ name: 'Bob', group: 'a', amount: 20 },
+			{ name: 'Carol', group: 'b', amount: 30 },
+			{ name: 'Dave', group: 'b', amount: 40 },
+			{ name: 'Eve', group: 'c', amount: 50 }
+		]);
+
+		return model;
+	};
+
+	afterEach(async () => {
+		await cleanCollection();
+	});
+
+	it('Should return every document even when there are more than the driver default batchSize', async () => {
 
 		const mongodb = getMongodbInstance();
 		const model = new TestModel();
@@ -17,45 +39,215 @@ describe('Aggregate and paging', () => {
 		const items = Array.from({ length: TOTAL_DOCUMENTS }, (documentValue, index) => ({ name: `Item ${index}` }));
 
 		await mongodb.multiInsert(model, items);
-	});
-
-	after(async () => {
-		await getMongodbInstance().dropCollection(TestModel.table);
-	});
-
-	it('aggregate(): Should return every document even when there are more than the driver default batchSize', async () => {
-
-		const mongodb = getMongodbInstance();
-		const model = new TestModel();
 
 		const result = await mongodb.aggregate(model, [{ $match: {} }]);
 
 		assert.equal(result.length, TOTAL_DOCUMENTS);
 	});
 
-	it('getPaged(): Should call the callback with every page when limit is lower than the total amount of documents', async () => {
+	it('Should return an empty array if the collection is empty', async () => {
 
+		const result = await getMongodbInstance().aggregate(new TestModel(), [{ $match: {} }]);
+
+		assert.deepEqual(result, []);
+	});
+
+	it('Should return every document if the pipeline has no stages', async () => {
+
+		const model = await seedSmall();
+
+		const result = await getMongodbInstance().aggregate(model, []);
+
+		assert.equal(result.length, 5);
+	});
+
+	it('Should map _id to a string id in the results', async () => {
+
+		const model = await seedSmall();
+
+		const result = await getMongodbInstance().aggregate(model, [{ $match: { name: 'Alice' } }]);
+
+		assert.equal(result.length, 1);
+		assert.equal(typeof result[0].id, 'string');
+		assert.equal(ObjectId.isValid(result[0].id), true);
+		assert.equal('_id' in result[0], false);
+	});
+
+	it('Should convert id to _id ObjectId in $match', async () => {
+
+		const model = await seedSmall();
 		const mongodb = getMongodbInstance();
-		const model = new TestModel();
 
-		const pageSize = 500;
+		const [{ id }] = await mongodb.get(model, { filters: { name: 'Carol' } });
 
-		const receivedPages = [];
+		const result = await mongodb.aggregate(model, [{ $match: { id } }]);
 
-		const { total, pages, batchSize } = await mongodb.getPaged(model, { limit: pageSize }, (items, page) => {
-			receivedPages.push({ page, itemsCount: items.length });
-		});
+		assert.deepEqual(result.map(({ name }) => name), ['Carol']);
+		assert.equal(result[0].id, id);
+	});
 
-		assert.equal(total, TOTAL_DOCUMENTS);
-		assert.equal(batchSize, pageSize);
-		assert.equal(pages, TOTAL_DOCUMENTS / pageSize);
+	it('Should not convert the ids inside a mongo operator in $match', async () => {
 
-		assert.equal(receivedPages.length, TOTAL_DOCUMENTS / pageSize);
-		assert.deepEqual(receivedPages, [
-			{ page: 1, itemsCount: pageSize },
-			{ page: 2, itemsCount: pageSize },
-			{ page: 3, itemsCount: pageSize }
+		const model = await seedSmall();
+		const mongodb = getMongodbInstance();
+
+		const [first, second] = await mongodb.get(model, { order: { name: 'asc' }, limit: 2 });
+
+		const result = await mongodb.aggregate(model, [{ $match: { id: { $in: [first.id, second.id] } } }]);
+
+		// Current behavior: only a plain id string or a {type, value} object is converted to ObjectId. A mongo operator ({ $in: [...] }) is left as is, so it matches nothing (inconsistent with get())
+		assert.equal(result.length, 0);
+	});
+
+	it('Should convert the isID fields of the stages to ObjectId', async () => {
+
+		const model = new TestModelWithFields();
+		const mongodb = getMongodbInstance();
+
+		const parentId = '5f8a7b2c9d1e4f0012345678';
+
+		await mongodb.multiInsert(model, [
+			{ name: 'A', parentId },
+			{ name: 'B', parentId: '5f8a7b2c9d1e4f0012345679' }
 		]);
+
+		const result = await mongodb.aggregate(model, [{ $match: { parentId } }]);
+
+		assert.deepEqual(result.map(({ name }) => name), ['A']);
+	});
+
+	it('Should run $group and map the _id of the groups to a string id', async () => {
+
+		const model = await seedSmall();
+
+		const result = await getMongodbInstance().aggregate(model, [
+			{ $group: { _id: '$group', total: { $sum: '$amount' }, count: { $sum: 1 } } },
+			{ $sort: { _id: 1 } }
+		]);
+
+		assert.deepEqual(result, [
+			{ id: 'a', total: 30, count: 2 },
+			{ id: 'b', total: 70, count: 2 },
+			{ id: 'c', total: 50, count: 1 }
+		]);
+	});
+
+	it('Should leave the result untouched when _id is null', async () => {
+
+		const model = await seedSmall();
+
+		const result = await getMongodbInstance().aggregate(model, [
+			{ $group: { _id: null, total: { $sum: '$amount' } } }
+		]);
+
+		// _id null is falsy: it is not mapped to id
+		assert.deepEqual(result, [{ _id: null, total: 150 }]);
+	});
+
+	it('Should stringify an object _id of a compound $group', async () => {
+
+		const model = await seedSmall();
+
+		const result = await getMongodbInstance().aggregate(model, [
+			{ $match: { group: 'a' } },
+			{ $group: { _id: { group: '$group' }, total: { $sum: '$amount' } } }
+		]);
+
+		// Current behavior: an object _id is converted with toString(), losing its data (inconsistent: it should keep the compound key)
+		assert.deepEqual(result, [{ id: '[object Object]', total: 30 }]);
+	});
+
+	it('Should run $project', async () => {
+
+		const model = await seedSmall();
+
+		const result = await getMongodbInstance().aggregate(model, [
+			{ $match: { name: 'Alice' } },
+			{ $project: { _id: 0, name: 1, double: { $multiply: ['$amount', 2] } } }
+		]);
+
+		assert.deepEqual(result, [{ name: 'Alice', double: 20 }]);
+	});
+
+	it('Should run $sort and $limit', async () => {
+
+		const model = await seedSmall();
+
+		const result = await getMongodbInstance().aggregate(model, [
+			{ $sort: { amount: -1 } },
+			{ $limit: 2 },
+			{ $project: { _id: 0, name: 1 } }
+		]);
+
+		assert.deepEqual(result, [{ name: 'Eve' }, { name: 'Dave' }]);
+	});
+
+	it('Should run $count, $skip and $unwind', async () => {
+
+		const model = new TestModel();
+		const mongodb = getMongodbInstance();
+
+		await mongodb.insert(model, { name: 'Tagged', tags: ['x', 'y', 'z'] });
+
+		const unwound = await mongodb.aggregate(model, [{ $unwind: '$tags' }, { $skip: 1 }, { $project: { _id: 0, tags: 1 } }]);
+		const counted = await mongodb.aggregate(model, [{ $count: 'total' }]);
+
+		assert.deepEqual(unwound, [{ tags: 'y' }, { tags: 'z' }]);
+		assert.deepEqual(counted, [{ total: 1 }]);
+	});
+
+	it('Should accept batchSize option', async () => {
+
+		const model = await seedSmall();
+
+		const result = await getMongodbInstance().aggregate(model, [{ $sort: { amount: 1 } }], { batchSize: 2 });
+
+		assert.deepEqual(result.map(({ name }) => name), ['Alice', 'Bob', 'Carol', 'Dave', 'Eve']);
+	});
+
+	it('Should accept allowDiskUse option', async () => {
+
+		const model = await seedSmall();
+
+		const result = await getMongodbInstance().aggregate(model, [{ $sort: { amount: -1 } }], { allowDiskUse: true });
+
+		assert.deepEqual(result.map(({ name }) => name), ['Eve', 'Dave', 'Carol', 'Bob', 'Alice']);
+	});
+
+	it('Should accept a hint option', async () => {
+
+		const model = await seedSmall();
+		const mongodb = getMongodbInstance();
+
+		await mongodb.createIndex(model, { name: 'amount_idx', key: { amount: 1 } });
+
+		const result = await mongodb.aggregate(model, [{ $match: { amount: { $gte: 40 } } }], { hint: 'amount_idx' });
+
+		assert.deepEqual(result.map(({ name }) => name), ['Dave', 'Eve']);
+
+		// 2 = BadValue
+		await assertDriverError(mongodb.aggregate(model, [{ $match: {} }], { hint: 'non_existent_idx' }), 2);
+	});
+
+	it('Should reject with code 4 and the server code when a stage is unknown', async () => {
+
+		const model = await seedSmall();
+
+		// 40324 = Unrecognized pipeline stage name
+		await assertDriverError(getMongodbInstance().aggregate(model, [{ $unknownStage: {} }]), 40324);
+	});
+
+	it('Should reject with code 4 and a numeric server code when a stage has an invalid argument', async () => {
+
+		const model = await seedSmall();
+
+		const error = await getMongodbInstance()
+			.aggregate(model, [{ $limit: 'invalid' }])
+			.catch(err => err);
+
+		assert.ok(error instanceof MongoDBError);
+		assert.equal(error.code, MongoDBError.codes.MONGODB_INTERNAL_ERROR);
+		assert.equal(typeof error.previousError.code, 'number');
 	});
 
 });

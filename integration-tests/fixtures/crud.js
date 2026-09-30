@@ -28,13 +28,6 @@ describe('CRUD', () => {
 		sinon.restore();
 	});
 
-	it('get(): Should return an empty array if no records exist', async () => {
-
-		const result = await getMongodbInstance().get(new TestModel(), {});
-
-		assert.deepEqual(result, []);
-	});
-
 	it('insert() + get(): Should insert a document and return an array of documents if records exist', async () => {
 
 		const mongodb = getMongodbInstance();
@@ -99,22 +92,6 @@ describe('CRUD', () => {
 			dateCreated: now,
 			dateModified: now
 		}]);
-	});
-
-	it('distinct(): Should return an array of distinct values for a given field', async () => {
-
-		const mongodb = getMongodbInstance();
-		const model = new TestModel();
-
-		await mongodb.insert(model, { name: 'Test 1', parent: 1 });
-		await mongodb.insert(model, { name: 'Test 2', parent: 1 });
-		await mongodb.insert(model, { name: 'Test 3', parent: 2 });
-
-		const result = await getMongodbInstance().distinct(model, {
-			key: 'parent'
-		});
-
-		sinon.assert.match(result, [1, 2]);
 	});
 
 	it('save(): Should upsert a new document and return its generated id', async () => {

@@ -52,7 +52,22 @@ const assertDriverError = async (promise, serverCode) => {
  */
 const useFakeDate = (now = new Date()) => sinon.useFakeTimers({ now, toFake: ['Date'] });
 
+/**
+ * Creates a TestModel subclass (same table) with the given `fields` definition
+ *
+ * @param {object} fields The model fields
+ * @returns {typeof TestModel}
+ */
+const createModelWithFields = fields => class ModelWithCustomFields extends TestModel {
+
+	static get fields() {
+		return fields;
+	}
+
+};
+
 module.exports = {
+	createModelWithFields,
 	cleanCollection,
 	assertDriverError,
 	useFakeDate
