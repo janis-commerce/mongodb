@@ -18,7 +18,7 @@ Now we are using [mongodb](https://www.npmjs.com/package/mongodb) `^7.x.x` versi
 
 ## Migration guide 3.x → 4.0
 
-`4.0.0` upgrades the underlying [mongodb](https://www.npmjs.com/package/mongodb) driver from `^4.x.x` to `^7.6.0`, which brings breaking changes:
+`4.0.0` upgrades the underlying [mongodb](https://www.npmjs.com/package/mongodb) driver from `^4.x.x` to `^7.6.0`, which brings breaking changes (additive and non-breaking changes are marked):
 
 - **Node version**: the driver requires Node `>= 20.19.0`.
 - **`ObjectId` requires `new`**: calling it without `new` now throws.
@@ -27,6 +27,11 @@ Now we are using [mongodb](https://www.npmjs.com/package/mongodb) `^7.x.x` versi
 - **Connection strings use strict booleans**: `ssl=1`/`retryWrites=yes` are rejected.
 - **`multiUpdate()` with `rawResponse` resolves instead of rejecting** on write errors.
 - **`aggregate()` no longer defaults `getMore` batches to `1000`**.
+- **`distinct()` maps `id` to `_id`**: filtering by `id` now matches (before it matched nothing).
+- **`aggregate()` converts the ids inside `$in`, `$nin`, `$eq` and `$ne` in `$match`**, and maps `_id` to `id` only when it is an `ObjectId` or a string (a number or an object `_id` is kept as `_id`).
+- **`createIndexes([])` rejects with code `10` (`INVALID_INDEX`)** instead of code `4`.
+- **`increment()` adds `id`** (string) to the returned document, keeping `_id` (additive).
+- **`dropIndexes()` is deterministic**: it waits for every drop before rejecting (not breaking).
 
 See [`docs/migration-v3-to-v4.md`](docs/migration-v3-to-v4.md) for the full detail, code examples and a migration checklist.
 
@@ -220,7 +225,7 @@ await mongo.update(
 - Resolves `Array<*>`: An array with the distinct values of `key` (values, not documents)
 - Rejects `Error` When something bad occurs
 
-> :warning: Unlike `get()`, a filter by `id` is not mapped to `_id`, so it matches nothing. Filter by `_id` using an `ObjectId`.
+> Like `get()`, a filter by `id` (and the fields with `isID: true`) is mapped to `_id` as `ObjectId`. A raw `_id` filter using `{ raw: true, value }` still works.
 
 **Usage:**
 ```js
@@ -886,7 +891,7 @@ await mongo.multiRemove(model, { name: { type: 'search', value: 'test' } });
 - incrementData: `Object`: The fields with the values to increment or decrement to updated in the collection (values must be *number* type).
 - setData: `Object`: extra data to be updated in the registry
 
-- Resolves `Object|null`: The updated document (after applying the increment), or `null` if no document matched the filters. It is the raw document from MongoDB: it has the `_id` as `ObjectId` and no `id` property
+- Resolves `Object|null`: The updated document (after applying the increment), or `null` if no document matched the filters. The document has the `id` as a string added, and the `_id` as `ObjectId` is kept
 - Rejects `Error` When something bad occurs
 
 **Usage:**
@@ -894,6 +899,7 @@ await mongo.multiRemove(model, { name: { type: 'search', value: 'test' } });
 await mongo.increment(model, { status: 'pending' }, { pendingDaysQuantity: 1 }, { updatedDate: new Date() });
 /* Output:
 {
+   id: '5df0151dbc1d570011949d86',
    _id: ObjectID('5df0151dbc1d570011949d86'),
    status: 'pending',
    pendingDaysQuantity: 4,
@@ -989,7 +995,7 @@ await mongo.createIndex(model, {
    - sparse `Boolean` (Optional)
 
 - Resolves `Boolean`: `true` if the indexes were successfully created
-- Rejects `Error`: When something bad occurs. An empty array `[]` is rejected by the server. Creating an existing index again with the same name, key and options is idempotent
+- Rejects `Error`: When something bad occurs. An empty array `[]` rejects with code `10` (`INVALID_INDEX`) without calling the server. Creating an existing index again with the same name, key and options is idempotent
 
 **Usage:**
 ```js
@@ -1034,7 +1040,7 @@ await mongo.dropIndex(model, 'some-index');
 - Resolves `Boolean`: `true` if every index was dropped. An empty array drops nothing and resolves `true`
 - Rejects `Error`: When `indexNames` is not an array, or when something bad occurs
 
-> :warning: The indexes are dropped in parallel. If one of them fails (for example, it does not exist), the call rejects but the other indexes are still dropped.
+> The indexes are dropped in parallel and the call waits for all of them. If one fails (for example, it does not exist), the call rejects with the first error (in `indexNames` order) once every drop has finished, and the other indexes are already dropped.
 
 **Usage:**
 ```js
@@ -1093,12 +1099,12 @@ await mongo.deleteAllDocuments('myCollection');
 - stages: `Array<Object>`: The pipeline stages, in the order to be executed
 - options: `Object` (optional): Options passed as is to the driver `aggregate()` (for example `batchSize`, `allowDiskUse`, `hint`)
 
-- Resolves `Array<Object>`: The computed results. A truthy `_id` of every result is mapped to `id` as a string. A falsy `_id` (for example `null` in a `$group`) is left as is
+- Resolves `Array<Object>`: The computed results. The `_id` of every result is mapped to `id` as a string only when it is an `ObjectId` or a string. Any other `_id` (for example `null`, a number or an object in a `$group`) is left as `_id`
 - Rejects `Error` When `stages` is not an array, or when something bad occurs
 
-**IDs conversion:** in the stages (for example in `$match`), an `id` field is converted to `_id` as `ObjectId`, and the fields declared with `isID: true` in the model are converted to `ObjectId` too. Only plain values are converted: a value with a mongo operator (for example `{ $in: [...] }`) is left as is.
+**IDs conversion:** in the stages (for example in `$match`), an `id` field is converted to `_id` as `ObjectId`, and the fields declared with `isID: true` in the model are converted to `ObjectId` too. Plain values and the ids inside `$in`, `$nin`, `$eq` and `$ne` are converted, like in `get()`.
 
-> :warning: The `_id` of `$group` results is also mapped to `id`. A compound `_id` object is converted to a string, losing its data.
+> A compound `_id` object of a `$group` (or a number `_id`) is kept as `_id`, without any conversion.
 
 **Usage:**
 ```js

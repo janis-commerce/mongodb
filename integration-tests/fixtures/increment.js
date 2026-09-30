@@ -43,9 +43,10 @@ describe('increment()', () => {
 
 		const result = await getMongodbInstance().increment(model, { name: 'Test 1' }, { firstValue: 1, secondValue: 30 }, { additionalData: 'test' });
 
-		// Current behavior: returns the raw driver document (with `_id` ObjectId), it does not go through the id mapper
+		// Additive: `id` (string) is added and `_id` (ObjectId) is kept, since @janiscommerce/model reads it
 		sinon.assert.match(result, {
 			_id: sinon.match.instanceOf(ObjectId),
+			id: sinon.match.string,
 			name: 'Test 1',
 			firstValue: 2,
 			secondValue: 40,
@@ -53,11 +54,11 @@ describe('increment()', () => {
 			dateCreated: now,
 			dateModified: now
 		});
-		assert.equal('id' in result, false);
+		assert.equal(result.id, result._id.toString());
 
 		const [stored] = await findRaw(model, { name: 'Test 1' });
 
-		assert.deepEqual(stored, result);
+		assert.deepEqual({ ...result, id: undefined }, { ...stored, id: undefined });
 	});
 
 	it('Should decrement with negative values', async () => {

@@ -199,6 +199,20 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(mongoDistinctStub, 'foo', {}, { comment });
 		});
 
+		it('Should use an empty filter when filters is null', async () => {
+
+			const mongoDistinctStub = sinon.stub().resolves(['bar']);
+
+			stubMongo(true, { distinct: mongoDistinctStub });
+
+			const mongodb = new MongoDB(config);
+			const distinctValues = await mongodb.distinct(getModel(), { key: 'foo', filters: null });
+
+			assert.deepStrictEqual(distinctValues, ['bar']);
+
+			sinon.assert.calledOnceWithExactly(mongoDistinctStub, 'foo', {}, { comment });
+		});
+
 		it('Should pass the comment with the request id if AWS_LAMBDA_REQUEST_ID env var is set', async () => {
 
 			process.env.AWS_LAMBDA_REQUEST_ID = 'test-request-id';
@@ -236,6 +250,21 @@ describe('MongoDB', () => {
 			sinon.assert.calledOnceWithExactly(collectionStub, 'myCollection');
 
 			sinon.assert.calledOnceWithExactly(mongoDistinctStub, 'foo', { field1: { $eq: 'value1' } }, { comment });
+		});
+
+		it('Should convert the id filter to ObjectId', async () => {
+
+			const mongoDistinctStub = sinon.stub().resolves(['bar']);
+
+			stubMongo(true, { distinct: mongoDistinctStub });
+
+			const mongodb = new MongoDB(config);
+			await mongodb.distinct(getModel(), {
+				key: 'foo',
+				filters: { id: '5df0151dbc1d570011949d86' }
+			});
+
+			sinon.assert.calledOnceWithExactly(mongoDistinctStub, 'foo', { _id: { $eq: new ObjectId('5df0151dbc1d570011949d86') } }, { comment });
 		});
 
 		it('Should pass the readPreference param to the mongodb distinct method', async () => {
@@ -3822,7 +3851,7 @@ describe('MongoDB', () => {
 					const mongodb = new MongoDB(config);
 					const result = await mongodb.increment(getModel(null, ['name'], indexesGetter), { id }, incrementData, setData);
 
-					assert.deepStrictEqual(result, response.value);
+					assert.deepStrictEqual(result, { ...response.value, id });
 
 					sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
@@ -3853,7 +3882,7 @@ describe('MongoDB', () => {
 					const mongodb = new MongoDB(config);
 					const result = await mongodb.increment(getModel(null, ['name'], indexesGetter), filters, incrementData, setData);
 
-					assert.deepStrictEqual(result, response.value);
+					assert.deepStrictEqual(result, { ...response.value, id });
 
 					sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
@@ -3886,7 +3915,7 @@ describe('MongoDB', () => {
 						['name', 'code']
 					]), { ...filters, code: 'fake-code' }, incrementData, setData);
 
-					assert.deepStrictEqual(result, { ...response.value, code: 'fake-code' });
+					assert.deepStrictEqual(result, { ...response.value, code: 'fake-code', id });
 
 					sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
@@ -3920,7 +3949,7 @@ describe('MongoDB', () => {
 					const mongodb = new MongoDB(config);
 					const result = await mongodb.increment(getModel(null, ['name']), { id }, incrementData);
 
-					assert.deepStrictEqual(result, response.value);
+					assert.deepStrictEqual(result, { ...response.value, id });
 
 					sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
@@ -3939,6 +3968,18 @@ describe('MongoDB', () => {
 						includeResultMetadata: true,
 						comment
 					});
+				});
+
+				it('Should return null if no document matches', async () => {
+
+					const findOneAndUpdate = sinon.stub().resolves({ value: null });
+
+					stubMongo(true, { findOneAndUpdate });
+
+					const mongodb = new MongoDB(config);
+					const result = await mongodb.increment(getModel(null, ['name']), { id }, incrementData, setData);
+
+					assert.strictEqual(result, null);
 				});
 
 				it('Should throw if no unique indexes are defined', async () => {
@@ -4105,6 +4146,21 @@ describe('MongoDB', () => {
 			await assert.rejects(() => mongodb.createIndexes(null), {
 				code: MongoDBError.codes.INVALID_MODEL
 			});
+		});
+
+		it('Should throw INVALID_INDEX without calling the driver if indexes array is empty', async () => {
+
+			const createIndexesStub = sinon.stub().resolves([]);
+			const collectionStub = stubMongo(true, { createIndexes: createIndexesStub });
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(() => mongodb.createIndexes(getModel(), []), {
+				code: MongoDBError.codes.INVALID_INDEX
+			});
+
+			sinon.assert.notCalled(collectionStub);
+			sinon.assert.notCalled(createIndexesStub);
 		});
 
 		it('Should throw if connection to DB fails', async () => {
@@ -4502,6 +4558,37 @@ describe('MongoDB', () => {
 			});
 		});
 
+		it('Should wait for every drop and reject with the first error in indexNames order', async () => {
+
+			const names = ['a', 'missing', 'b', 'missing-2'];
+			const settledNames = [];
+
+			const dropIndexStub = sinon.stub().callsFake(async name => {
+				if(name === 'missing') {
+					await new Promise(resolve => { setTimeout(resolve, 20); });
+					throw new Error('missing not found');
+				}
+				if(name === 'missing-2')
+					throw new Error('missing-2 not found');
+
+				await new Promise(resolve => { setTimeout(resolve, 10); });
+				settledNames.push(name);
+				return { ok: true };
+			});
+
+			stubMongo(true, { dropIndex: dropIndexStub });
+
+			const mongodb = new MongoDB(config);
+
+			await assert.rejects(() => mongodb.dropIndexes(getModel(), names), {
+				message: 'missing not found',
+				code: MongoDBError.codes.MONGODB_INTERNAL_ERROR
+			});
+
+			assert.deepStrictEqual(settledNames, ['a', 'b']);
+			sinon.assert.callCount(dropIndexStub, 4);
+		});
+
 		it('Should throw when the dropIndex method rejects', async () => {
 
 			const dropIndexStub = sinon.stub().rejects();
@@ -4864,6 +4951,122 @@ describe('MongoDB', () => {
 			], { comment });
 
 			sinon.assert.calledOnce(toArray);
+		});
+
+		const runAggregate = async (fields, aggregateStages, items = []) => {
+
+			const toArray = sinon.stub().resolves(items);
+			const aggregate = sinon.stub().returns({ toArray });
+
+			stubMongo(true, { aggregate, toArray });
+
+			const mongodb = new MongoDB(config);
+			const result = await mongodb.aggregate(getModel(fields), aggregateStages);
+
+			return { result, aggregate };
+		};
+
+		const otherId = '5df0151dbc1d570011949d88';
+
+		['$in', '$nin'].forEach(operator => {
+
+			it(`Should convert ids inside ${operator} of $match for id and isID fields`, async () => {
+
+				const { aggregate } = await runAggregate({ parentId: { isID: true } }, [
+					{ $match: { id: { [operator]: [itemId, otherId] }, parentId: { [operator]: [itemId] }, name: { [operator]: [itemId] } } }
+				]);
+
+				sinon.assert.calledOnceWithExactly(aggregate, [
+					{
+						$match: {
+							_id: { [operator]: [new ObjectId(itemId), new ObjectId(otherId)] },
+							parentId: { [operator]: [new ObjectId(itemId)] },
+							name: { [operator]: [itemId] }
+						}
+					}
+				], { comment });
+			});
+		});
+
+		['$eq', '$ne'].forEach(operator => {
+
+			it(`Should convert ids inside ${operator} of $match for id and isID fields`, async () => {
+
+				const { aggregate } = await runAggregate({ parentId: { isID: true } }, [
+					{ $match: { id: { [operator]: itemId }, parentId: { [operator]: otherId } } }
+				]);
+
+				sinon.assert.calledOnceWithExactly(aggregate, [
+					{ $match: { _id: { [operator]: new ObjectId(itemId) }, parentId: { [operator]: new ObjectId(otherId) } } }
+				], { comment });
+			});
+		});
+
+		it('Should keep other operators and non plain values of id fields in $match untouched', async () => {
+
+			const { aggregate } = await runAggregate({ parentId: { isID: true } }, [
+				{ $match: { id: { $exists: true }, parentId: new ObjectId(itemId) } }
+			]);
+
+			sinon.assert.calledOnceWithExactly(aggregate, [
+				{ $match: { _id: { $exists: true }, parentId: new ObjectId(itemId) } }
+			], { comment });
+		});
+
+		it('Should not convert ids inside operators in stages other than $match', async () => {
+
+			const { aggregate } = await runAggregate({ parentId: { isID: true } }, [
+				{ $project: { id: { $in: [itemId] }, parentId: { $eq: itemId } } }
+			]);
+
+			sinon.assert.calledOnceWithExactly(aggregate, [
+				{ $project: { _id: { $in: [itemId] }, parentId: { $eq: itemId } } }
+			], { comment });
+		});
+
+		it('Should not convert ids inside operators when model has custom id', async () => {
+
+			const toArray = sinon.stub().resolves([]);
+			const aggregate = sinon.stub().returns({ toArray });
+
+			stubMongo(true, { aggregate, toArray });
+
+			const model = getModel();
+			model.constructor.hasCustomId = true;
+
+			const mongodb = new MongoDB(config);
+			await mongodb.aggregate(model, [{ $match: { id: { $in: [itemId] } } }]);
+
+			sinon.assert.calledOnceWithExactly(aggregate, [
+				{ $match: { _id: { $in: [itemId] } } }
+			], { comment });
+		});
+
+		it('Should keep a non object $match untouched', async () => {
+
+			const { aggregate } = await runAggregate(undefined, [{ $match: 'not-an-object' }]);
+
+			sinon.assert.calledOnceWithExactly(aggregate, [{ $match: 'not-an-object' }], { comment });
+		});
+
+		it('Should map _id to id when _id is an ObjectId', async () => {
+
+			const { result } = await runAggregate(undefined, [{ $group: { _id: '$x' } }], [{ _id: new ObjectId(itemId), count: 1 }]);
+
+			assert.deepStrictEqual(result, [{ id: itemId, count: 1 }]);
+		});
+
+		it('Should keep _id untouched and not set id when _id is an object, number or null', async () => {
+
+			const items = [
+				{ _id: { a: 1, b: 'x' }, count: 1 },
+				{ _id: 5, count: 2 },
+				{ _id: null, count: 3 }
+			];
+
+			const { result } = await runAggregate(undefined, [{ $group: { _id: { a: '$a', b: '$b' } } }], items.map(item => ({ ...item })));
+
+			assert.deepStrictEqual(result, items);
 		});
 
 		it('Should execute every pipe stage adding additional options when received', async () => {
