@@ -3837,7 +3837,7 @@ describe('MongoDB', () => {
 					const mongodb = new MongoDB(config);
 					const result = await mongodb.increment(getModel(null, ['name'], indexesGetter), { id }, incrementData, setData);
 
-					assert.deepStrictEqual(result, response.value);
+					assert.deepStrictEqual(result, { ...response.value, id });
 
 					sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
@@ -3868,7 +3868,7 @@ describe('MongoDB', () => {
 					const mongodb = new MongoDB(config);
 					const result = await mongodb.increment(getModel(null, ['name'], indexesGetter), filters, incrementData, setData);
 
-					assert.deepStrictEqual(result, response.value);
+					assert.deepStrictEqual(result, { ...response.value, id });
 
 					sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
@@ -3901,7 +3901,7 @@ describe('MongoDB', () => {
 						['name', 'code']
 					]), { ...filters, code: 'fake-code' }, incrementData, setData);
 
-					assert.deepStrictEqual(result, { ...response.value, code: 'fake-code' });
+					assert.deepStrictEqual(result, { ...response.value, code: 'fake-code', id });
 
 					sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
@@ -3935,7 +3935,7 @@ describe('MongoDB', () => {
 					const mongodb = new MongoDB(config);
 					const result = await mongodb.increment(getModel(null, ['name']), { id }, incrementData);
 
-					assert.deepStrictEqual(result, response.value);
+					assert.deepStrictEqual(result, { ...response.value, id });
 
 					sinon.assert.calledOnceWithExactly(collection, 'myCollection');
 
@@ -3954,6 +3954,18 @@ describe('MongoDB', () => {
 						includeResultMetadata: true,
 						comment
 					});
+				});
+
+				it('Should return null if no document matches', async () => {
+
+					const findOneAndUpdate = sinon.stub().resolves({ value: null });
+
+					stubMongo(true, { findOneAndUpdate });
+
+					const mongodb = new MongoDB(config);
+					const result = await mongodb.increment(getModel(null, ['name']), { id }, incrementData, setData);
+
+					assert.strictEqual(result, null);
 				});
 
 				it('Should throw if no unique indexes are defined', async () => {
