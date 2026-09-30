@@ -10,7 +10,7 @@
 npm install --save @janiscommerce/mongodb
 ```
 
-## :new: Changes from _v2.0.0_
+## :new: Changes from _v3.0.0_
 
 ### MongoDB Driver v7
 
