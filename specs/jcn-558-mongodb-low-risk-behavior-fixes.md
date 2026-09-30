@@ -1,7 +1,7 @@
 # Fixes de comportamiento de riesgo bajo para 4.0.0
 
 > Repo: `packages/mongodb` · Branch: `JCN-558-mongodb-low-risk-behavior-fixes` (desde `JCN-555-mongodb-driver-v7-upgrade`) · Ticket: [JCN-558](https://janiscommerce.atlassian.net/browse/JCN-558)
-> Estado: borrador · Creado: 2026-09-30
+> Estado: aprobado · Creado: 2026-09-30
 
 ## Objetivo
 
