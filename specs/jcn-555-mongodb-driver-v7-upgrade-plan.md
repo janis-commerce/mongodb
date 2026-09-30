@@ -28,7 +28,7 @@
 - Depende de: 1
 
 ## Batch 6 — README
-- [ ] Corregir las 7 diferencias README vs código (lista en el mapeo; comportamiento real = lo que asertan los tests).
+- [x] Corregir las 7 diferencias README vs código (lista en el mapeo; comportamiento real = lo que asertan los tests).
 - Depende de: 2–5
 
 ## Hallazgos para ticket aparte
