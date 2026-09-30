@@ -8,8 +8,8 @@
 - Depende de: —
 
 ## Batch 2 — Lecturas
-- [ ] `constructor.js`, `get.js`, `get-paged.js`, `get-totals.js`, `distinct.js`, `filters.js`, `aggregate.js`
-- [ ] Migrar casos de `crud.js` (get, distinct) y `aggregate.js`; borrar `aggregate.js`.
+- [x] `constructor.js`, `get.js`, `get-paged.js`, `get-totals.js`, `distinct.js`, `filters.js`, `aggregate.js`
+- [x] Migrar casos de `crud.js` (get, distinct) y `aggregate.js`; borrar `aggregate.js`.
 - Depende de: 1
 
 ## Batch 3 — Escrituras simples
@@ -33,3 +33,12 @@
 
 ## Hallazgos para ticket aparte
 <!-- Cada batch agrega acá las inconsistencias confirmadas contra las 3 versiones. -->
+- `get`/`getPaged`/`getTotals`: id no-hex lanza `BSONError` crudo, no `MongoDBError` (`get.js:279`).
+- `distinct`: no mapea `id`→`_id`; filtrar por `id` devuelve `[]` (`distinct.js:107`).
+- `aggregate`: `_id` objeto de `$group` queda `"[object Object]"` (`aggregate.js:156`).
+- `aggregate`: ids dentro de operadores (`$in`) no se convierten a ObjectId; en `get` sí (`aggregate.js:98`).
+- Conexión fallida: doble wrap code 4; el error del driver queda en `previousError.previousError` (`constructor.js:122`).
+
+## Server codes observados (3 versiones)
+- `hint` inexistente → 2 · `$text` sin índice → 27 · `$nearSphere` sin índice → 291 · stage desconocido → 40324
+
