@@ -18,8 +18,8 @@
 - Depende de: 1
 
 ## Batch 4 — Escrituras masivas
-- [ ] `multi-insert.js`, `multi-save.js`, `multi-update.js`, `multi-remove.js`, `delete-all-documents.js`
-- [ ] Migrar `batch.js`; borrarlo.
+- [x] `multi-insert.js`, `multi-save.js`, `multi-update.js`, `multi-remove.js`, `delete-all-documents.js`
+- [x] Migrar `batch.js`; borrarlo.
 - Depende de: 1
 
 ## Batch 5 — Índices y drops
@@ -43,6 +43,10 @@
 - `insert`: id no-hex sale code 4; en `save`/`remove`/`get` sale `BSONError` crudo (`insert.js:182`, `save.js:343`, `remove.js:109`).
 - `increment`: devuelve doc crudo con `_id` ObjectId, sin `id` (`increment.js:46`).
 - `update` con `upsert: true`: retorna 0 (solo `modifiedCount`) aunque crea el doc (`update.js:321`).
+
+- `multiRemove`: filtro `undefined`, `{}` o `[]` borra toda la colección (`multi-remove.js`).
+- `multiUpdate` vs `update`: en `multiUpdate` stage >1 key (11) y filtro inválido (8) salen sin envolver.
+- `deleteAllDocuments`: filtro crudo; `{ id }` y `{ _id: '<hex string>' }` no matchean.
 
 ## Server codes observados (3 versiones)
 - `hint` inexistente → 2 · `$text` sin índice → 27 · `$nearSphere` sin índice → 291 · stage desconocido → 40324
