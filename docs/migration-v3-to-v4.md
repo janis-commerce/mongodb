@@ -15,6 +15,11 @@ This guide is for consumers of `@janiscommerce/mongodb` upgrading from `3.x` to 
 | [Connection strings use strict booleans](#connection-strings-use-strict-booleans) | Only if your connection string uses non-strict boolean values |
 | [`multiUpdate()` with `rawResponse` resolves instead of rejecting](#multiupdate-with-rawresponse-resolves-instead-of-rejecting) | Yes, if you use `rawResponse: true` |
 | [`aggregate()` and `batchSize`](#aggregate-and-batchsize) | Only if your pipeline needs a specific `getMore` batch size |
+| [`distinct()` maps `id` to `_id`](#distinct-maps-id-to-_id) | Only if your code relied on `id` filters matching nothing |
+| [`aggregate()` ids handling](#aggregate-ids-handling) | Only if you read `id` from non ObjectId/string `_id` results, or pass operators in `$match` |
+| [`createIndexes([])` error code](#createindexes-error-code) | Only if you check the error code for an empty array |
+| [`increment()` adds `id`](#increment-adds-id) | No, additive |
+| [`dropIndexes()` is deterministic](#dropindexes-is-deterministic) | No |
 
 ## Node version
 
@@ -91,6 +96,33 @@ The driver no longer defaults `getMore` batches to `1000`. `aggregate()` forward
 await mongo.aggregate(model, [{ $match: { status: 'active' } }], { batchSize: 1000 });
 ```
 
+## `distinct()` maps `id` to `_id`
+
+Like `get()`, `distinct()` now converts an `id` filter (and the fields with `isID: true`) to `_id` as `ObjectId`. Before, `filters: { id }` matched nothing and the workaround was filtering by `_id` with an `ObjectId`. That workaround is still valid.
+
+## `aggregate()` ids handling
+
+- The ids inside `$in`, `$nin`, `$eq` and `$ne` of a `$match` stage are now converted to `ObjectId` (for `id` and for the fields with `isID: true`). Before, only plain values were converted, so operators matched nothing.
+- The `_id` of the results is mapped to `id` only when it is an `ObjectId` or a string. Before, any truthy `_id` was mapped: a number became a string `id` and an object became `"[object Object]"`. Now those results keep `_id` untouched (`null` was already kept).
+
+```js
+await mongo.aggregate(model, [{ $group: { _id: { group: '$group' }, total: { $sum: '$amount' } } }]);
+// Before: [{ id: '[object Object]', total: 30 }]
+// Now:    [{ _id: { group: 'a' }, total: 30 }]
+```
+
+## `createIndexes()` error code
+
+`createIndexes(model, [])` now rejects with `MongoDBError` code `10` (`INVALID_INDEX`) without calling the server. Before, the server rejected it and the error had code `4` (`MONGODB_INTERNAL_ERROR`).
+
+## `increment()` adds `id`
+
+The document returned by `increment()` now includes `id` (string). The `_id` (`ObjectId`) is kept, so existing code keeps working.
+
+## `dropIndexes()` is deterministic
+
+`dropIndexes()` waits for every drop to finish before rejecting. If one fails, it rejects with the first error (in `indexNames` order) and the other indexes are already dropped.
+
 ## Migration checklist
 
 1. Bump Node to `>= 20.19.0` (`nodejs22.x` runtime for Lambdas) and update `engines.node`.
@@ -100,7 +132,9 @@ await mongo.aggregate(model, [{ $match: { status: 'active' } }], { batchSize: 10
 5. Review every `multiUpdate(..., { rawResponse: true })` call site: replace reliance on the rejection with a check on `result.success` / `result.operations[].success`.
 6. Review `dropCollection()` call sites that relied on the rejection to detect a non-existent collection.
 7. Review `aggregate()` calls that are performance-sensitive and set `batchSize` explicitly if needed.
-8. Run your test suite against `4.0.0`.
+8. Review `distinct()` filters by `id` (now they match) and `aggregate()` calls that read `id` from `$group` results with number or object `_id`.
+9. Review code that checks the error code of `createIndexes([])` (now `10`).
+10. Run your test suite against `4.0.0`.
 
 ## See also
 
