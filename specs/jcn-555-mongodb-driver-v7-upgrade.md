@@ -34,7 +34,7 @@ Estado actual: 5 fixtures agrupados (`crud`, `batch`, `aggregate`, `indexes`, `d
 - Cambios en `lib/`. Un bug encontrado se reporta; no se arregla en este paso.
 - Unificar códigos de error, envolver `BSONError`, mapear `id` en `distinct`: van a un ticket aparte.
 - Verificar el operation comment contra el servidor. Queda en unitarios.
-- Validación pura del package (códigos 1, 2, 3, 5, 6, 7, 9, 10, 11 disparados antes del driver). Queda en unitarios.
+- Cobertura exhaustiva de validación pura del package (códigos 1, 2, 3, 5, 6, 7, 9, 10, 11). Sigue en unitarios; los integration tests pueden incluir casos puntuales.
 - Cambios al runner `integration-tests/index.js` ni a las versiones de MongoDB.
 - Bump de versión, publish y canarios.
 - CI para integration tests.
@@ -67,7 +67,7 @@ Estado actual: 5 fixtures agrupados (`crud`, `batch`, `aggregate`, `indexes`, `d
 ## Decisiones
 
 - Un archivo por método, nombre kebab-case: pedido del reviewer, deja visibles los huecos.
-- Validación pura queda en unitarios: no depende del driver.
+- Validación pura queda en unitarios: no depende del driver. Ajuste post-review: se aceptan casos puntuales en integration (pedido del reviewer: cubrir errores).
 - Sin bump: `files` publica solo `lib/` y `types/`.
 - Los filtros van en un archivo aparte: son transversales a `get`, `getTotals`, `multiRemove`, `update`.
 
