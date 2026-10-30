@@ -147,7 +147,7 @@ A `MongoDBError` thrown inside a method is now rejected as is. Before, the `catc
 | --- | --- | --- | --- |
 | `update()` | invalid filter type | code `4` (`previousError`: code `8`) | code `8` (`INVALID_FILTER_TYPE`) |
 | `update()` | pipeline stage with more than one operator | code `4` (`previousError`: code `11`) | code `11` (`INVALID_STAGES`) |
-| `update()` | `filters` is not an object (e.g. a string) | code `4` | `MongoDBError` without `code` (same as the other methods) |
+| every method with filters | `filters` is not an object (e.g. a string) | `MongoDBError` without `code` (code `4` in `update()`) | code `13` (`INVALID_FILTERS`) |
 | `getPaged()` | the `callback` throws a `MongoDBError` | code `4` (`previousError`: the original) | the original error, with its own code |
 | every method that connects | the connection fails | code `4`, driver error in `previousError.previousError` | code `4`, driver error in `previousError` |
 
@@ -170,7 +170,7 @@ The document returned by `increment()` now includes `id` (string). The `_id` (`O
 7. Review `aggregate()` calls that are performance-sensitive and set `batchSize` explicitly if needed.
 8. Review `distinct()` filters by `id` (now they match) and every `aggregate()` call that reads `id` from `$group` results whose `_id` is a number, a date, a boolean or an object: read `_id` instead.
 9. Review code that checks the error code of `createIndexes([])` (now `10`).
-10. Review code that checks the error of an invalid id (now `MongoDBError` code `12` in every method) and the code of `update()` errors for invalid filters or stages (now `8` and `11`).
+10. Review code that checks the error of an invalid id (now `MongoDBError` code `12` in every method) and the code of `update()` errors for invalid filters or stages (now `8` and `11`), and of non object `filters` (now `13`).
 11. Run your test suite against `4.0.0`.
 
 ## See also

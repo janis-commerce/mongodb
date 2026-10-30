@@ -24,6 +24,7 @@ Corregir 6 comportamientos inconsistentes antes del GA de 4.0.0: `distinct` e `a
 - `dropIndexes`: `Promise.allSettled`; cuando todos terminan, rechazar con el primer error en orden de `indexNames` (`lib/mongodb.js:990`).
 - Id inválido: `ObjectIdHelper` envuelve el `BSONError` en `MongoDBError` code 12 `INVALID_ID` (`lib/helpers/object-id.js`). Lo pidió el review del PR.
 - Catch de los métodos: dejar pasar un `MongoDBError` sin re-envolverlo como code 4 (`lib/mongodb.js`). Saca el doble wrap de conexión.
+- `filters` que no es objeto: rechazar con code 13 `INVALID_FILTERS` (`lib/mongodb-filters.js:56`).
 - Unitarios en `tests/` con cobertura 100%.
 - Invertir los asserts `// Current behavior:` de estos 6 casos en `integration-tests/fixtures/`.
 - `README.md` y `docs/migration-v3-to-v4.md`: documentar el comportamiento nuevo y los breaking.
@@ -33,7 +34,6 @@ Corregir 6 comportamientos inconsistentes antes del GA de 4.0.0: `distinct` e `a
 - Cambios en `@janiscommerce/model`.
 - Conversión de ids en `get`, `getTotals`, `multiRemove` ni en stages de `aggregate` distintos de `$match`.
 - Retorno de `update` con upsert.
-- Code de `MongoDBError` en `lib/mongodb-filters.js:56` (sale sin code).
 - Bump, publish de `4.0.0-beta.1` y canarios (paso posterior, con su gate).
 - `CHANGELOG.md` (va en la descripción del PR).
 

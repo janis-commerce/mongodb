@@ -31,7 +31,8 @@ Now we are using [mongodb](https://www.npmjs.com/package/mongodb) `^7.x.x` versi
 - **`aggregate()` converts the ids inside `$in`, `$nin`, `$eq` and `$ne` in `$match`**, and maps `_id` to `id` only when it is an `ObjectId` or a string (a number or an object `_id` is kept as `_id`).
 - **`createIndexes([])` rejects with code `10` (`INVALID_INDEX`)** instead of code `4`.
 - **Invalid ids reject with `MongoDBError` code `12` (`INVALID_ID`)**: before, most methods threw a raw `BSONError` and `insert()`/`update()` wrapped it with code `4`.
-- **A `MongoDBError` thrown inside a method is no longer re-wrapped with code `4`**: `update()` now rejects with its own code (`8`, `11`) and connection errors are wrapped once.
+- **A `MongoDBError` thrown inside a method is no longer re-wrapped with code `4`**: `update()` now rejects with its own code (`8`, `11`, `13`) and connection errors are wrapped once.
+- **Non object `filters` reject with code `13` (`INVALID_FILTERS`)**: before, the `MongoDBError` had no `code` (code `4` in `update()`).
 - **`increment()` adds `id`** (string) to the returned document, keeping `_id` (additive).
 - **`dropIndexes()` is deterministic**: it waits for every drop before rejecting (not breaking).
 

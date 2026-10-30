@@ -1749,6 +1749,19 @@ describe('MongoDB', () => {
 			sinon.assert.notCalled(collection);
 		});
 
+		it('Should reject with INVALID_FILTERS when the filters are not an object', async () => {
+
+			const collection = stubMongo(true);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.update(getModel(), { name: 'foo' }, 'invalid'), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.INVALID_FILTERS
+			});
+
+			sinon.assert.notCalled(collection);
+		});
+
 		it('Should not wrap a MongoDBError thrown while parsing the pipeline stages', async () => {
 
 			const collection = stubMongo(true);

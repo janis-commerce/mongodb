@@ -52,7 +52,7 @@ describe('MongoDBFilters', () => {
 
 		it('Should throw if invalid filters are passed', () => {
 			assert.throws(() => MongoDBFilters.parseFilters(true));
-			assert.throws(() => MongoDBFilters.parseFilters('invalid'));
+			assert.throws(() => MongoDBFilters.parseFilters('invalid'), { code: MongoDBError.codes.INVALID_FILTERS });
 			assert.throws(() => MongoDBFilters.parseFilters({
 				dateCreated
 			}, getModel({
