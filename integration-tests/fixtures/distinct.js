@@ -108,7 +108,7 @@ describe('distinct()', () => {
 		assert.deepEqual(result.sort(), [1, 2]);
 	});
 
-	it('Should not map the id filter to _id', async () => {
+	it('Should map the id filter to _id', async () => {
 
 		const model = await seed();
 		const mongodb = getMongodbInstance();
@@ -117,10 +117,14 @@ describe('distinct()', () => {
 
 		const result = await mongodb.distinct(model, { key: 'color', filters: { id } });
 
-		// Current behavior: unlike get(), distinct() does not map `id` to `_id`, so filtering by id matches nothing (inconsistent with get())
-		assert.deepEqual(result, []);
+		assert.deepEqual(result, ['red']);
+	});
 
-		// Only the raw _id filter works
+	it('Should still filter by a raw _id', async () => {
+
+		const model = await seed();
+		const mongodb = getMongodbInstance();
+
 		const cursor = await mongodb.get(model, { returnType: 'cursor', filters: { name: 'Test 1' } });
 		const { _id } = await cursor.next();
 		await cursor.close();

@@ -275,7 +275,7 @@ describe('update()', () => {
 			assert.equal('dateModified' in await findByName(model, 'Test 1'), false);
 		});
 
-		it('Should reject with code 4 wrapping INVALID_STAGES when a stage has more than one operator', async () => {
+		it('Should reject with INVALID_STAGES (not wrapped) when a stage has more than one operator', async () => {
 
 			const model = await seed();
 
@@ -287,11 +287,9 @@ describe('update()', () => {
 				error = err;
 			}
 
-			// Current behavior: the validation is inside the try/catch, so it is wrapped as code 4 (multiUpdate() throws INVALID_STAGES as is)
+			// Current behavior: thrown as is, same as multiUpdate()
 			assert.ok(error instanceof MongoDBError);
-			assert.equal(error.code, MongoDBError.codes.MONGODB_INTERNAL_ERROR);
-			assert.ok(error.previousError instanceof MongoDBError);
-			assert.equal(error.previousError.code, MongoDBError.codes.INVALID_STAGES);
+			assert.equal(error.code, MongoDBError.codes.INVALID_STAGES);
 		});
 
 	});
@@ -356,7 +354,7 @@ describe('update()', () => {
 			assert.match(error.message, /\$foo/);
 		});
 
-		it('Should reject with code 4 wrapping INVALID_FILTER_TYPE when a filter type is invalid', async () => {
+		it('Should reject with INVALID_FILTER_TYPE (not wrapped) when a filter type is invalid', async () => {
 
 			const model = await seed();
 
@@ -368,14 +366,12 @@ describe('update()', () => {
 				error = err;
 			}
 
-			// Current behavior: the validation is inside the try/catch, so it is wrapped as code 4 (get() throws INVALID_FILTER_TYPE as is)
+			// Current behavior: thrown as is, same as get()
 			assert.ok(error instanceof MongoDBError);
-			assert.equal(error.code, MongoDBError.codes.MONGODB_INTERNAL_ERROR);
-			assert.ok(error.previousError instanceof MongoDBError);
-			assert.equal(error.previousError.code, MongoDBError.codes.INVALID_FILTER_TYPE);
+			assert.equal(error.code, MongoDBError.codes.INVALID_FILTER_TYPE);
 		});
 
-		it('Should reject with code 4 wrapping a BSONError when the id filter is not a valid ObjectId', async () => {
+		it('Should reject with INVALID_ID wrapping a BSONError when the id filter is not a valid ObjectId', async () => {
 
 			const model = await seed();
 
@@ -387,9 +383,9 @@ describe('update()', () => {
 				error = err;
 			}
 
-			// Current behavior: wrapped as code 4 (get()/save()/remove() throw the raw BSONError)
+			// Current behavior: the id cast is wrapped as INVALID_ID, same as get()/save()/remove()
 			assert.ok(error instanceof MongoDBError);
-			assert.equal(error.code, MongoDBError.codes.MONGODB_INTERNAL_ERROR);
+			assert.equal(error.code, MongoDBError.codes.INVALID_ID);
 			assert.equal(error.previousError?.name, 'BSONError');
 		});
 

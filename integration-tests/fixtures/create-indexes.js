@@ -2,6 +2,8 @@
 
 const assert = require('node:assert').strict;
 
+const MongoDBError = require('../../lib/mongodb-error');
+
 const TestModel = require('./_model');
 const { getMongodbInstance } = require('./_mongodb-instance');
 const { cleanCollection, assertDriverError } = require('./_helpers');
@@ -150,10 +152,12 @@ describe('createIndexes()', () => {
 		assert.equal(await getIndex(model, 'group_unique'), undefined);
 	});
 
-	it('Should reject with the driver error 2 (BadValue) when the array is empty', async () => {
+	it('Should reject with INVALID_INDEX (code 10) without calling the driver when the array is empty', async () => {
 
-		// Current behavior: `[]` is not validated by the package, the server rejects it ("Must specify at least one index to create")
-		await assertDriverError(getMongodbInstance().createIndexes(new TestModel(), []), 2);
+		await assert.rejects(
+			getMongodbInstance().createIndexes(new TestModel(), []),
+			err => err instanceof MongoDBError && err.code === MongoDBError.codes.INVALID_INDEX
+		);
 	});
 
 });

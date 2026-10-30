@@ -85,17 +85,19 @@ describe('aggregate()', () => {
 		assert.equal(result[0].id, id);
 	});
 
-	it('Should not convert the ids inside a mongo operator in $match', async () => {
+	it('Should convert the ids inside $in, $nin, $eq and $ne in $match', async () => {
 
 		const model = await seedSmall();
 		const mongodb = getMongodbInstance();
 
 		const [first, second] = await mongodb.get(model, { order: { name: 'asc' }, limit: 2 });
 
-		const result = await mongodb.aggregate(model, [{ $match: { id: { $in: [first.id, second.id] } } }]);
+		const names = async id => (await mongodb.aggregate(model, [{ $match: { id } }, { $sort: { name: 1 } }])).map(({ name }) => name);
 
-		// Current behavior: only a plain id string or a {type, value} object is converted to ObjectId. A mongo operator ({ $in: [...] }) is left as is, so it matches nothing (inconsistent with get())
-		assert.equal(result.length, 0);
+		assert.deepEqual(await names({ $in: [first.id, second.id] }), ['Alice', 'Bob']);
+		assert.deepEqual(await names({ $nin: [first.id, second.id] }), ['Carol', 'Dave', 'Eve']);
+		assert.deepEqual(await names({ $eq: first.id }), ['Alice']);
+		assert.deepEqual(await names({ $ne: first.id }), ['Bob', 'Carol', 'Dave', 'Eve']);
 	});
 
 	it('Should convert the isID fields of the stages to ObjectId', async () => {
@@ -113,6 +115,18 @@ describe('aggregate()', () => {
 		const result = await mongodb.aggregate(model, [{ $match: { parentId } }]);
 
 		assert.deepEqual(result.map(({ name }) => name), ['A']);
+
+		const operators = await mongodb.aggregate(model, [
+			{ $match: { parentId: { $in: [parentId] } } }
+		]);
+
+		assert.deepEqual(operators.map(({ name }) => name), ['A']);
+
+		const excluded = await mongodb.aggregate(model, [
+			{ $match: { parentId: { $ne: parentId } } }
+		]);
+
+		assert.deepEqual(excluded.map(({ name }) => name), ['B']);
 	});
 
 	it('Should run $group and map the _id of the groups to a string id', async () => {
@@ -143,7 +157,34 @@ describe('aggregate()', () => {
 		assert.deepEqual(result, [{ _id: null, total: 150 }]);
 	});
 
-	it('Should stringify an object _id of a compound $group', async () => {
+	it('Should map an ObjectId _id of a $group to a string id', async () => {
+
+		const model = await seedSmall();
+		const mongodb = getMongodbInstance();
+
+		const [{ id }] = await mongodb.get(model, { filters: { name: 'Carol' } });
+
+		const result = await mongodb.aggregate(model, [
+			{ $match: { name: 'Carol' } },
+			{ $group: { _id: '$_id', total: { $sum: '$amount' } } }
+		]);
+
+		assert.deepEqual(result, [{ id, total: 30 }]);
+	});
+
+	it('Should keep a number _id of a $group without mapping it', async () => {
+
+		const model = await seedSmall();
+
+		const result = await getMongodbInstance().aggregate(model, [
+			{ $match: { name: 'Alice' } },
+			{ $group: { _id: '$amount', count: { $sum: 1 } } }
+		]);
+
+		assert.deepEqual(result, [{ _id: 10, count: 1 }]);
+	});
+
+	it('Should keep an object _id of a compound $group without mapping it', async () => {
 
 		const model = await seedSmall();
 
@@ -152,8 +193,7 @@ describe('aggregate()', () => {
 			{ $group: { _id: { group: '$group' }, total: { $sum: '$amount' } } }
 		]);
 
-		// Current behavior: an object _id is converted with toString(), losing its data (inconsistent: it should keep the compound key)
-		assert.deepEqual(result, [{ id: '[object Object]', total: 30 }]);
+		assert.deepEqual(result, [{ _id: { group: 'a' }, total: 30 }]);
 	});
 
 	it('Should run $project', async () => {

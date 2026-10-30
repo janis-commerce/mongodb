@@ -15,6 +15,13 @@ This guide is for consumers of `@janiscommerce/mongodb` upgrading from `3.x` to 
 | [Connection strings use strict booleans](#connection-strings-use-strict-booleans) | Only if your connection string uses non-strict boolean values |
 | [`multiUpdate()` with `rawResponse` resolves instead of rejecting](#multiupdate-with-rawresponse-resolves-instead-of-rejecting) | Yes, if you use `rawResponse: true` |
 | [`aggregate()` and `batchSize`](#aggregate-and-batchsize) | Only if your pipeline needs a specific `getMore` batch size |
+| [`distinct()` maps `id` to `_id`](#distinct-maps-id-to-_id) | Only if your code relied on `id` filters matching nothing |
+| [`aggregate()` ids handling](#aggregate-ids-handling) | Yes, if you read `id` from `$group` results with a number, date, boolean or object `_id`, or pass operators in `$match` |
+| [`createIndexes([])` error code](#createindexes-error-code) | Only if you check the error code for an empty array |
+| [Invalid ids reject with `MongoDBError`](#invalid-ids-reject-with-mongodberror) | Only if your code checks the error of an invalid id (`BSONError` or code `4`) |
+| [`MongoDBError` is not re-wrapped](#mongodberror-is-not-re-wrapped) | Only if your code checks the code or `previousError` of `update()` or connection errors |
+| [`increment()` adds `id`](#increment-adds-id) | No, additive |
+| [`dropIndexes()` is deterministic](#dropindexes-is-deterministic) | No |
 
 ## Node version
 
@@ -91,6 +98,67 @@ The driver no longer defaults `getMore` batches to `1000`. `aggregate()` forward
 await mongo.aggregate(model, [{ $match: { status: 'active' } }], { batchSize: 1000 });
 ```
 
+## `distinct()` maps `id` to `_id`
+
+Like `get()`, `distinct()` now converts an `id` filter (and the fields with `isID: true`) to `_id` as `ObjectId`. Before, `filters: { id }` matched nothing and the workaround was filtering by `_id` with an `ObjectId`. That workaround is still valid. A `null` `filters` is now treated as `{}` (before it threw a `TypeError`).
+
+## `aggregate()` ids handling
+
+- The ids inside `$in`, `$nin`, `$eq` and `$ne` of a `$match` stage are now converted to `ObjectId` (for `id` and for the fields with `isID: true`). Before, only plain values were converted, so operators matched nothing.
+- The `_id` of the results is mapped to `id` only when it is an `ObjectId` or a string. Before, any truthy `_id` was mapped to a string `id`: a number, a date or a boolean became its string form and an object became `"[object Object]"`. Now those results keep `_id` untouched, with its original type (`null` was already kept).
+
+> ⚠️ This breaks silently: code that reads `.id` from those results now gets `undefined`, without any error. It applies to every `$group` by a number, date or boolean field, not only to compound (object) `_id`.
+
+```js
+await mongo.aggregate(model, [{ $group: { _id: '$year', total: { $sum: '$amount' } } }]);
+// Before: [{ id: '2024', total: 30 }]
+// Now:    [{ _id: 2024, total: 30 }]
+
+await mongo.aggregate(model, [{ $group: { _id: { group: '$group' }, total: { $sum: '$amount' } } }]);
+// Before: [{ id: '[object Object]', total: 30 }]
+// Now:    [{ _id: { group: 'a' }, total: 30 }]
+```
+
+## `createIndexes()` error code
+
+`createIndexes(model, [])` now rejects with `MongoDBError` code `10` (`INVALID_INDEX`) without calling the server. Before, the server rejected it and the error had code `4` (`MONGODB_INTERNAL_ERROR`).
+
+## Invalid ids reject with `MongoDBError`
+
+An id that is not a valid `ObjectId` (e.g. `'abc'`) now rejects with `MongoDBError` code `12` (`INVALID_ID`), with the `BSONError` in `previousError`. It applies to `id` filters, `{ type, value }` filters, the `id` and the `isID` fields of the items, and the ids inside `$in`, `$nin`, `$eq` and `$ne` of an `aggregate()` `$match`.
+
+| Method | Before | Now |
+| --- | --- | --- |
+| `get()`, `getPaged()`, `save()`, `multiInsert()`, `multiSave()`, `multiUpdate()`, `remove()`, `multiRemove()`, `getTotals()`, `increment()`, `aggregate()`, `distinct()` (only for fields with `isID: true`) | raw `BSONError` (no `code`) | `MongoDBError` code `12` |
+| `distinct()` with an `id` filter | resolved `[]` (matched nothing, no error) | rejects `MongoDBError` code `12` |
+| `insert()`, `update()` | `MongoDBError` code `4` (`previousError`: `BSONError`) | `MongoDBError` code `12` |
+
+```js
+await mongo.get(model, { filters: { id: 'abc' } });
+// Before: rejects BSONError
+// Now:    rejects MongoDBError { code: 12, previousError: BSONError }
+```
+
+## `MongoDBError` is not re-wrapped
+
+A `MongoDBError` thrown inside a method is now rejected as is. Before, the `catch` of the method wrapped it again with code `4` (`MONGODB_INTERNAL_ERROR`), keeping the original in `previousError`. Errors that do not come from the package keep the code `4`.
+
+| Method | Case | Before | Now |
+| --- | --- | --- | --- |
+| `update()` | invalid filter type | code `4` (`previousError`: code `8`) | code `8` (`INVALID_FILTER_TYPE`) |
+| `update()` | pipeline stage with more than one operator | code `4` (`previousError`: code `11`) | code `11` (`INVALID_STAGES`) |
+| every method with filters | `filters` is not an object (e.g. a string) | `MongoDBError` without `code` (code `4` in `update()`) | code `13` (`INVALID_FILTERS`) |
+| `getPaged()` | the `callback` throws a `MongoDBError` | code `4` (`previousError`: the original) | the original error, with its own code |
+| every method that connects | the connection fails | code `4`, driver error in `previousError.previousError` | code `4`, driver error in `previousError` |
+
+## `increment()` adds `id`
+
+The document returned by `increment()` now includes `id` (string). The `_id` (`ObjectId`) is kept, so existing code keeps working.
+
+## `dropIndexes()` is deterministic
+
+`dropIndexes()` waits for every drop to finish before rejecting. If one fails, it rejects with the first error (in `indexNames` order) and the other indexes are already dropped.
+
 ## Migration checklist
 
 1. Bump Node to `>= 20.19.0` (`nodejs22.x` runtime for Lambdas) and update `engines.node`.
@@ -100,7 +168,10 @@ await mongo.aggregate(model, [{ $match: { status: 'active' } }], { batchSize: 10
 5. Review every `multiUpdate(..., { rawResponse: true })` call site: replace reliance on the rejection with a check on `result.success` / `result.operations[].success`.
 6. Review `dropCollection()` call sites that relied on the rejection to detect a non-existent collection.
 7. Review `aggregate()` calls that are performance-sensitive and set `batchSize` explicitly if needed.
-8. Run your test suite against `4.0.0`.
+8. Review `distinct()` filters by `id` (now they match) and every `aggregate()` call that reads `id` from `$group` results whose `_id` is a number, a date, a boolean or an object: read `_id` instead.
+9. Review code that checks the error code of `createIndexes([])` (now `10`).
+10. Review code that checks the error of an invalid id (now `MongoDBError` code `12` in every method) and the code of `update()` errors for invalid filters or stages (now `8` and `11`), and of non object `filters` (now `13`).
+11. Run your test suite against `4.0.0`.
 
 ## See also
 

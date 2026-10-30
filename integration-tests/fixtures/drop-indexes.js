@@ -10,21 +10,6 @@ describe('dropIndexes()', () => {
 
 	const getIndexNames = async model => (await getMongodbInstance().getIndexes(model)).map(index => index.name).sort();
 
-	// The rejection does not wait for the drops still in flight: polls until the remaining ones are done
-	const waitForIndexNames = async (model, expected) => {
-
-		let names;
-
-		for(let attempt = 0; attempt < 50; attempt++) {
-			names = await getIndexNames(model);
-			if(names.length === expected.length)
-				break;
-			await new Promise(resolve => { setTimeout(resolve, 20); });
-		}
-
-		return names;
-	};
-
 	beforeEach(async () => {
 		await getMongodbInstance().createIndexes(new TestModel(), [
 			...TestModel.indexes,
@@ -63,8 +48,8 @@ describe('dropIndexes()', () => {
 
 		await assertDriverError(getMongodbInstance().dropIndexes(model, ['a', 'nope', 'b']), 27);
 
-		// Current behavior: the drops run in parallel (Promise.all), so the existing ones are dropped even though the call rejects
-		assert.deepEqual(await waitForIndexNames(model, ['_id_', 'name']), ['_id_', 'name']);
+		// allSettled: the call rejects only after every drop finished
+		assert.deepEqual(await getIndexNames(model), ['_id_', 'name']);
 	});
 
 	it('Should reject with the driver error 72 (InvalidOptions) when one of the names is _id_', async () => {

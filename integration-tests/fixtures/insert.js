@@ -169,7 +169,7 @@ describe('insert()', () => {
 		await assertDriverError(getMongodbInstance().insert(model, { id, name: 'Test 2' }), 11000);
 	});
 
-	it('Should reject with MONGODB_INTERNAL_ERROR wrapping a BSONError when the id is not a valid ObjectId', async () => {
+	it('Should reject with INVALID_ID wrapping a BSONError when the id is not a valid ObjectId', async () => {
 
 		let error;
 
@@ -179,9 +179,9 @@ describe('insert()', () => {
 			error = err;
 		}
 
-		// Current behavior: unlike get/save/remove, the id cast is inside the try/catch, so it is wrapped as code 4 (no server code)
+		// Current behavior: the id cast is wrapped as INVALID_ID, same as the other methods
 		assert.ok(error instanceof MongoDBError);
-		assert.equal(error.code, MongoDBError.codes.MONGODB_INTERNAL_ERROR);
+		assert.equal(error.code, MongoDBError.codes.INVALID_ID);
 		assert.equal(error.previousError?.name, 'BSONError');
 	});
 
