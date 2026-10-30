@@ -4,6 +4,7 @@ const assert = require('assert');
 const { ObjectId } = require('mongodb');
 
 const MongoDBFilters = require('../lib/mongodb-filters');
+const MongoDBError = require('../lib/mongodb-error');
 
 describe('MongoDBFilters', () => {
 
@@ -29,6 +30,24 @@ describe('MongoDBFilters', () => {
 
 		it('Should return an empty object if no filters are passed', () => {
 			assert.deepStrictEqual(MongoDBFilters.parseFilters(), {});
+		});
+
+		[
+			['a value', { value: 'abc' }],
+			['a value with a type', { type: 'equal', value: '' }],
+			['an array of values', { type: 'in', value: [id, 'abc'] }]
+		].forEach(([description, filter]) => {
+
+			it(`Should throw INVALID_ID if a field with isID has ${description} that is not a valid ObjectId`, () => {
+				assert.throws(() => MongoDBFilters.parseFilters({ productId: filter }, getModel({
+					productId: { isID: true }
+				})), err => {
+					assert(err instanceof MongoDBError);
+					assert.strictEqual(err.code, MongoDBError.codes.INVALID_ID);
+					assert.strictEqual(err.previousError.name, 'BSONError');
+					return true;
+				});
+			});
 		});
 
 		it('Should throw if invalid filters are passed', () => {

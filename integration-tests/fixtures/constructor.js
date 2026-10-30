@@ -7,7 +7,7 @@ const MongoDBError = require('../../lib/mongodb-error');
 
 const TestModel = require('./_model');
 const { getMongodbInstance } = require('./_mongodb-instance');
-const { cleanCollection, assertDriverError } = require('./_helpers');
+const { cleanCollection } = require('./_helpers');
 
 describe('constructor', () => {
 
@@ -136,19 +136,31 @@ describe('constructor', () => {
 		// Port 1 is not listening, and the host is not shared with the other instances (clients are cached by host)
 		const mongodb = new MongoDB({ connectionString: 'mongodb://127.0.0.1:1/integration-tests?serverSelectionTimeoutMS=300' });
 
-		// The connection error is wrapped twice: connect() wraps the driver error and get() wraps it again
-		// Current behavior: previousError is a MongoDBError with code 4, the driver error is previousError.previousError
-		const error = await assertDriverError(mongodb.get(new TestModel(), {}), MongoDBError.codes.MONGODB_INTERNAL_ERROR);
+		// Current behavior: the connection error is wrapped once, connect() wraps the driver error and get() lets the MongoDBError through
+		const getError = async promise => {
 
-		assert.equal(error.previousError.previousError.name, 'MongoServerSelectionError');
+			let error;
+
+			try {
+				await promise;
+			} catch(err) {
+				error = err;
+			}
+
+			assert.ok(error instanceof MongoDBError);
+			assert.equal(error.code, MongoDBError.codes.MONGODB_INTERNAL_ERROR);
+			assert.equal(error.previousError.name, 'MongoServerSelectionError');
+
+			return error;
+		};
+
+		const error = await getError(mongodb.get(new TestModel(), {}));
 
 		// The failed client is not kept in the cache: the next operation tries to connect again
-		const secondError = await assertDriverError(mongodb.insert(new TestModel(), { name: 'Not inserted' }), MongoDBError.codes.MONGODB_INTERNAL_ERROR);
-
-		assert.equal(secondError.previousError.previousError.name, 'MongoServerSelectionError');
+		const secondError = await getError(mongodb.insert(new TestModel(), { name: 'Not inserted' }));
 
 		// A new connection attempt means a new driver error instance (a cached rejected client would repeat the same one)
-		assert.notEqual(secondError.previousError.previousError, error.previousError.previousError);
+		assert.notEqual(secondError.previousError, error.previousError);
 	});
 
 });

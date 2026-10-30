@@ -18,6 +18,8 @@ This guide is for consumers of `@janiscommerce/mongodb` upgrading from `3.x` to 
 | [`distinct()` maps `id` to `_id`](#distinct-maps-id-to-_id) | Only if your code relied on `id` filters matching nothing |
 | [`aggregate()` ids handling](#aggregate-ids-handling) | Yes, if you read `id` from `$group` results with a number, date, boolean or object `_id`, or pass operators in `$match` |
 | [`createIndexes([])` error code](#createindexes-error-code) | Only if you check the error code for an empty array |
+| [Invalid ids reject with `MongoDBError`](#invalid-ids-reject-with-mongodberror) | Only if your code checks the error of an invalid id (`BSONError` or code `4`) |
+| [`MongoDBError` is not re-wrapped](#mongodberror-is-not-re-wrapped) | Only if your code checks the code or `previousError` of `update()` or connection errors |
 | [`increment()` adds `id`](#increment-adds-id) | No, additive |
 | [`dropIndexes()` is deterministic](#dropindexes-is-deterministic) | No |
 
@@ -121,6 +123,34 @@ await mongo.aggregate(model, [{ $group: { _id: { group: '$group' }, total: { $su
 
 `createIndexes(model, [])` now rejects with `MongoDBError` code `10` (`INVALID_INDEX`) without calling the server. Before, the server rejected it and the error had code `4` (`MONGODB_INTERNAL_ERROR`).
 
+## Invalid ids reject with `MongoDBError`
+
+An id that is not a valid `ObjectId` (e.g. `'abc'`) now rejects with `MongoDBError` code `12` (`INVALID_ID`), with the `BSONError` in `previousError`. It applies to `id` filters, `{ type, value }` filters, the `id` and the `isID` fields of the items, and the ids inside `$in`, `$nin`, `$eq` and `$ne` of an `aggregate()` `$match`.
+
+| Method | Before | Now |
+| --- | --- | --- |
+| `get()`, `getPaged()`, `save()`, `multiInsert()`, `multiSave()`, `multiUpdate()`, `remove()`, `multiRemove()`, `getTotals()`, `increment()`, `aggregate()`, `distinct()` (only for fields with `isID: true`) | raw `BSONError` (no `code`) | `MongoDBError` code `12` |
+| `distinct()` with an `id` filter | resolved `[]` (matched nothing, no error) | rejects `MongoDBError` code `12` |
+| `insert()`, `update()` | `MongoDBError` code `4` (`previousError`: `BSONError`) | `MongoDBError` code `12` |
+
+```js
+await mongo.get(model, { filters: { id: 'abc' } });
+// Before: rejects BSONError
+// Now:    rejects MongoDBError { code: 12, previousError: BSONError }
+```
+
+## `MongoDBError` is not re-wrapped
+
+A `MongoDBError` thrown inside a method is now rejected as is. Before, the `catch` of the method wrapped it again with code `4` (`MONGODB_INTERNAL_ERROR`), keeping the original in `previousError`. Errors that do not come from the package keep the code `4`.
+
+| Method | Case | Before | Now |
+| --- | --- | --- | --- |
+| `update()` | invalid filter type | code `4` (`previousError`: code `8`) | code `8` (`INVALID_FILTER_TYPE`) |
+| `update()` | pipeline stage with more than one operator | code `4` (`previousError`: code `11`) | code `11` (`INVALID_STAGES`) |
+| `update()` | `filters` is not an object (e.g. a string) | code `4` | `MongoDBError` without `code` (same as the other methods) |
+| `getPaged()` | the `callback` throws a `MongoDBError` | code `4` (`previousError`: the original) | the original error, with its own code |
+| every method that connects | the connection fails | code `4`, driver error in `previousError.previousError` | code `4`, driver error in `previousError` |
+
 ## `increment()` adds `id`
 
 The document returned by `increment()` now includes `id` (string). The `_id` (`ObjectId`) is kept, so existing code keeps working.
@@ -140,7 +170,8 @@ The document returned by `increment()` now includes `id` (string). The `_id` (`O
 7. Review `aggregate()` calls that are performance-sensitive and set `batchSize` explicitly if needed.
 8. Review `distinct()` filters by `id` (now they match) and every `aggregate()` call that reads `id` from `$group` results whose `_id` is a number, a date, a boolean or an object: read `_id` instead.
 9. Review code that checks the error code of `createIndexes([])` (now `10`).
-10. Run your test suite against `4.0.0`.
+10. Review code that checks the error of an invalid id (now `MongoDBError` code `12` in every method) and the code of `update()` errors for invalid filters or stages (now `8` and `11`).
+11. Run your test suite against `4.0.0`.
 
 ## See also
 

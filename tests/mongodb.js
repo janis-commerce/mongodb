@@ -155,6 +155,21 @@ describe('MongoDB', () => {
 			});
 		});
 
+		it('Should throw INVALID_ID and not hit the DB if an id is not a valid ObjectId', async () => {
+
+			const collection = stubMongo(true);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.distinct(getModel(), { key: 'foo', filters: { id: 'abc' } }), err => {
+				assert(err instanceof MongoDBError);
+				assert.strictEqual(err.code, MongoDBError.codes.INVALID_ID);
+				assert.strictEqual(err.previousError.name, 'BSONError');
+				return true;
+			});
+
+			sinon.assert.notCalled(collection);
+		});
+
 		it('Should throw if connection to DB fails', async () => {
 
 			const collectionStub = stubMongo(false);
@@ -293,6 +308,63 @@ describe('MongoDB', () => {
 			const mongodb = new MongoDB(config);
 			await assert.rejects(() => mongodb.get(null), {
 				code: MongoDBError.codes.INVALID_MODEL
+			});
+		});
+
+		it('Should throw INVALID_ID and not hit the DB if an id is not a valid ObjectId', async () => {
+
+			const collection = stubMongo(true);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.get(getModel(), { filters: { id: 'abc' } }), err => {
+				assert(err instanceof MongoDBError);
+				assert.strictEqual(err.code, MongoDBError.codes.INVALID_ID);
+				assert.strictEqual(err.previousError.name, 'BSONError');
+				return true;
+			});
+
+			sinon.assert.notCalled(collection);
+		});
+
+		[
+			['a single value', 'abc'],
+			['an array of values', ['5df0151dbc1d570011949d87', 'abc']]
+		].forEach(([description, value]) => {
+
+			it(`Should throw INVALID_ID if a { type, value } id filter has ${description} that is not a valid ObjectId`, async () => {
+
+				const collection = stubMongo(true);
+
+				const mongodb = new MongoDB(config);
+				await assert.rejects(() => mongodb.get(getModel(), { filters: { id: { type: 'in', value } } }), {
+					name: 'MongoDBError',
+					code: MongoDBError.codes.INVALID_ID
+				});
+
+				sinon.assert.notCalled(collection);
+			});
+		});
+
+		it('Should keep INVALID_FILTER_TYPE code when the filter type is invalid', async () => {
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.get(getModel(), { filters: { name: { type: 'invalid', value: 'foo' } } }), {
+				code: MongoDBError.codes.INVALID_FILTER_TYPE
+			});
+		});
+
+		it('Should wrap a connection error only once', async () => {
+
+			const driverError = new Error('Driver connection error');
+
+			sinon.stub(MongoWrapper.prototype, 'getDb').rejects(new MongoDBError(driverError, MongoDBError.codes.MONGODB_INTERNAL_ERROR));
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.get(getModel(), {}), err => {
+				assert(err instanceof MongoDBError);
+				assert.strictEqual(err.code, MongoDBError.codes.MONGODB_INTERNAL_ERROR);
+				assert.strictEqual(err.previousError, driverError);
+				return true;
 			});
 		});
 
@@ -709,6 +781,34 @@ describe('MongoDB', () => {
 			});
 		});
 
+		it('Should throw INVALID_ID and not hit the DB if an id is not a valid ObjectId', async () => {
+
+			const collection = stubMongo(true);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.getPaged(getModel(), { filters: { id: 'abc' } }, () => {}), err => {
+				assert(err instanceof MongoDBError);
+				assert.strictEqual(err.code, MongoDBError.codes.INVALID_ID);
+				assert.strictEqual(err.previousError.name, 'BSONError');
+				return true;
+			});
+
+			sinon.assert.notCalled(collection);
+		});
+
+		it('Should not wrap a MongoDBError thrown by the callback', async () => {
+
+			asyncIteratorMockChain(true, [{ foo: 1 }]);
+
+			const callbackError = new MongoDBError('Callback error', MongoDBError.codes.INVALID_ITEM);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.getPaged(getModel(), {}, sinon.stub().rejects(callbackError)), err => {
+				assert.strictEqual(err, callbackError);
+				return true;
+			});
+		});
+
 		it('Should throw if connection to DB fails', async () => {
 
 			const collection = stubMongo(false);
@@ -872,6 +972,21 @@ describe('MongoDB', () => {
 			await assert.rejects(() => mongodb.save(null), {
 				code: MongoDBError.codes.INVALID_MODEL
 			});
+		});
+
+		it('Should throw INVALID_ID and not hit the DB if an id is not a valid ObjectId', async () => {
+
+			const collection = stubMongo(true);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.save(getModel(), { id: 'abc', name: 'foo' }), err => {
+				assert(err instanceof MongoDBError);
+				assert.strictEqual(err.code, MongoDBError.codes.INVALID_ID);
+				assert.strictEqual(err.previousError.name, 'BSONError');
+				return true;
+			});
+
+			sinon.assert.notCalled(collection);
 		});
 
 		it('Should throw if connection to DB fails', async () => {
@@ -1417,6 +1532,34 @@ describe('MongoDB', () => {
 			});
 		});
 
+		it('Should throw INVALID_ID and not hit the DB if an id is not a valid ObjectId', async () => {
+
+			const collection = stubMongo(true);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.insert(getModel(), { id: 'abc', name: 'foo' }), err => {
+				assert(err instanceof MongoDBError);
+				assert.strictEqual(err.code, MongoDBError.codes.INVALID_ID);
+				assert.strictEqual(err.previousError.name, 'BSONError');
+				return true;
+			});
+
+			sinon.assert.notCalled(collection);
+		});
+
+		it('Should throw INVALID_ID if a field with isID is not a valid ObjectId', async () => {
+
+			const collection = stubMongo(true);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.insert(getModel({ otherId: { isID: true } }), { name: 'foo', otherId: 'abc' }), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.INVALID_ID
+			});
+
+			sinon.assert.notCalled(collection);
+		});
+
 		it('Should throw if connection to DB fails', async () => {
 
 			const item = {
@@ -1576,6 +1719,47 @@ describe('MongoDB', () => {
 			await assert.rejects(() => mongodb.update(null), {
 				code: MongoDBError.codes.INVALID_MODEL
 			});
+		});
+
+		it('Should throw INVALID_ID and not hit the DB if an id is not a valid ObjectId', async () => {
+
+			const collection = stubMongo(true);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.update(getModel(), { name: 'foo' }, { id: 'abc' }), err => {
+				assert(err instanceof MongoDBError);
+				assert.strictEqual(err.code, MongoDBError.codes.INVALID_ID);
+				assert.strictEqual(err.previousError.name, 'BSONError');
+				return true;
+			});
+
+			sinon.assert.notCalled(collection);
+		});
+
+		it('Should not wrap a MongoDBError thrown while parsing the filters', async () => {
+
+			const collection = stubMongo(true);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.update(getModel(), { name: 'foo' }, { name: { type: 'invalid', value: 'foo' } }), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.INVALID_FILTER_TYPE
+			});
+
+			sinon.assert.notCalled(collection);
+		});
+
+		it('Should not wrap a MongoDBError thrown while parsing the pipeline stages', async () => {
+
+			const collection = stubMongo(true);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.update(getModel(), [{ $set: { a: 1 }, $unset: 'b' }], { id: '5df0151dbc1d570011949d87' }), {
+				name: 'MongoDBError',
+				code: MongoDBError.codes.INVALID_STAGES
+			});
+
+			sinon.assert.notCalled(collection);
 		});
 
 		it('Should throw if connection to DB fails', async () => {
@@ -1911,6 +2095,21 @@ describe('MongoDB', () => {
 			await assert.rejects(() => mongodb.multiInsert(getModel(), []), {
 				code: MongoDBError.codes.INVALID_ITEM
 			});
+		});
+
+		it('Should throw INVALID_ID and not hit the DB if an id is not a valid ObjectId', async () => {
+
+			const collection = stubMongo(true);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.multiInsert(getModel(), [{ id: 'abc', name: 'foo' }]), err => {
+				assert(err instanceof MongoDBError);
+				assert.strictEqual(err.code, MongoDBError.codes.INVALID_ID);
+				assert.strictEqual(err.previousError.name, 'BSONError');
+				return true;
+			});
+
+			sinon.assert.notCalled(collection);
 		});
 
 		it('Should throw if connection to DB fails', async () => {
@@ -2265,6 +2464,21 @@ describe('MongoDB', () => {
 			});
 		});
 
+		it('Should throw INVALID_ID and not hit the DB if an id is not a valid ObjectId', async () => {
+
+			const collection = stubMongo(true);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.multiSave(getModel(), [{ id: 'abc', name: 'foo' }]), err => {
+				assert(err instanceof MongoDBError);
+				assert.strictEqual(err.code, MongoDBError.codes.INVALID_ID);
+				assert.strictEqual(err.previousError.name, 'BSONError');
+				return true;
+			});
+
+			sinon.assert.notCalled(collection);
+		});
+
 		it('Should throw if connection to DB fails', async () => {
 
 			const item = {
@@ -2474,6 +2688,21 @@ describe('MongoDB', () => {
 			await assert.rejects(() => mongodb.multiUpdate(getModel(), []), {
 				code: MongoDBError.codes.INVALID_ITEM
 			});
+		});
+
+		it('Should throw INVALID_ID and not hit the DB if an id is not a valid ObjectId', async () => {
+
+			const collection = stubMongo(true);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.multiUpdate(getModel(), [{ filter: { id: 'abc' }, data: { name: 'foo' } }]), err => {
+				assert(err instanceof MongoDBError);
+				assert.strictEqual(err.code, MongoDBError.codes.INVALID_ID);
+				assert.strictEqual(err.previousError.name, 'BSONError');
+				return true;
+			});
+
+			sinon.assert.notCalled(collection);
 		});
 
 		it('Should throw if connection to DB fails', async () => {
@@ -3127,6 +3356,21 @@ describe('MongoDB', () => {
 			});
 		});
 
+		it('Should throw INVALID_ID and not hit the DB if an id is not a valid ObjectId', async () => {
+
+			const collection = stubMongo(true);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.remove(getModel(), { id: 'abc' }), err => {
+				assert(err instanceof MongoDBError);
+				assert.strictEqual(err.code, MongoDBError.codes.INVALID_ID);
+				assert.strictEqual(err.previousError.name, 'BSONError');
+				return true;
+			});
+
+			sinon.assert.notCalled(collection);
+		});
+
 		it('Should throw if connection to DB fails', async () => {
 
 			const item = {
@@ -3259,6 +3503,21 @@ describe('MongoDB', () => {
 			await assert.rejects(() => mongodb.multiRemove(null), {
 				code: MongoDBError.codes.INVALID_MODEL
 			});
+		});
+
+		it('Should throw INVALID_ID and not hit the DB if an id is not a valid ObjectId', async () => {
+
+			const collection = stubMongo(true);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.multiRemove(getModel(), { id: 'abc' }), err => {
+				assert(err instanceof MongoDBError);
+				assert.strictEqual(err.code, MongoDBError.codes.INVALID_ID);
+				assert.strictEqual(err.previousError.name, 'BSONError');
+				return true;
+			});
+
+			sinon.assert.notCalled(collection);
 		});
 
 		it('Should throw if connection to DB fails', async () => {
@@ -3809,6 +4068,36 @@ describe('MongoDB', () => {
 			await assert.rejects(() => mongodb.increment(null), {
 				code: MongoDBError.codes.INVALID_MODEL
 			});
+		});
+
+		it('Should throw INVALID_ID and not hit the DB if an id is not a valid ObjectId', async () => {
+
+			const collection = stubMongo(true);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.getTotals(getModel(), { id: 'abc' }), err => {
+				assert(err instanceof MongoDBError);
+				assert.strictEqual(err.code, MongoDBError.codes.INVALID_ID);
+				assert.strictEqual(err.previousError.name, 'BSONError');
+				return true;
+			});
+
+			sinon.assert.notCalled(collection);
+		});
+
+		it('Should throw INVALID_ID and not hit the DB if an id is not a valid ObjectId', async () => {
+
+			const collection = stubMongo(true);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.increment(getModel(), { id: 'abc' }, 'foo', 1), err => {
+				assert(err instanceof MongoDBError);
+				assert.strictEqual(err.code, MongoDBError.codes.INVALID_ID);
+				assert.strictEqual(err.previousError.name, 'BSONError');
+				return true;
+			});
+
+			sinon.assert.notCalled(collection);
 		});
 
 		it('Should throw if connection to DB fails', async () => {
@@ -4889,6 +5178,21 @@ describe('MongoDB', () => {
 			{ $match: { id: itemId, referenceId: 'display-id' } },
 			{ $unset: 'category' }
 		];
+
+		it('Should throw INVALID_ID and not hit the DB if an id is not a valid ObjectId', async () => {
+
+			const collection = stubMongo(true);
+
+			const mongodb = new MongoDB(config);
+			await assert.rejects(() => mongodb.aggregate(getModel(), [{ $match: { id: { $in: ['5df0151dbc1d570011949d87', 'abc'] } } }]), err => {
+				assert(err instanceof MongoDBError);
+				assert.strictEqual(err.code, MongoDBError.codes.INVALID_ID);
+				assert.strictEqual(err.previousError.name, 'BSONError');
+				return true;
+			});
+
+			sinon.assert.notCalled(collection);
+		});
 
 		it('Should throw if connection to DB fails', async () => {
 

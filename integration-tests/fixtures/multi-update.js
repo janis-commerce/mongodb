@@ -324,17 +324,18 @@ describe('multiUpdate()', () => {
 			);
 		});
 
-		it('Should reject with a raw BSONError when the id filter is not a valid ObjectId', async () => {
+		it('Should reject with INVALID_ID wrapping a BSONError when the id filter is not a valid ObjectId', async () => {
 
 			const model = await seed();
 
-			// Current behavior: unlike update() (wrapped as code 4), the id conversion runs outside the try/catch and the BSONError is thrown as is
+			// Current behavior: the id conversion is wrapped as INVALID_ID, same as update()
 
 			await assert.rejects(
 				getMongodbInstance().multiUpdate(model, [{ filter: { id: 'invalid' }, data: { value: 1 } }]),
 				err => {
-					assert.equal(err instanceof MongoDBError, false);
-					assert.equal(err.name, 'BSONError');
+					assert.ok(err instanceof MongoDBError);
+					assert.equal(err.code, MongoDBError.codes.INVALID_ID);
+					assert.equal(err.previousError?.name, 'BSONError');
 					return true;
 				}
 			);
@@ -344,7 +345,7 @@ describe('multiUpdate()', () => {
 
 			const model = await seed();
 
-			// Current behavior: unlike update() (wrapped as code 4), the filter parsing runs outside the try/catch and the error is thrown as is
+			// Current behavior: thrown as is, same as update()
 
 			await assert.rejects(
 				getMongodbInstance().multiUpdate(model, [{ filter: { name: { type: 'invalidType', value: 'A' } }, data: { value: 1 } }]),

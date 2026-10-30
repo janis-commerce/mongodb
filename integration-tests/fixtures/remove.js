@@ -94,7 +94,7 @@ describe('remove()', () => {
 		);
 	});
 
-	it('Should reject with a raw BSONError when the id is not a valid ObjectId', async () => {
+	it('Should reject with INVALID_ID wrapping a BSONError when the id is not a valid ObjectId', async () => {
 
 		const model = await seed();
 
@@ -106,10 +106,10 @@ describe('remove()', () => {
 			error = err;
 		}
 
-		// Current behavior: the id is cast before the try/catch, so it is thrown as is
-		assert.ok(error);
-		assert.equal(error instanceof MongoDBError, false);
-		assert.equal(error.name, 'BSONError');
+		// Current behavior: the id cast is wrapped as INVALID_ID
+		assert.ok(error instanceof MongoDBError);
+		assert.equal(error.code, MongoDBError.codes.INVALID_ID);
+		assert.equal(error.previousError?.name, 'BSONError');
 	});
 
 });
