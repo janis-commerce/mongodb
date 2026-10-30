@@ -16,7 +16,7 @@ This guide is for consumers of `@janiscommerce/mongodb` upgrading from `3.x` to 
 | [`multiUpdate()` with `rawResponse` resolves instead of rejecting](#multiupdate-with-rawresponse-resolves-instead-of-rejecting) | Yes, if you use `rawResponse: true` |
 | [`aggregate()` and `batchSize`](#aggregate-and-batchsize) | Only if your pipeline needs a specific `getMore` batch size |
 | [`distinct()` maps `id` to `_id`](#distinct-maps-id-to-_id) | Only if your code relied on `id` filters matching nothing |
-| [`aggregate()` ids handling](#aggregate-ids-handling) | Only if you read `id` from non ObjectId/string `_id` results, or pass operators in `$match` |
+| [`aggregate()` ids handling](#aggregate-ids-handling) | Yes, if you read `id` from `$group` results with a number, date, boolean or object `_id`, or pass operators in `$match` |
 | [`createIndexes([])` error code](#createindexes-error-code) | Only if you check the error code for an empty array |
 | [`increment()` adds `id`](#increment-adds-id) | No, additive |
 | [`dropIndexes()` is deterministic](#dropindexes-is-deterministic) | No |
@@ -103,9 +103,15 @@ Like `get()`, `distinct()` now converts an `id` filter (and the fields with `isI
 ## `aggregate()` ids handling
 
 - The ids inside `$in`, `$nin`, `$eq` and `$ne` of a `$match` stage are now converted to `ObjectId` (for `id` and for the fields with `isID: true`). Before, only plain values were converted, so operators matched nothing.
-- The `_id` of the results is mapped to `id` only when it is an `ObjectId` or a string. Before, any truthy `_id` was mapped: a number became a string `id` and an object became `"[object Object]"`. Now those results keep `_id` untouched (`null` was already kept).
+- The `_id` of the results is mapped to `id` only when it is an `ObjectId` or a string. Before, any truthy `_id` was mapped to a string `id`: a number, a date or a boolean became its string form and an object became `"[object Object]"`. Now those results keep `_id` untouched, with its original type (`null` was already kept).
+
+> ⚠️ This breaks silently: code that reads `.id` from those results now gets `undefined`, without any error. It applies to every `$group` by a number, date or boolean field, not only to compound (object) `_id`.
 
 ```js
+await mongo.aggregate(model, [{ $group: { _id: '$year', total: { $sum: '$amount' } } }]);
+// Before: [{ id: '2024', total: 30 }]
+// Now:    [{ _id: 2024, total: 30 }]
+
 await mongo.aggregate(model, [{ $group: { _id: { group: '$group' }, total: { $sum: '$amount' } } }]);
 // Before: [{ id: '[object Object]', total: 30 }]
 // Now:    [{ _id: { group: 'a' }, total: 30 }]
@@ -132,7 +138,7 @@ The document returned by `increment()` now includes `id` (string). The `_id` (`O
 5. Review every `multiUpdate(..., { rawResponse: true })` call site: replace reliance on the rejection with a check on `result.success` / `result.operations[].success`.
 6. Review `dropCollection()` call sites that relied on the rejection to detect a non-existent collection.
 7. Review `aggregate()` calls that are performance-sensitive and set `batchSize` explicitly if needed.
-8. Review `distinct()` filters by `id` (now they match) and `aggregate()` calls that read `id` from `$group` results with number or object `_id`.
+8. Review `distinct()` filters by `id` (now they match) and every `aggregate()` call that reads `id` from `$group` results whose `_id` is a number, a date, a boolean or an object: read `_id` instead.
 9. Review code that checks the error code of `createIndexes([])` (now `10`).
 10. Run your test suite against `4.0.0`.
 

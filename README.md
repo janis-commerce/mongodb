@@ -1099,12 +1099,12 @@ await mongo.deleteAllDocuments('myCollection');
 - stages: `Array<Object>`: The pipeline stages, in the order to be executed
 - options: `Object` (optional): Options passed as is to the driver `aggregate()` (for example `batchSize`, `allowDiskUse`, `hint`)
 
-- Resolves `Array<Object>`: The computed results. The `_id` of every result is mapped to `id` as a string only when it is an `ObjectId` or a string. Any other `_id` (for example `null`, a number or an object in a `$group`) is left as `_id`
+- Resolves `Array<Object>`: The computed results. The `_id` of every result is mapped to `id` as a string only when it is an `ObjectId` or a string. Any other `_id` (for example `null`, a number, a date, a boolean or an object in a `$group`) is left as `_id`, with its original type
 - Rejects `Error` When `stages` is not an array, or when something bad occurs
 
 **IDs conversion:** in the stages (for example in `$match`), an `id` field is converted to `_id` as `ObjectId`, and the fields declared with `isID: true` in the model are converted to `ObjectId` too. Plain values and the ids inside `$in`, `$nin`, `$eq` and `$ne` are converted, like in `get()`.
 
-> A compound `_id` object of a `$group` (or a number `_id`) is kept as `_id`, without any conversion.
+> A `$group` by a number, date, boolean or compound (object) `_id` is kept as `_id`, without any conversion: read `_id`, not `id`.
 
 **Usage:**
 ```js

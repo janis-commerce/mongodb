@@ -5056,11 +5056,13 @@ describe('MongoDB', () => {
 			assert.deepStrictEqual(result, [{ id: itemId, count: 1 }]);
 		});
 
-		it('Should keep _id untouched and not set id when _id is an object, number or null', async () => {
+		it('Should keep _id untouched and not set id when _id is an object, number, date, boolean or null', async () => {
 
 			const items = [
 				{ _id: { a: 1, b: 'x' }, count: 1 },
 				{ _id: 5, count: 2 },
+				{ _id: new Date('2024-01-01T00:00:00.000Z'), count: 4 },
+				{ _id: true, count: 5 },
 				{ _id: null, count: 3 }
 			];
 
